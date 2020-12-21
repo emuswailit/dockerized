@@ -1367,7 +1367,7 @@ class ProductImageList(generics.ListCreateAPIView):
         user = self.request.user
         product_pk = self.kwargs.get("pk")
 
-        serializer.save(created_by=user,
+        serializer.save(facility_id=user.facility_id, created_by=user,
                         product_id=product_pk)
 
     def create(self, request, *args, **kwargs):

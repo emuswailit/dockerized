@@ -6,6 +6,7 @@ from core.models import FacilityRelatedModel
 from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils.text import slugify
 User = get_user_model()
 
 
