@@ -1,0 +1,21 @@
+import os
+SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
+DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+from settings import *
+
+
+ALLOWED_HOSTS = ['*']
+SECRET_KEY = 'ozs6d&t+d=no1=e**m&4*#2puhuiieejz2o!08qofr3lymk@*g'
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'mobipharma_db',
+#         'USER': 'postgres',
+#         'PASSWORD': '1978@Omaria@Postgres',
+#         'HOST': 'localhost',
+#         'PORT': '',
+#     }
+# }
+
