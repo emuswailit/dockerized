@@ -196,6 +196,7 @@ def activate_account(request, uidb64, token):
         user = None
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
+        user.is_verified = True
         user.save()
         return redirect("/")
     else:
@@ -636,3 +637,15 @@ class AllergyUpdateAPIView(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+def verify(request, uuid):
+    try:
+        user = User.objects.get(verification_uuid=uuid, is_verified=False)
+    except User.DoesNotExist:
+        raise Http404("User does not exist or is already verified")
+ 
+    user.is_verified = True
+    user.save()
+ 
+    return redirect('home')

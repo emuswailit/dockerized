@@ -99,14 +99,18 @@ INSTALLED_APPS = [
     'users',
     'subscriptions',
     'entities',
+    'celery',
     'drugs',
     'inventory',
     'consultations',
     'clients',
     'pharmacies',
+    'notifications',
     'django_countries',
     'webpack_loader',
     'corsheaders',
+    'django_celery_results',
+    'django_celery_beat',
 
 ]
 
@@ -253,12 +257,12 @@ JWT_AUTH = {
     'JWT_VERIFY': True,
     'JWT_VERIFY_EXPIRATION': True,
     'JWT_LEEWAY': 0,
-    'JWT_EXPIRATION_DELTA': timedelta(days=30),
+    'JWT_EXPIRATION_DELTA': timedelta(days=1),
     'JWT_AUDIENCE': None,
     'JWT_ISSUER': None,
 
     'JWT_ALLOW_REFRESH': False,
-    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=30),
+    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=1),
 
     'JWT_AUTH_HEADER_PREFIX': 'Bearer',
     'JWT_AUTH_COOKIE': None,
@@ -287,7 +291,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'emuswailit@gmail.com'
-EMAIL_HOST_PASSWORD = '19-COVID-19'
+EMAIL_HOST_PASSWORD = 'sjlcihgaoftvwqgk'
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -313,5 +317,12 @@ DATABASES['default'].update(prod_db)
 
 # Celery
 CELERY_BROKER_URL = 'amqp://localhost'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND ='django-cache'
+# Celery Data Format
+# CELERY_ACCEPT_CONTENT = ['application/json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'Africa/Nairobi'
 
 CORS_ORIGIN_ALLOW_ALL = True

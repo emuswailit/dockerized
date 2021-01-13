@@ -17,7 +17,11 @@ from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.text import slugify
 from .token_generator import account_activation_token
-
+from django.core.mail import send_mail
+from django.urls import reverse
+from notifications.tasks import send_verification_email
+ 
+ 
 # Create your models here.
 
 
@@ -116,6 +120,7 @@ class Facility(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+  
     objects = FacilityManager()
 
     class Meta:
@@ -157,21 +162,20 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.is_active = True
-        user.save()
+        user.save(using=self._db)
 
         # Send email
-        if Site._meta.installed:
-            current_site = Site.objects.get_current()
+        # if Site._meta.installed:
+        #     current_site = Site.objects.get_current()
         # current_site = get_current_site(request)
-        email_subject = 'Activate Your Account'
-        message = render_to_string('activate_account.html', {
-            'user': user,
-            'domain': current_site.domain,
-            'uid': force_text(urlsafe_base64_encode(force_bytes(user.pk))),
-            'token': account_activation_token.make_token(user),
-        })
-        to_email = email
+        # email_subject = 'Activate Your Account'
+        # message = render_to_string('activate_account.html', {
+        #     'user': user,
+        #     'domain': current_site.domain,
+        #     'uid': force_text(urlsafe_base64_encode(force_bytes(user.pk))),
+        #     'token': account_activation_token.make_token(user),
+        # })
+        # to_email = email
         # email = EmailMessage(email_subject, message, to=[to_email])
         # email.send()
         return user
@@ -227,6 +231,9 @@ class User(AbstractUser):
     date_of_birth = models.DateField(null=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
+    is_verified = models.BooleanField(default=False)
+    verification_uuid = models.UUIDField('Unique Verification UUID', default=uuid.uuid4)
+
 
     class Meta:
         db_table = 'users'
@@ -361,10 +368,39 @@ class Allergy(models.Model):
 # Create account for each registered user who is not staff and also add user as dependant of the account
 
 
+def user_post_save(sender, instance, signal, *args, **kwargs):
+    if not instance.is_verified:
+        send_verification_email.delay(instance.pk)
+        # Send verification email
+    
+
+
+        # Send verification email
+           # Send email
+        # if Site._meta.installed:
+        #     current_site = Site.objects.get_current()
+        # current_site = get_current_site(request)
+        # email_subject = 'Activate Your Account'
+        # message = render_to_string('activate_account.html', {
+        #     'user': instance,
+        #     'domain':'http://212.22.173.231',
+        #     'uid': force_text(urlsafe_base64_encode(force_bytes(instance.pk))),
+        #     'token': account_activation_token.make_token(instance),
+        # })
+        # to_email = instance.email
+        # email = EmailMessage(email_subject, message, to=[to_email])
+        # email.send()
+     
+ 
+signals.post_save.connect(user_post_save, sender=User)
+
+
 @receiver(post_save, sender=User, dispatch_uid="add_default_facility")
 def create_offer(sender, instance, created, **kwargs):
     """Every user must be attached to a facility. Either created by sel as merchant or by default Mobipharma is created"""
     if created:
+        # send_verification_email(instance.id)
+
         if instance.facility is None:
 
             if Facility.objects.filter(title="Mobipharma").count() >= 1:
