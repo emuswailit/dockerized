@@ -194,11 +194,14 @@ def activate_account(request, uidb64, token):
         print(user)
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
-    if user is not None and account_activation_token.check_token(user, token):
-        user.is_active = True
-        user.is_verified = True
-        user.save()
-        return redirect("/")
+    if user is not None  and account_activation_token.check_token(user, token):
+        if user.is_verified==False and user.is_active==False:
+            user.is_active = True
+            user.is_verified = True
+            user.save()
+            return redirect("/")
+        else:
+            return redirect("/")
     else:
         return HttpResponse('Activation link is invalid!')
 
@@ -241,6 +244,45 @@ class UserLoginView(generics.views.APIView):
             raise exceptions.AuthenticationFailed('User not found')
         return Response({'status': 401, 'detail': 'Invalid credentials'})
 
+class FacilityImageAPIView(generics.CreateAPIView):
+    name = 'facilityimage'
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.FacilityImageSerializer
+    queryset = models.FacilityImage.objects.all()
+    lookup_fields = ('pk',)
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        serializer.save(created_by=user,facility=user.facility
+                        )
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+class FacilityImageDetail(generics.RetrieveUpdateDestroyAPIView):
+    name = 'facilityimage-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.FacilityImageSerializer
+    queryset = models.FacilityImage.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+    def delete(self, request, pk=None, **kwargs):
+
+        print("No deletes")
 
 class UserImageAPIView(generics.CreateAPIView):
     name = 'userimage'
@@ -253,7 +295,7 @@ class UserImageAPIView(generics.CreateAPIView):
 
         user = self.request.user
 
-        serializer.save(created_by=user
+        serializer.save(created_by=user,owner=user
                         )
 
     def get_object(self):

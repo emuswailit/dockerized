@@ -2,7 +2,9 @@ from rest_framework.validators import UniqueValidator
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from core.serializers import FacilitySafeSerializerMixin
+from users.models import FacilityImage
 from entities.models import Pharmacist, Courier, Prescriber
+from users.models import UserImage
 from entities.serializers import PharmacistSerializer, CourierSerializer, PrescriberSerializer
 from subscriptions.serializers import SubscriptionSerializer
 from subscriptions.models import Subscription
@@ -11,27 +13,41 @@ from . import models
 
 User = get_user_model()
 
+class FacilityImageSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.FacilityImage
+        fields = "__all__"
+        read_only_fields = (
+             'created_by','facility',
+        )
+
 
 class UserImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.UserImage
         fields = "__all__"
         read_only_fields = (
-            'variation', 'created_by', 'user',
+            'variation', 'created_by', 'owner',
         )
 
 
 class FacilitySerializer(serializers.HyperlinkedModelSerializer):
+    facility_image = serializers.SerializerMethodField(
+        read_only=True)
 
     class Meta:
         model = models.Facility
-        fields = ('id', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated')
+        fields = ('id', 'title','url', 'facility_type', 'county', 'town', 'road', 'building',
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated','facility_image')
         read_only_fields = ('is_verified','is_subscribed')
     title = serializers.CharField(
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
     )
+
+    def get_facility_image(self, obj):
+        facility_image = FacilityImage.objects.filter(facility=obj)
+        return FacilityImageSerializer(facility_image, context=self.context, many=True).data
 
 
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
@@ -65,6 +81,8 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         read_only=True)
     courier_details = serializers.SerializerMethodField(
         read_only=True)
+    user_image = serializers.SerializerMethodField(
+        read_only=True)
     password = serializers.CharField(
         style={'input_type': 'password'}, write_only=True)
     confirm_password = serializers.CharField(
@@ -87,7 +105,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'date_of_birth',
             'password',
             'confirm_password',
-            # 'user_images',
+            'user_image',
             'is_staff',
             'is_active',
             'is_pharmacist',
@@ -180,6 +198,10 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
     def get_courier_details(self, obj):
         courier = Courier.objects.filter(owner=obj)
         return CourierSerializer(courier, context=self.context, many=True).data
+    
+    def get_user_image(self, obj):
+        user_image = UserImage.objects.filter(owner=obj)
+        return UserImageSerializer(user_image, context=self.context, many=True).data
 
 
 class MerchantSerializer(serializers.Serializer):

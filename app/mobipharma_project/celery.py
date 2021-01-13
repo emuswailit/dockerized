@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
 from django.conf import settings
+from celery.schedules import crontab
 # import django
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mobipharma_project.settings')
@@ -19,6 +20,14 @@ app.config_from_object('django.conf:settings', namespace="CELERY")
 #         'args': ('emuswailit@gmail.com',)
 #     }
 # }
+
+app.conf.beat_schedule ={
+    "after-15-seconds":{
+        'task':'users.tasks.check_subscription_status',
+        'schedule':crontab(minute=0, hour=0)
+     
+    }
+}
 
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 

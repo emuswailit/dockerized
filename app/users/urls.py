@@ -26,8 +26,10 @@ urlpatterns = [
          name=views.FacilityDetail.name),
     path('facilities/<uuid:pk>/', views.FacilityDetail.as_view(),
          name=views.FacilityDetail.name),
-
-
+    path('facilities/<uuid:pk>/image', views.FacilityImageAPIView.as_view(),
+          name=views.FacilityImageAPIView.name),
+path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
+         name=views.FacilityImageDetail.name),
     #     Dependants urls
     path('dependants', views.DependantListAPIView.as_view(),
          name=views.DependantListAPIView.name),

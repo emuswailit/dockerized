@@ -10,7 +10,6 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.core.mail import EmailMessage
 
 
-
 @shared_task
 def sum (a,b):
   print("Hello from task")

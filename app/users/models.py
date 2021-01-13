@@ -26,12 +26,18 @@ from notifications.tasks import send_verification_email
 
 
 def image_upload_to(instance, filename):
-    name = instance.user.email
+    name = instance.owner.email
     slug = slugify(name)
     basename, file_extension = filename.split(".")
     new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
     return new_filename
 
+def facility_image_upload_to(instance, filename):
+    name = instance.facility.title
+    slug = slugify(name)
+    basename, file_extension = filename.split(".")
+    new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
+    return new_filename
 
 class FacilityManager(models.Manager):
     """Manager for the Facility model. Also handles the account creation"""
@@ -145,7 +151,19 @@ class Facility(models.Model):
             return False
 
         return current_date < self.paid_until
+class FacilityImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    """Model for uploading profile user image"""
+    facility = models.ForeignKey(
+        Facility, related_name="facility_images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=facility_image_upload_to)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    created_by = models.ForeignKey(
+        'User', on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.facility.title
 
 class CustomUserManager(BaseUserManager):
     """
@@ -296,7 +314,7 @@ class User(AbstractUser):
 class UserImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     """Model for uploading profile user image"""
-    user = models.ForeignKey(
+    owner = models.ForeignKey(
         User, related_name="user_images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to=image_upload_to)
     created = models.DateField(auto_now_add=True)
