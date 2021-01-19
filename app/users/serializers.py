@@ -31,13 +31,13 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class FacilitySerializer(serializers.HyperlinkedModelSerializer):
+class FacilitySerializer(serializers.ModelSerializer):
     facility_image = serializers.SerializerMethodField(
         read_only=True)
 
     class Meta:
         model = models.Facility
-        fields = ('id', 'title','url', 'facility_type', 'county', 'town', 'road', 'building',
+        fields = ('id', 'title', 'facility_type', 'county', 'town', 'road', 'building',
                   'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated','facility_image')
         read_only_fields = ('is_verified','is_subscribed')
     title = serializers.CharField(

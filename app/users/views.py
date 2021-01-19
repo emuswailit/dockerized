@@ -65,9 +65,9 @@ class FacilityDetail(generics.RetrieveAPIView):
     serializer_class = serializers.FacilitySerializer
     queryset = models.Facility.objects.all()
 
-    def get_object(self):
-        # Ensure that users can only see the company that they belong to
-        return self.request.user.facility
+    # def get_object(self):
+    #     # Ensure that users can only see the company that they belong to
+    #     return self.request.user.facility
 
 
 class AnyUserRegisterAPIView(generics.CreateAPIView):

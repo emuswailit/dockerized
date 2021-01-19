@@ -9,8 +9,9 @@ urlpatterns = [
          name=views.PharmacistCreate.name),
     path('pharmacists/', views.PharmacistList.as_view(),
          name=views.PharmacistList.name),
-    path('pharmacists/list', views.PharmacistList.as_view(),
-         name=views.PharmacistList.name),
+ 
+    path('pharmacists/available', views.AvailablePharmacistList.as_view(),
+         name=views.AvailablePharmacistList.name),
 
     path('pharmacists/<uuid:pk>', views.PharmacistDetail.as_view(),
          name=views.PharmacistDetail.name),
@@ -43,21 +44,19 @@ urlpatterns = [
          name=views.PrescriberPhotoList.name),
     path('prescriber-photos/<uuid:pk>', views.PrescriberPhotoDetail.as_view(),
          name=views.PrescriberPhotoDetail.name),
-
-
-
-
     path('pharmacists/<uuid:pk>/recruit', views.FacilityPharmacistCreate.as_view(),
          name=views.FacilityPharmacistCreate.name),
-    path('facility-pharmacists/', views.FacilityPharmacistList.as_view(),
-         name=views.FacilityPharmacistList.name),
+    path('facility-pharmacists/all', views.AllFacilityPharmacistList.as_view(),
+         name=views.AllFacilityPharmacistList.name),
+    path('facility-pharmacists/active', views.ActiveFacilityPharmacistList.as_view(),
+         name=views.ActiveFacilityPharmacistList.name),
+   
+   
     path('facility-pharmacists/<uuid:pk>', views.FacilityPharmacistDetail.as_view(),
          name=views.FacilityPharmacistDetail.name),
-
+   
     path('facility-pharmacists/<uuid:pk>/', views.FacilityPharmacistUpdate.as_view(),
          name=views.FacilityPharmacistUpdate.name),
-
-
     path('prescribers/<uuid:pk>/recruit', views.FacilityPrescriberCreate.as_view(),
          name=views.FacilityPrescriberCreate.name),
     path('facility-prescribers/', views.FacilityPrescriberList.as_view(),

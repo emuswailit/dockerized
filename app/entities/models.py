@@ -58,6 +58,20 @@ def certificate_upload_to(instance, filename):
     return new_filename
 
 
+class PharmacistQuerySet(models.QuerySet):
+    def all_pharmacists(self):
+        return self.all()
+    def available_pharmacists(self):
+        return self.filter(is_available=True) 
+
+class PharmacistManager(models.Manager):
+    def get_queryset(self):
+        return PharmacistQuerySet(self.model, using=self._db)
+    def all_pharmacists(self):
+        return self.get_queryset().all_pharmacists()
+    def available_pharmacists(self):
+        return self.get_queryset().available_pharmacists()
+
 class Pharmacist(FacilityRelatedModel):
 
     PHARMACY_CADRES = (
@@ -77,6 +91,7 @@ class Pharmacist(FacilityRelatedModel):
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
 
+    objects= PharmacistManager()
     def __str__(self):
         return f"{self.owner.first_name} {self.owner.middle_name}  {self.owner.last_name}"
 
@@ -172,6 +187,20 @@ class CourierPhoto(FacilityRelatedModel):
     def __str__(self):
         return self.owner.email
 
+class FacilityPharmacistQuerySet(models.QuerySet):
+    def all_facility_pharmacists(self):
+        return self.all()
+    def active_facility_pharmacists(self):
+        return self.filter(is_active=True) 
+
+class FacilityPharmacistManager(models.Manager):
+    def get_queryset(self):
+        return FacilityPharmacistQuerySet(self.model, using=self._db)
+    def active_facility_pharmacists(self):
+        return self.get_queryset().active_facility_pharmacists()
+    def all_facility_pharmacists(self):
+        return self.get_queryset().all_facility_pharmacists()
+
 
 class FacilityPharmacist(FacilityRelatedModel):
     is_active = models.BooleanField(default=True)
@@ -183,12 +212,28 @@ class FacilityPharmacist(FacilityRelatedModel):
     owner = models.ForeignKey(
         User, related_name='facility_pharmacist_owner', on_delete=models.CASCADE)
 
+    objects=FacilityPharmacistManager()
+
     class Meta:
         db_table = 'pharmacists_for_facility'
         ordering = ['created']
 
     def __str__(self):
         return self.pharmacist.owner.email
+
+    def activate_facility_pharmacist(self):
+        "Activates a facility pharmacist"
+        if (self.is_active==False):
+            self.is_active=True
+            self.save();
+            return self
+
+    def deactivate_facility_pharmacist(self):
+        "Deactivates a facility pharmacist"
+        if (self.is_active):
+            self.is_active=False
+            self.save();
+            return self
 
 
 class FacilityPrescriber(FacilityRelatedModel):
