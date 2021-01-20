@@ -13,53 +13,53 @@ from django.db.models import Q
 # Create your views here.
 
 
-class PrescriptionListAPIView(generics.ListAPIView):
-    """
-    Client
-    =============================================
-    Retrieve all prescriptions for the logged in user's dependants
-    """
-    name = "product-list"
-    permission_classes = (permissions.IsAuthenticated,
-                          )
-    serializer_class = PrescriptionSerializer
+# class PrescriptionListAPIView(generics.ListAPIView):
+#     """
+#     Client
+#     =============================================
+#     Retrieve all prescriptions for the logged in user's dependants
+#     """
+#     name = "product-list"
+#     permission_classes = (permissions.IsAuthenticated,
+#                           )
+#     serializer_class = PrescriptionSerializer
 
-    queryset = Prescription.objects.all()
-    # TODO : Reuse this for filtering by q.
+#     queryset = Prescription.objects.all()
+#     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(PrescriptionListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+#     def get_context_data(self, *args, **kwargs):
+#         context = super(PrescriptionListAPIView, self).get_context_data(
+#             *args, **kwargs)
+#         # context["now"] = timezone.now()
+#         context["query"] = self.request.GET.get("q")  # None
+#         return context
 
-    def get_queryset(self):
-        # Ensure that the users belong to the company of the user that is making the request
-        dependant = Dependant.objects.get(owner=self.request.user)
-        return super().get_queryset().filter(dependant=dependant)
+#     def get_queryset(self):
+#         # Ensure that the users belong to the company of the user that is making the request
+#         dependant = Dependant.objects.get(owner=self.request.user)
+#         return super().get_queryset().filter(dependant=dependant)
 
 
-class PrescriptionDetailAPIView(generics.RetrieveAPIView):
-    """
-    Prescription details
-    """
-    name = "prescription-detail"
-    permission_classes = (permissions.IsAuthenticated,
-                          )
-    serializer_class = PrescriptionSerializer
-    queryset = Prescription.objects.all()
-    lookup_fields = ('pk',)
+# class PrescriptionDetailAPIView(generics.RetrieveAPIView):
+#     """
+#     Prescription details
+#     """
+#     name = "prescription-detail"
+#     permission_classes = (permissions.IsAuthenticated,
+#                           )
+#     serializer_class = PrescriptionSerializer
+#     queryset = Prescription.objects.all()
+#     lookup_fields = ('pk',)
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
+#     def get_object(self):
+#         queryset = self.get_queryset()
+#         filter = {}
+#         for field in self.lookup_fields:
+#             filter[field] = self.kwargs[field]
 
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+#         obj = get_object_or_404(queryset, **filter)
+#         self.check_object_permissions(self.request, obj)
+#         return obj
 
 
 class ForwardPrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):

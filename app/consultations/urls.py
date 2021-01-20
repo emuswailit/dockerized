@@ -11,6 +11,8 @@ urlpatterns = [
          name=views.DependantDetailAPIView.name),
     path('dependants/<uuid:pk>/prescription', views.PrescriptionCreate.as_view(),
          name=views.PrescriptionCreate.name),
+
+         
     path('prescriptions/', views.PrescriptionList.as_view(),
          name=views.PrescriptionList.name),
     path('prescriptions/<uuid:pk>', views.PrescriptionDetail.as_view(),

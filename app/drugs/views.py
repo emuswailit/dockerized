@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_countries.serializers import CountryFieldMixin
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 
 # Distributors
@@ -1283,25 +1284,11 @@ class ProductListAPIView(generics.ListAPIView):
     serializer_class = serializers.ProductSerializer
 
     queryset = models.Product.objects.all()
-    # TODO : Reuse this for filtering by q.
+    
+    # Searching and filtering
+    search_fields =('title','description')
+    ordering_fields =('title','description','id')
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(ProductListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(ProductListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
 
 
 class ProductDetailAPIView(generics.RetrieveAPIView):

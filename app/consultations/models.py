@@ -84,9 +84,13 @@ class PrescriptionItem(FacilityRelatedModel):
     updated = models.DateField(auto_now_add=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+    
+    class Meta:
+        unique_together = ('prescription', 'preparation','product')
+
 
     objects = PrescriptionManager()
-
+    
     def __str__(self):
         return f"{self.preparation.title} - {self.product.title}"
 

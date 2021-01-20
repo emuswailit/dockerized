@@ -453,10 +453,6 @@ class FacilityPharmacistUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPI
                        
                         return Response(data={"message": f"{facility_pharmacist.pharmacist.owner.first_name } {facility_pharmacist.pharmacist.owner.last_name } succesfully deactivated from facility to {default_facility.title}"})
 
-
-
-                
-                
         else:
              return Response(data={"message": f"Default facility not retrieved"})
 

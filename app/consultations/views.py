@@ -5,6 +5,8 @@ from core.views import FacilitySafeViewMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.response import Response
 from core.permissions import PrescriberPermission, IsOwner
+from django.db import IntegrityError
+
 # Create your views here.
 # Prescription
 
@@ -124,8 +126,10 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             user = self.request.user
             facility = self.request.user.facility
             prescription_pk = self.kwargs.get("pk")
-            if prescription_pk:
 
+            if prescription_pk:
+                print(prescription_pk)
+             
                 serializer.save(owner=user, facility=facility,
                                 prescription_id=prescription_pk)
             else:
@@ -211,7 +215,7 @@ class DependantListAPIView(generics.ListAPIView):
     Retrieve all dependants
     """
     name = "dependant-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (PrescriberPermission,
                           )
     serializer_class = serializers.DependantSerializer
 
@@ -243,7 +247,7 @@ class DependantDetailAPIView(generics.RetrieveAPIView):
     Dependant details
     """
     name = "dependant-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (PrescriberPermission,
                           )
     serializer_class = serializers.DependantSerializer
     queryset = models.Dependant.objects.all()
@@ -258,3 +262,4 @@ class DependantDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+

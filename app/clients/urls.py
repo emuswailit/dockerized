@@ -5,17 +5,17 @@ from users.views import DependantListAPIView
 
 
 urlpatterns = [
-    path('prescriptions/', views.PrescriptionListAPIView.as_view(),
-         name=views.PrescriptionListAPIView.name),
-    path('prescriptions/<uuid:pk>/', views.PrescriptionDetailAPIView.as_view(),
-         name=views.PrescriptionDetailAPIView.name),
+#     path('prescriptions/', views.PrescriptionListAPIView.as_view(),
+#          name=views.PrescriptionListAPIView.name),
+#     path('prescriptions/<uuid:pk>/', views.PrescriptionDetailAPIView.as_view(),
+#          name=views.PrescriptionDetailAPIView.name),
 
-    path('prescriptions/<uuid:pk>/forward', views.ForwardPrescriptionCreate.as_view(),
-         name=views.ForwardPrescriptionCreate.name),
-    path('forward-prescriptions/<uuid:pk>/', views.ForwardPrescriptionDetailAPIView.as_view(),
-         name=views.ForwardPrescriptionDetailAPIView.name),
-    path('forward-prescriptions/', views.ForwardPrescriptionListAPIView.as_view(),
-         name=views.ForwardPrescriptionListAPIView.name),
+#     path('prescriptions/<uuid:pk>/forward', views.ForwardPrescriptionCreate.as_view(),
+#          name=views.ForwardPrescriptionCreate.name),
+#     path('forward-prescriptions/<uuid:pk>/', views.ForwardPrescriptionDetailAPIView.as_view(),
+#          name=views.ForwardPrescriptionDetailAPIView.name),
+#     path('forward-prescriptions/', views.ForwardPrescriptionListAPIView.as_view(),
+#          name=views.ForwardPrescriptionListAPIView.name),
 
 
     path('pharmacies/', views.PharmacyListAPIView.as_view(),

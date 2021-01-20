@@ -497,31 +497,15 @@ class DependantListAPIView(generics.ListAPIView):
     Dependants list
     """
     name = "dependant-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.DependantSerializer
 
     queryset = models.Dependant.objects.all()
-    # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DependantListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        user = self.request.user
-        qs = super(DependantListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs.filter(owner=user)
+    search_fields =('first_name','middle_name','last_name', 'owner__phone')
+    ordering_fields =('first_name', 'id')
+   
 
 
 class DependantDetailAPIView(generics.RetrieveAPIView):

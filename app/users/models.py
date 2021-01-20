@@ -358,6 +358,7 @@ class Dependant(models.Model):
     gender = models.CharField(
         max_length=120, choices=GENDER_CHOICES)
     date_of_birth = models.DateField()
+    is_active= models.BooleanField(default=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
