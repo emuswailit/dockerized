@@ -110,6 +110,22 @@ class PharmacistPhoto(FacilityRelatedModel):
         return self.owner.email
 
 
+
+class PrescriberQuerySet(models.QuerySet):
+    def all_prescribers(self):
+        return self.all()
+    def available_prescribers(self):
+        return self.filter(is_available=True) 
+
+class PrescriberManager(models.Manager):
+    def get_queryset(self):
+        return PrescriberQuerySet(self.model, using=self._db)
+    def all_prescribers(self):
+        return self.get_queryset().all_prescribers()
+    def available_prescribers(self):
+        return self.get_queryset().available_prescribers()
+
+
 class Prescriber(FacilityRelatedModel):
 
     PRESCRIBER_CADRES = (
@@ -133,6 +149,8 @@ class Prescriber(FacilityRelatedModel):
         User, related_name="prescriber_owner", on_delete=models.CASCADE)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
+
+    objects= PrescriberManager()
 
     def __str__(self):
         return self.owner.email
@@ -214,9 +232,12 @@ class FacilityPharmacist(FacilityRelatedModel):
 
     objects=FacilityPharmacistManager()
 
+   
+
     class Meta:
         db_table = 'pharmacists_for_facility'
         ordering = ['created']
+        unique_together = ('facility', 'pharmacist')
 
     def __str__(self):
         return self.pharmacist.owner.email
@@ -235,6 +256,20 @@ class FacilityPharmacist(FacilityRelatedModel):
             self.save();
             return self
 
+class FacilityPrescriberQuerySet(models.QuerySet):
+    def all_facility_prescribers(self):
+        return self.all()
+    def active_facility_prescribers(self):
+        return self.filter(is_active=True) 
+
+class FacilityPrescriberManager(models.Manager):
+    def get_queryset(self):
+        return FacilityPrescriberQuerySet(self.model, using=self._db)
+    def active_facility_prescribers(self):
+        return self.get_queryset().active_facility_prescribers()
+    def all_facility_prescribers(self):
+        return self.get_queryset().all_facility_prescribers()
+
 
 class FacilityPrescriber(FacilityRelatedModel):
     is_active = models.BooleanField(default=True)
@@ -245,6 +280,8 @@ class FacilityPrescriber(FacilityRelatedModel):
         Prescriber, related_name='facility_prescriber', on_delete=models.CASCADE)
     owner = models.ForeignKey(
         User, related_name='facility_prescriber_owner', on_delete=models.CASCADE)
+
+    objects= FacilityPrescriberManager()
 
     class Meta:
         db_table = 'prescribers_for_facility'

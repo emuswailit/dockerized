@@ -54,6 +54,7 @@ class PrescriberSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedM
         model = models.Prescriber
         fields = (
             'id',
+            'facility',
             'url',
             'salutation',
             'cadre',
@@ -68,7 +69,7 @@ class PrescriberSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedM
         )
 
         read_only_fields = ('is_active', 'is_available',
-                            'is_verified', 'owner')
+                            'is_verified', 'owner','facility')
 
 
 class PharmacistPhotoSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
@@ -130,7 +131,6 @@ class FacilityPharmacistSerializer(FacilitySafeSerializerMixin, serializers.Hype
         fields = (
             'id',
             'url',
-
             'pharmacist',
             'is_active',
             'is_superintendent',
@@ -140,6 +140,8 @@ class FacilityPharmacistSerializer(FacilitySafeSerializerMixin, serializers.Hype
         )
 
         read_only_fields = ('pharmacist', 'owner')
+
+    
 
 
 class FacilityPrescriberSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):

@@ -213,6 +213,22 @@ class PrescriberList(generics.ListAPIView):
         user = self.request.user
         return super().get_queryset().all()
 
+class AvailablePrescribersList(generics.ListAPIView):
+    """
+    Facility Superintendent
+    =======================================
+    1. View list of pharmacists who are available for recruitment
+    """
+    name = 'prescribers-list'
+
+    # TODO : Determine who needs this permission
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.PrescriberSerializer
+    queryset = models.Prescriber.objects.available_prescribers()
+
+
 
 class PrescriberDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     name = 'prescriber-detail'
@@ -228,143 +244,6 @@ class PrescriberDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
 
 # Pharmacist photo views
 
-
-class PharmacistPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
-    """
-    Logged In User
-    =================================================================
-    1. Add pharmacist photo
-    2. View own courier instance
-    """
-    name = 'pharmacistphoto-list'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.PharmacistPhotoSerializer
-    queryset = models.PharmacistPhoto.objects.all()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        pharmacist_pk = self.kwargs.get("pk")
-        facility_id = self.request.user.facility_id
-        serializer.save(facility_id=facility_id, owner=user,
-                        pharmacist_id=pharmacist_pk)
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
-
-
-class PharmacistPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    """
-    Logged in pharmacist
-    ================================================================
-    1. View details of photo instance
-
-    """
-    name = 'pharmacistphoto-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.PharmacistPhotoSerializer
-    queryset = models.PharmacistPhoto.objects.all()
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
-
-# Courier photo views
-
-
-class CourierPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
-    """
-    Logged In User
-    =================================================================
-    1. Add courier photo
-    2. View own courier instance
-    """
-    name = 'courierphoto-list'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.CourierPhotoSerializer
-    queryset = models.CourierPhoto.objects.all()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        courier_pk = self.kwargs.get("pk")
-        facility_id = self.request.user.facility_id
-        serializer.save(facility_id=facility_id, owner=user,
-                        courier_id=courier_pk)
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
-
-
-class CourierPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    """
-    Logged in courier
-    ================================================================
-    1. View details of photo instance
-
-    """
-    name = 'courierphoto-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.CourierPhotoSerializer
-    queryset = models.CourierPhoto.objects.all()
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
-
-
-# Prescriber photos
-class PrescriberPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
-    """
-    Logged In User
-    =================================================================
-    1. Add prescriber photo
-    2. View own prescriber instance
-    """
-    name = 'prescriberphoto-list'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.PrescriberPhotoSerializer
-    queryset = models.PrescriberPhoto.objects.all()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        prescriber_pk = self.kwargs.get("pk")
-        facility_id = self.request.user.facility_id
-        serializer.save(facility_id=facility_id, owner=user,
-                        prescriber_id=prescriber_pk)
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
-
-
-class PrescriberPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    """
-    Logged in prescriber
-    ================================================================
-    1. View details of photo instance
-
-    """
-    name = 'prescriberphoto-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.PrescriberPhotoSerializer
-    queryset = models.PrescriberPhoto.objects.all()
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
 
 # Facility Pharmacist views
 
@@ -385,16 +264,17 @@ class FacilityPharmacistCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     queryset = models.FacilityPharmacist.objects.all()
 
     def perform_create(self, serializer):
-        user = self.request.user
+        
         facility_id = self.request.user.facility_id
         pharmacist_pk = self.kwargs.get("pk")
 
         pharmacist = models.Pharmacist.objects.get(id=pharmacist_pk)
 
         if pharmacist:
-            facility_pharmacist = models.FacilityPharmacist.objects.get(pharmacist=pharmacist, facility_id=facility_id)
+            # facility_pharmacist = models.FacilityPharmacist.objects.get(pharmacist=pharmacist, facility_id=facility_id)
 
-            if facility_pharmacist:
+            if models.FacilityPharmacist.objects.filter(pharmacist=pharmacist, facility_id=facility_id).exists():
+                facility_pharmacist = models.FacilityPharmacist.objects.get(pharmacist=pharmacist, facility_id=facility_id)
                 """
                 1. Pharmacist already registered for to this facility
                 2. If pharmacist is available, activate him
@@ -404,7 +284,7 @@ class FacilityPharmacistCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                     facility_pharmacist.is_active=True
                     facility_pharmacist.save()
                     pharmacist.is_available=False
-                    pharmacist.facility=user.facility
+                    pharmacist.facility=self.request.user.facility
                     pharmacist.save()
 
                     user = User.objects.get(id=pharmacist.owner_id)
@@ -428,7 +308,7 @@ class FacilityPharmacistCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                 if pharmacist.is_available:
 
                     serializer.save(facility_id=facility_id,
-                                    owner=user, pharmacist=pharmacist)
+                                    owner=self.request.user, pharmacist=pharmacist)
                     user = User.objects.get(id=pharmacist.owner_id)
                     user.facility_id = facility_id
                     user.save()
@@ -472,6 +352,8 @@ class AllFacilityPharmacistList(FacilitySafeViewMixin, generics.ListAPIView):
     )
     serializer_class = serializers.FacilityPharmacistSerializer
     queryset = models.FacilityPharmacist.objects.all_facility_pharmacists()
+
+
 
 class ActiveFacilityPharmacistList(FacilitySafeViewMixin, generics.ListAPIView):
     """
@@ -555,7 +437,7 @@ class FacilityPharmacistUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPI
                         
         
                         facility_pharmacist.is_active=False
-                        # facility_pharmacist.pharmacist.facility=default_facility
+                        facility_pharmacist.is_superintendent=False
                         # facility_pharmacist.pharmacist.is_available=True
                         # facility_pharmacist.facility=default_facility
                         facility_pharmacist.save()
@@ -577,50 +459,6 @@ class FacilityPharmacistUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPI
                 
         else:
              return Response(data={"message": f"Default facility not retrieved"})
-
-
-    # def delete(self, request, pk=None, **kwargs):
-
-    #     facility_id = self.request.user.facility_id
-    #     facility_pharmacist_pk = self.kwargs.get("pk")
-    #     print(facility_pharmacist_pk)
-    #     # Retrieve the pharmacist object
-    #     facility_pharmacist = models.FacilityPharmacist.objects.get(
-    #         id=facility_pharmacist_pk)
-    #     if facility_pharmacist:
-    #         pharmacist = models.Pharmacist.objects.get(
-    #             id=facility_pharmacist.pharmacist_id)
-    #         if pharmacist:
-    #             if pharmacist.owner == self.request.user:
-
-    #                 raise exceptions.NotAcceptable(
-    #                     {"detail": ["This is your place. You cannot quit!", ]})
-    #             else:
-
-    #                 print(pharmacist.owner.first_name)
-    #                 user = User.objects.get(id=pharmacist.owner_id)
-    #                 print(user.first_name)
-
-    #                 default_facility = Facility.objects.get(title="Mobipharma")
-    #                 if default_facility:
-
-    #                     user.facility = default_facility
-    #                     user.save()
-    #                     pharmacist.facility = default_facility
-    #                     pharmacist.is_available = True
-    #                     pharmacist.save()
-    #                     facility_pharmacist.facility = default_facility
-    #                     facility_pharmacist.is_active = False
-    #                     facility_pharmacist.is_superintendent = False
-    #                     facility_pharmacist.save()
-    #                     return Response(data={"message": "Pharmacist succesfully removed from pharmacy"})
-
-    #                 else:
-    #                     raise exceptions.NotAcceptable(
-    #                         {"detail": ["The pharmacist has not confirmed availability!", ]})
-    #         else:
-    #             raise exceptions.NotAcceptable(
-    #                 {"detail": ["Pharmacist details could not be retrieved!", ]})
 
 
 class FacilityPharmacistExit(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -645,88 +483,37 @@ class FacilityPharmacistExit(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
         facility_pharmacist_pk = self.kwargs.get("pk")
         facility_pharmacist = models.FacilityPharmacist.objects.get(
             id=facility_pharmacist_pk)
+        user = self.request.user
         
         if facility_pharmacist:
             pharmacist = models.Pharmacist.objects.get(
                 id=facility_pharmacist.pharmacist_id)
-
-            if facility_pharmacist.owner.id == request.user.id:
-                 return Response(data={"message": f"{facility_pharmacist.pharmacist.owner.first_name } {facility_pharmacist.pharmacist.owner.last_name } how are you?"})
-
-
-
-
-            if pharmacist:
-                if facility_pharmacist.is_active==False:
-                    facility_pharmacist.is_active=True
-                    facility_pharmacist.save()
-                    # Set Pharmacist not available for recruitment elsewhere
-                    pharmacist.is_available=False
-                    pharmacist.save()
-                    return Response(data={"message": f"{facility_pharmacist.pharmacist.owner.first_name } {facility_pharmacist.pharmacist.owner.last_name } succesfully activated in your facility"})
-
-                else:
-                    facility_pharmacist.is_active=False
-                    facility_pharmacist.save()
-                    # Set the pharmacist as available for recruitment elsewhere
-                    pharmacist.is_available=True
-                    pharmacist.save()
-                    return Response(data={"message": f"{facility_pharmacist.pharmacist.owner.first_name } {facility_pharmacist.pharmacist.owner.last_name } succesfully deactivated from facility"})
-
-    # def delete(self, request, pk=None, **kwargs):
-
-    #     facility_id = self.request.user.facility_id
-    #     facility_pharmacist_pk = self.kwargs.get("pk")
-    #     print(facility_pharmacist_pk)
-    #     # Retrieve the pharmacist object
-    #     facility_pharmacist = models.FacilityPharmacist.objects.get(
-    #         id=facility_pharmacist_pk)
-    #     if facility_pharmacist:
-    #         pharmacist = models.Pharmacist.objects.get(
-    #             id=facility_pharmacist.pharmacist_id)
-    #         if pharmacist:
-    #             if pharmacist.owner == self.request.user:
-
-    #                 raise exceptions.NotAcceptable(
-    #                     {"detail": ["This is your place. You cannot quit!", ]})
-    #             else:
-
-    #                 print(pharmacist.owner.first_name)
-    #                 user = User.objects.get(id=pharmacist.owner_id)
-    #                 print(user.first_name)
-
-    #                 default_facility = Facility.objects.get(title="Mobipharma")
-    #                 if default_facility:
-
-    #                     user.facility = default_facility
-    #                     user.save()
-    #                     pharmacist.facility = default_facility
-    #                     pharmacist.is_available = True
-    #                     pharmacist.save()
-    #                     facility_pharmacist.facility = default_facility
-    #                     facility_pharmacist.is_active = False
-    #                     facility_pharmacist.is_superintendent = False
-    #                     facility_pharmacist.save()
-    #                     return Response(data={"message": "Pharmacist succesfully removed from pharmacy"})
-
-    #                 else:
-    #                     raise exceptions.NotAcceptable(
-    #                         {"detail": ["The pharmacist has not confirmed availability!", ]})
-    #         else:
-    #             raise exceptions.NotAcceptable(
-    #                 {"detail": ["Pharmacist details could not be retrieved!", ]})
+            default_facility = Facility.objects.get(title="Mobipharma")
+            if pharmacist and pharmacist.id==request.user.id:
+                    if facility_pharmacist.is_active==True:
+                        facility_pharmacist.is_active=False
+                        facility_pharmacist.save()
+                        # Set Pharmacist not available for recruitment elsewhere
+                        pharmacist.is_available=True
+                        pharmacist.facility=default_facility
+                        pharmacist.save()
+                        user.facility=default_facility
+                        user.save()
+                        return Response(data={"message": f"{facility_pharmacist.pharmacist.owner.first_name } {facility_pharmacist.pharmacist.owner.last_name } succesfully deactivated from your facility"})
+            else:
+                return Response(data={"message": f"Only the self can quit"})
 
 
-# Facility Prescriber views
+
 class FacilityPrescriberCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
-    Superintendent Prescriber
+    Superintendent Pharmacist
     ============================================================
-    1. Recruit a prescriber to own facility
-    2. Only prescriber who have confirmed availability can be recruited
-    3. Prescriber will be set to unavailable immediately after recruitment. Until he s/she sets otherwise
+    1. Recruit a pharmacist to own facility
+    2. Only pharmacists are available
+    3. Pharmacist will be set to unavailable immediately after recruitment. Until he s/she sets otherwise
     """
-    name = 'facilityprescriber-list'
+    name = 'facilityprescriber-create'
     permission_classes = (
         FacilitySuperintendentPermission,
     )
@@ -734,30 +521,55 @@ class FacilityPrescriberCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     queryset = models.FacilityPrescriber.objects.all()
 
     def perform_create(self, serializer):
-        user = self.request.user
+        
         facility_id = self.request.user.facility_id
         prescriber_pk = self.kwargs.get("pk")
 
         prescriber = models.Prescriber.objects.get(id=prescriber_pk)
 
         if prescriber:
+            # facility_pharmacist = models.FacilityPrescriber.objects.get(pharmacist=pharmacist, facility_id=facility_id)
 
             if models.FacilityPrescriber.objects.filter(prescriber=prescriber, facility_id=facility_id).exists():
-                raise exceptions.NotAcceptable(
-                    {"detail": ["The prescriber has already been added to facility!", ]})
+                facility_prescriber = models.FacilityPrescriber.objects.get(prescriber=prescriber, facility_id=facility_id)
+                """
+                1. Pharmacist already registered for to this facility
+                2. If pharmacist is available, activate him
+                """
+               
+                if prescriber.is_available ==True:
+                    facility_prescriber.is_active=True
+                    facility_prescriber.save()
+                    prescriber.is_available=False
+                    prescriber.facility=self.request.user.facility
+                    prescriber.save()
+
+                    user = User.objects.get(id=prescriber.owner_id)
+                    user.facility = user.facility
+                    user.save()
+
+                    # return  Response(data={"message": "Existing facility pharmacist activated successfully."})
+                else:
+                    raise exceptions.NotAcceptable(
+                        {"detail": ["Prescriber is not available!", ]})
+                    #  return Response(data={"message": "Pharmacist is already engaged elsewhere", "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+          
+                # raise exceptions.NotAcceptable(
+                #     {"detail": ["The pharmacist has already been added to facility!", ]})
             else:
-                print(prescriber_pk)
-                print(facility_id)
-                # Retrieve the prescriber object
+               
+                # Retrieve the pharmacist object
 
                 if prescriber.is_available:
 
                     serializer.save(facility_id=facility_id,
-                                    owner=user, prescriber=prescriber)
+                                    owner=self.request.user, prescriber=prescriber)
                     user = User.objects.get(id=prescriber.owner_id)
                     user.facility_id = facility_id
                     user.save()
                     prescriber.is_available = False
+                    prescriber.facility_id = facility_id
                     prescriber.save()
                 else:
                     raise exceptions.NotAcceptable(
@@ -771,7 +583,8 @@ class FacilityPrescriberCreate(FacilitySafeViewMixin, generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Facility prescriber created successfully.", "facility-prescriber": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            
+            return Response(data={"message": "Facility prescriber created successfully.", "facility-prescriber": serializer.validated_data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -780,26 +593,36 @@ class FacilityPrescriberCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Facility prescriber not created", "facility-prescriber": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Facility prescriber not created", "facility-prescriber": serializer.validated_data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class FacilityPrescriberList(FacilitySafeViewMixin, generics.ListAPIView):
+class AllFacilityPrescriberList(FacilitySafeViewMixin, generics.ListAPIView):
     """
-    Superintendent Prescriber
+    Facility Superintendent
     ============================================================
-    1. List of all prescribers attached to facility
+    1. View list of all pharmacists attached to facility
+    """
+    name = 'facilitypharmacist-list'
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.FacilityPrescriberSerializer
+    queryset = models.FacilityPrescriber.objects.all_facility_prescribers()
 
+
+
+class ActiveFacilityPrescriberList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Facility Superintendent
+    ============================================================
+    1. View list of active pharmacists attached to facility
     """
     name = 'facilityprescriber-list'
     permission_classes = (
         FacilitySuperintendentPermission,
     )
     serializer_class = serializers.FacilityPrescriberSerializer
-    queryset = models.FacilityPrescriber.objects.all()
-
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    queryset = models.FacilityPrescriber.objects.active_facility_prescribers()
 
 
 class FacilityPrescriberDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
@@ -815,12 +638,91 @@ class FacilityPrescriberDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
         return super().get_queryset().filter(facility_id=facility_id)
 
 
-class FacilityPrescriberUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+class FacilityPrescriberUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
     """
     Superintendent Prescriber
     ============================================================
     1. Set prescriber as superintendent or not
     2. Activate or deactivate prescriber
+    """
+    name = 'facilityprescriber-detail'
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.FacilityPrescriberSerializer
+    queryset = models.FacilityPrescriber.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+    def put(self, request, pk=None, **kwargs):
+        facility_id = self.request.user.facility_id
+        facility_prescriber_pk = self.kwargs.get("pk")
+        facility_prescriber = models.FacilityPharmacist.objects.get(
+            id=facility_prescriber_pk)
+        default_facility = Facility.objects.get(title="Mobipharma")
+
+        
+        
+        if facility_prescriber and default_facility:
+            prescriber = models.Pharmacist.objects.get(
+                id=facility_prescriber.prescriber_id)
+            if prescriber:
+
+                user=User.objects.get(id=prescriber.owner.id)
+                if facility_prescriber.owner.id==request.user.id and prescriber.owner.id==request.user.id:
+                    facility_prescriber.is_active=True
+                    facility_prescriber.is_superintendent=True
+                    facility_prescriber.save()
+                    return Response(data={"message": f"You cannot do this!"})
+                else:
+                    if facility_prescriber.is_active==False:
+                        facility_prescriber.is_active=True
+                        facility_prescriber.save()
+                        # Set Pharmacist not available for recruitment elsewhere
+                        prescriber.is_available=False
+                        prescriber.facility=request.user.facility
+                        prescriber.save()
+
+                        user.facility=request.user.facility
+                        user.save()
+
+                        return Response(data={"message": f"{facility_prescriber.prescriber.owner.first_name } {facility_prescriber.prescriber.owner.last_name } succesfully activated in your facility"})
+
+                    else:
+                        
+        
+                        facility_prescriber.is_active=False
+                        facility_prescriber.is_superintendent=False
+                        # facility_prescriber.prescriber.is_available=True
+                        # facility_prescriber.facility=default_facility
+                        facility_prescriber.save()
+
+                        prescriber.is_available=True
+                        prescriber.facility=default_facility
+                        prescriber.save()
+
+                        user.facility=default_facility
+                        user.save()
+                      
+                        # Set the prescriber as available for recruitment elsewhere
+                       
+                        return Response(data={"message": f"{facility_prescriber.prescriber.owner.first_name } {facility_prescriber.prescriber.owner.last_name } succesfully deactivated from facility to {default_facility.title}"})
+
+
+
+                
+                
+        else:
+             return Response(data={"message": f"Default facility not retrieved"})
+
+
+class FacilityPrescriberExit(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Superintendent Prescriber
+    ============================================================
+    1. Set pharmacist as superintendent or not
+    2. Activate or deactivate pharmacist
     """
     name = 'facilityprescriber-detail'
     permission_classes = (
@@ -832,51 +734,30 @@ class FacilityPrescriberUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDes
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
-
-    def delete(self, request, pk=None, **kwargs):
-
+    def put(self, request, pk=None, **kwargs):
         facility_id = self.request.user.facility_id
         facility_prescriber_pk = self.kwargs.get("pk")
-        print(facility_prescriber_pk)
-        # Retrieve the prescriber object
         facility_prescriber = models.FacilityPrescriber.objects.get(
             id=facility_prescriber_pk)
+        user = self.request.user
+        
         if facility_prescriber:
-            prescriber = models.Prescriber.objects.get(
+            prescriber = models.Pharmacist.objects.get(
                 id=facility_prescriber.prescriber_id)
-            if prescriber:
-                if prescriber.owner == self.request.user:
-
-                    raise exceptions.NotAcceptable(
-                        {"detail": ["This is your place. You cannot quit!", ]})
-                else:
-
-                    print(prescriber.owner.first_name)
-                    user = User.objects.get(id=prescriber.owner_id)
-                    print(user.first_name)
-
-                    default_facility = Facility.objects.get(title="Mobipharma")
-                    if default_facility:
-
-                        user.facility = default_facility
-                        user.save()
-                        prescriber.facility = default_facility
-                        prescriber.is_available = True
-                        prescriber.save()
-                        facility_prescriber.facility = default_facility
-                        facility_prescriber.is_active = False
-                        facility_prescriber.is_superintendent = False
+            default_facility = Facility.objects.get(title="Mobipharma")
+            if prescriber and prescriber.id==request.user.id:
+                    if facility_prescriber.is_active==True:
+                        facility_prescriber.is_active=False
                         facility_prescriber.save()
-
-                        return Response(data={"message": "Prescriber succesfully removed from your facility"})
-
-                    else:
-                        raise exceptions.NotAcceptable(
-                            {"detail": ["The prescriber has not confirmed availability!", ]})
+                        # Set Pharmacist not available for recruitment elsewhere
+                        prescriber.is_available=True
+                        prescriber.facility=default_facility
+                        prescriber.save()
+                        user.facility=default_facility
+                        user.save()
+                        return Response(data={"message": f"{facility_prescriber.prescriber.owner.first_name } {facility_prescriber.prescriber.owner.last_name } succesfully deactivated from your facility"})
             else:
-                raise exceptions.NotAcceptable(
-                    {"detail": ["Prescriber details could not be retrieved!", ]})
-
+                return Response(data={"message": f"Only the self can quit"})
 
 # Facility Courier views
 class FacilityCourierCreate(FacilitySafeViewMixin, generics.CreateAPIView):

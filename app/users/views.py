@@ -13,6 +13,7 @@ from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
 from . import serializers
 from . import models
+from django.http import HttpResponse
 
 from .token_generator import account_activation_token
 from .utils import jwt_response_payload_handler
