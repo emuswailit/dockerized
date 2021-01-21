@@ -191,6 +191,7 @@ class ForwardPrescriptionDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
+
 class PharmacyListAPIView(generics.ListAPIView):
     """
     Client

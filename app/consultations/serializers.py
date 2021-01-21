@@ -3,7 +3,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from rest_framework import serializers
 from . import models
 from users.models import Dependant, Allergy
-from drugs.models import Preparation
+from drugs.models import Preparation, Product
 from drugs.serializers import PreparationSerializer
 from users.serializers import AllergySerializer
 
@@ -27,6 +27,25 @@ class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
         #         fields=['prescription', 'preparation', 'product']
         #     )
         # ]
+    # TODO: Validate foreign key parameters
+    def create(self, validated_data):
+        try:
+            preparation_id = validated_data.pop('preparation').id
+            product_id = validated_data.pop('product').id
+
+            preparation = Preparation.objects.get(id=preparation_id)
+            product = Product.objects.get(id=product_id)
+
+            if product and preparation:
+                if preparation.id !=product.preparation_id:
+                    raise serializers.ValidationError(f"{product.title} does not contain {preparation.title}")
+                else:
+                    created =models.PrescriptionItem.objects.create(preparation=preparation,product=product, **validated_data)
+                
+        except Preparation.DoesNotExist:
+            raise ValidationError('Imaginary preparation not allowed!')
+        return created
+
 
     def get_preparation_details(self, obj):
         preparation = Preparation.objects.filter(

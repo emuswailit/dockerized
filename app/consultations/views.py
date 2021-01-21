@@ -89,7 +89,7 @@ class AllPrescriptionList(FacilitySafeViewMixin, generics.ListAPIView):
         PrescriberPermission,
     )
     serializer_class = serializers.PrescriptionSerializer
-    queryset = models.Prescription.objects.all()
+    queryset = models.Prescription.objects.filter(is_signed=False)
 
     search_fields =('dependant__id','dependant__middle_name','dependant__last_name', 'dependant__first_name',)
     ordering_fields =('dependant__first_name', 'id')
@@ -211,9 +211,9 @@ class PrescriptionSign(generics.RetrieveUpdateAPIView):
 
 class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
-    Superintendent Pharmacist
+    Prescriber
     ============================================================
-    1. Create new product variation
+    Add item to a prescription which is not signed
 
     """
     name = 'prescriptionitem-create'
@@ -235,17 +235,20 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
                 # Add items only to prescriptions which are open and not signed
                 if prescription:
-                    # Add items to own prescription
+                    #Add items to own prescription
                     if prescription.owner==self.request.user:
                         if prescription.is_signed==False:                    
-                            serializer.save(owner=user, facility=facility,
-                                        prescription_id=prescription_pk)
+                            serializer.save(owner=user, facility=facility, prescription_id=prescription_pk)
+                            # raise exceptions.NotAcceptable(
+                            # {"detail": ["Prescription is signed", ]})
                         else:
                             raise exceptions.NotAcceptable(
                             {"detail": ["Prescription is already signed and closed", ]})
+
                     else:
                         raise exceptions.NotAcceptable(
                                 {"detail": ["You can only add items to your own prescription", ]})
+                    
 
                 else:
                     raise exceptions.NotAcceptable(
@@ -253,7 +256,7 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": ["Prescription item must be to be unique. Similar item is already added!", ]})
+                {"detail": [f"Prescription item must be to be unique. Similar item is already added! {e}", ]})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -270,7 +273,7 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"message": "Precsription item not added", "prescription-item": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
+    
 
 class PrescriptionItemList(FacilitySafeViewMixin, generics.ListAPIView):
     """
