@@ -17,7 +17,7 @@ class ForwardPrescriptionSerializer(serializers.HyperlinkedModelSerializer):
         model = models.ForwardPrescription
         fields = "__all__"
         read_only_fields = (
-            'owner', 'prescription'
+            'owner',
         )
 
     def get_prescription_details(self, obj):
@@ -30,5 +30,5 @@ class PharmacySerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Facility
-        fields = ('id', 'url', 'title', 'town', 'road',
-                  'building', 'latitude', 'longitude')
+        fields = ('id', 'url', 'title', 'town', 'road','county','town',
+                  'building', 'latitude', 'longitude','facility_type', 'is_active')

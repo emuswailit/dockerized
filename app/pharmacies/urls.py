@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.conf.urls import url
-from users.views import DependantListAPIView
+from users.views import AllDependantListAPIView
 
 
 urlpatterns = [
@@ -11,14 +11,14 @@ urlpatterns = [
          name=views.ForwardPrescriptionDetailAPIView.name),
 
 
-    path('prescriptions/<uuid:pk>/quote', views.PrescriptionQuoteCreate.as_view(),
+    path('prescription-quotes/create', views.PrescriptionQuoteCreate.as_view(),
          name=views.PrescriptionQuoteCreate.name),
     path('prescription-quotes/<uuid:pk>/', views.PrescriptionQuoteDetailAPIView.as_view(),
          name=views.PrescriptionQuoteDetailAPIView.name),
-    path('prescription-quotes/', views.PrescriptionQuoteListAPIView.as_view(),
+    path('prescription-quotes/all', views.PrescriptionQuoteListAPIView.as_view(),
          name=views.PrescriptionQuoteListAPIView.name),
 
-    path('prescription-quotes/<uuid:pk>/item', views.QuoteItemCreate.as_view(),
+    path('prescription-quotes/item', views.QuoteItemCreate.as_view(),
          name=views.QuoteItemCreate.name),
     path('prescription-quote-item/<uuid:pk>', views.QuoteItemDetailAPIView.as_view(),
          name=views.QuoteItemDetailAPIView.name),

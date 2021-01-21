@@ -2,6 +2,8 @@ from rest_framework import serializers
 from . import models
 from clients.models import ForwardPrescription
 from clients.serializers import ForwardPrescriptionSerializer
+from consultations.serializers import PrescriptionSerializer
+from consultations.models import PrescriptionItem, Prescription
 
 
 class QuoteItemSerializer(serializers.HyperlinkedModelSerializer):
@@ -10,7 +12,7 @@ class QuoteItemSerializer(serializers.HyperlinkedModelSerializer):
         model = models.QuoteItem
         fields = "__all__"
         read_only_fields = (
-            'owner',  'prescription', 'item_cost', 'quantity_pending'
+            'owner',  'item_cost', 'quantity_pending', 'facility'
         )
 
 
@@ -19,12 +21,26 @@ class PrescriptionQuoteSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True)
     forward_prescription_details = serializers.SerializerMethodField(
         read_only=True)
+   
+
+    # def validate_prescription(self, prescription):
+    #     if prescription:
+    #         prescription_items = PrescriptionItem.objects.get(prescription=prescription)
+
+    #         if prescription_items.count()>0:
+    #             pass
+
+    #         else:
+    #             raise serializers.ValidationError("There is a prescription")
+    #     else:
+    #         raise serializers.ValidationError("There is a prescription attached")
+
 
     class Meta:
         model = models.PrescriptionQuote
-        fields = "__all__"
+        fields = ('id', 'prescription', 'prescription_cost','client_confirmed','owner','quote_item_details','forward_prescription_details','created','updated')
         read_only_fields = (
-            'owner', 'prescription', 'prescription_cost'
+            'owner', 'prescription_cost', 'facility','client_confirmed'
         )
 
     def get_forward_prescription_details(self, obj):

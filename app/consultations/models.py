@@ -52,6 +52,7 @@ class Prescription(FacilityRelatedModel):
         Dependant, related_name="prescription_dependant", on_delete=models.CASCADE)
 
     comment = models.CharField(max_length=120, null=True)
+    is_signed = models.BooleanField(default=False)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now_add=True)
     owner = models.ForeignKey(
@@ -63,6 +64,20 @@ class Prescription(FacilityRelatedModel):
 
     def get_absolute_url(self):
         return self.product.get_absolute_url()
+
+class PrescriberQuerySet(models.QuerySet):
+    def all_prescribers(self):
+        return self.all()
+    def available_prescribers(self):
+        return self.filter(is_available=True) 
+
+class PrescriberManager(models.Manager):
+    def get_queryset(self):
+        return PrescriberQuerySet(self.model, using=self._db)
+    def all_prescribers(self):
+        return self.get_queryset().all_prescribers()
+    def available_prescribers(self):
+        return self.get_queryset().available_prescribers()
 
 
 class PrescriptionItem(FacilityRelatedModel):
@@ -80,7 +95,7 @@ class PrescriptionItem(FacilityRelatedModel):
         Posology, related_name="prescription_item_posology", on_delete=models.CASCADE)
     instruction = models.TextField(null=True, blank=True)
     duration = models.IntegerField(default=0)
-    created = models.DateField(auto_now_add=True)
+    created = models.DateField(auto_now=True)
     updated = models.DateField(auto_now_add=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)

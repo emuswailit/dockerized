@@ -2,7 +2,7 @@ from django.db import models
 from core.models import FacilityRelatedModel
 from clients.models import ForwardPrescription
 from django.contrib.auth import get_user_model
-from consultations.models import PrescriptionItem
+from consultations.models import PrescriptionItem, Prescription
 from inventory.models import VariationReceipt
 from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
@@ -15,7 +15,7 @@ class PrescriptionQuote(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
 
     prescription = models.ForeignKey(
-        ForwardPrescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
+        Prescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
     prescription_cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     client_confirmed = models.BooleanField(default=False)
@@ -30,7 +30,7 @@ class PrescriptionQuote(FacilityRelatedModel):
 
 class QuoteItem(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
-    prescription = models.ForeignKey(
+    prescription_quote = models.ForeignKey(
         PrescriptionQuote, on_delete=models.CASCADE)
     prescription_item = models.ForeignKey(
         PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE)
@@ -46,6 +46,10 @@ class QuoteItem(FacilityRelatedModel):
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('prescription_quote', 'prescription_item','quoted_item')
+
 
     # def __str__(self):
     #     return self.prescription.dependant.first_name

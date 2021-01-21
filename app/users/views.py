@@ -25,6 +25,7 @@ jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 User = get_user_model()
 
 
+
 class MerchantCreate(generics.CreateAPIView):
     """
     Create new merchant account
@@ -492,9 +493,11 @@ class DependantCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Dependant not created", "dependant": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class DependantListAPIView(generics.ListAPIView):
+class AllDependantListAPIView(generics.ListAPIView):
     """
-    Dependants list
+    Admin user
+    ----------------------------------
+    All dependants, active and inactive
     """
     name = "dependant-list"
     permission_classes = (permissions.IsAdminUser,
@@ -505,8 +508,45 @@ class DependantListAPIView(generics.ListAPIView):
 
     search_fields =('first_name','middle_name','last_name', 'owner__phone')
     ordering_fields =('first_name', 'id')
-   
 
+class ActiveDependantListAPIView(generics.ListAPIView):
+    """
+    Prescribers
+    ------------------------------------------------
+    Active users
+    """
+    name = "dependant-list"
+    permission_classes = (PrescriberPermission,
+                          )
+    serializer_class = serializers.DependantSerializer
+
+    queryset = models.Dependant.objects.filter(is_active=True)
+
+    search_fields =('first_name','middle_name','last_name', 'owner__phone')
+    ordering_fields =('first_name', 'id')
+   
+class UserDependantsList(generics.ListAPIView):
+    """
+    General user
+    -------------------------------------------
+    View own active dependants
+
+    """
+    name = "dependant-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+
+    serializer_class = serializers.DependantSerializer
+
+    queryset = models.Dependant.objects.filter(is_active=True)
+
+    search_fields =('first_name','middle_name','last_name', 'owner__phone')
+    ordering_fields =('first_name', 'id')
+
+    def get_queryset(self):
+        # Retrieve dependants for specific user
+        user = self.request.user
+        return super().get_queryset().filter(owner=user)
 
 class DependantDetailAPIView(generics.RetrieveAPIView):
     """

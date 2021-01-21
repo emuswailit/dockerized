@@ -31,8 +31,14 @@ urlpatterns = [
 path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
          name=views.FacilityImageDetail.name),
     #     Dependants urls
-    path('dependants', views.DependantListAPIView.as_view(),
-         name=views.DependantListAPIView.name),
+    path('dependants/all', views.AllDependantListAPIView.as_view(),
+         name=views.AllDependantListAPIView.name),
+     path('dependants/active', views.ActiveDependantListAPIView.as_view(),
+         name=views.ActiveDependantListAPIView.name),
+      path('dependants/user', views.UserDependantsList.as_view(),
+         name=views.UserDependantsList.name),
+
+
     path('dependants/<uuid:pk>', views.DependantDetailAPIView.as_view(),
          name=views.DependantDetailAPIView.name),
     path('dependants/<uuid:pk>/update', views.DependantUpdateAPIView.as_view(),

@@ -123,6 +123,7 @@ class Facility(models.Model):
     )
     is_subscribed = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

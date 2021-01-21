@@ -40,11 +40,24 @@ class PrescriptionSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Prescription
-        fields = ('id','url','dependant','comment','owner','prescription_item_details')
+        fields = ('id','url','dependant','comment','owner','prescription_item_details','is_signed')
         read_only_fields = (
-            'created', 'updated', 'owner', 'dependant','facility'
+            'created', 'updated', 'owner','facility','is_signed'
         )
 
+    def get_prescription_item_details(self, obj):
+        prescription_item = models.PrescriptionItem.objects.filter(
+            prescription=obj)
+        return PrescriptionItemSerializer(prescription_item, context=self.context, many=True).data
+
+class PrescriptionUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    prescription_item_details = serializers.SerializerMethodField(
+        read_only=True)
+
+    class Meta:
+        model = models.Prescription
+        fields = ('id','url','dependant','comment','owner','prescription_item_details')
+        read_only_fields = ('id','url','dependant','comment','owner','prescription_item_details')
     def get_prescription_item_details(self, obj):
         prescription_item = models.PrescriptionItem.objects.filter(
             prescription=obj)

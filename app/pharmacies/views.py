@@ -75,17 +75,10 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        prescription_pk = self.kwargs.get("pk")
-        print("Self")
-        print(prescription_pk)
-        if prescription_pk:
-
-            serializer.save(owner=user,
-                            prescription_id=prescription_pk, facility=self.request.user.facility)
-        else:
-            raise exceptions.NotAcceptable(
-                {"detail": ["Prescription not retrieved", ]})
-
+      
+        serializer.save(owner=user,
+                           facility=self.request.user.facility)
+        
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
@@ -169,17 +162,8 @@ class QuoteItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        prescription_pk = self.kwargs.get("pk")
-        print("Self")
-        print(prescription_pk)
-        if prescription_pk:
-
-            serializer.save(owner=user,
-                            prescription_id=prescription_pk, facility=self.request.user.facility,)
-        else:
-            raise exceptions.NotAcceptable(
-                {"detail": ["Prescription not retrieved", ]})
-
+        serializer.save(owner=user, facility=self.request.user.facility,)
+        
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 

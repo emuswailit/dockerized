@@ -309,7 +309,7 @@ class DependantSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Dependant
-        fields = ('id', 'url', 'is_active', 'account', 'owner', 'first_name', 'middle_name',
+        fields = ('id', 'url','allergy_details', 'is_active', 'account', 'owner', 'first_name', 'middle_name',
                   'last_name', 'gender', 'date_of_birth',  'created', 'updated')
 
         read_only_fields = ('id', 'url', 'account', 'owner',
