@@ -15,7 +15,7 @@ class PrescriptionQuote(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
 
     prescription = models.ForeignKey(
-        Prescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
+        ForwardPrescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
     prescription_cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     client_confirmed = models.BooleanField(default=False)
@@ -23,9 +23,14 @@ class PrescriptionQuote(FacilityRelatedModel):
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['facility', 'prescription'], name='One quote per prescription')
+        ]
 
-    # def __str__(self):
-    #     return self.prescription.dependant.first_name
+    def __str__(self):
+        return self.prescription.dependant.first_name
+    
 
 
 class QuoteItem(FacilityRelatedModel):

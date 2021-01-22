@@ -10,7 +10,6 @@ urlpatterns = [
          name=views.AllPrescriptionList.name),
      path('prescriptions/dependants/<uuid:pk>', views.DependantPrescriptionsList.as_view(),
          name=views.DependantPrescriptionsList.name),
-
      path('prescriptions/create', views.PrescriptionCreate.as_view(),
          name=views.PrescriptionCreate.name),
          
@@ -20,7 +19,7 @@ urlpatterns = [
      path('prescriptions/<uuid:pk>/sign', views.PrescriptionSign.as_view(),
           name=views.PrescriptionSign.name),
 
-    path('prescriptions/<uuid:pk>', views.PrescriptionUpdate.as_view(),
+    path('prescriptions/<uuid:pk>/update', views.PrescriptionUpdate.as_view(),
          name=views.PrescriptionUpdate.name),
 
     path('prescriptions/<uuid:pk>/item', views.PrescriptionItemCreate.as_view(),

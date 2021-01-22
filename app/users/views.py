@@ -173,7 +173,7 @@ class UserList(FacilitySafeViewMixin, generics.ListCreateAPIView):
         return qs.filter(facility_id=facility_id)
 
 
-class UserDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     name = 'user-detail'
     permission_classes = (
         permissions.IsAuthenticated,
@@ -181,11 +181,11 @@ class UserDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.UserSerializer
     queryset = User.objects.all()
 
-    def get_queryset(self):
-        # Ensure that the user belongs to the company of the user that is making the request
-        # Note that this method is identical to the one in `UserList`
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    # def get_queryset(self):
+    #     # Ensure that the user belongs to the company of the user that is making the request
+    #     # Note that this method is identical to the one in `UserList`
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
 
 
 def activate_account(request, uidb64, token):

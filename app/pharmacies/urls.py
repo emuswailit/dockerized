@@ -5,10 +5,10 @@ from users.views import AllDependantListAPIView
 
 
 urlpatterns = [
-    path('prescriptions/', views.ForwardPrescriptionListAPIView.as_view(),
-         name=views.ForwardPrescriptionListAPIView.name),
-    path('prescriptions/<uuid:pk>/', views.ForwardPrescriptionDetailAPIView.as_view(),
-         name=views.ForwardPrescriptionDetailAPIView.name),
+#     path('prescriptions/', views.ForwardPrescriptionListAPIView.as_view(),
+#          name=views.ForwardPrescriptionListAPIView.name),
+#     path('prescriptions/<uuid:pk>/', views.ForwardPrescriptionDetailAPIView.as_view(),
+#          name=views.ForwardPrescriptionDetailAPIView.name),
 
 
     path('prescription-quotes/create', views.PrescriptionQuoteCreate.as_view(),

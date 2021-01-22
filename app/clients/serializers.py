@@ -15,9 +15,9 @@ class ForwardPrescriptionSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.ForwardPrescription
-        fields = "__all__"
+        fields = ('id','url','facility','prescription','comment','owner','prescription_details','created','updated',)
         read_only_fields = (
-            'owner',
+           'id', 'owner',
         )
 
     def get_prescription_details(self, obj):

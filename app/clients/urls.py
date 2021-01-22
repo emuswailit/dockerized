@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('forward-prescriptions/create', views.ForwardPrescriptionCreate.as_view(),
          name=views.ForwardPrescriptionCreate.name),
-    path('forward-prescriptions/<uuid:pk>/', views.ForwardPrescriptionDetailAPIView.as_view(),
+    path('forward-prescriptions/<uuid:pk>', views.ForwardPrescriptionDetailAPIView.as_view(),
          name=views.ForwardPrescriptionDetailAPIView.name),
     path('forward-prescriptions/user', views.ForwardPrescriptionListAPIView.as_view(),
          name=views.ForwardPrescriptionListAPIView.name),
