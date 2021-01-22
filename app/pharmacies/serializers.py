@@ -26,17 +26,17 @@ class PrescriptionQuoteSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.PrescriptionQuote
-        fields = ('id', 'prescription', 'prescription_cost','client_confirmed','owner','quote_item_details','forward_prescription_details','created','updated')
+        fields = ('id', 'forward_prescription', 'prescription_cost','client_confirmed','owner','quote_item_details','forward_prescription_details','created','updated')
         read_only_fields = (
             'owner', 'prescription_cost', 'facility','client_confirmed',
         )
 
     def get_forward_prescription_details(self, obj):
         prescription = models.ForwardPrescription.objects.filter(
-            id=obj.prescription_id)
+            id=obj.forward_prescription_id)
         return ForwardPrescriptionSerializer(prescription, context=self.context, many=True).data
 
     def get_quote_item_details(self, obj):
         quote_item = models.QuoteItem.objects.filter(
-            id=obj.prescription_id)
+            prescription_quote=obj)
         return QuoteItemSerializer(quote_item, context=self.context, many=True).data

@@ -6,7 +6,7 @@ from rest_framework import generics, exceptions, permissions, status
 from core.views import FacilitySafeViewMixin
 from . import serializers, models
 from rest_framework.response import Response
-from core.permissions import PharmacistPermission
+from core.permissions import PharmacistPermission,FacilitySuperintendentPermission
 from consultations.models import Prescription
 
 # Create your views here.
@@ -77,16 +77,16 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        prescription_pk = self.kwargs.get("pk")
-        
-        # if prescription_pk:
-        #     if Prescription.objects.filter(id=prescription_pk).count()>0:
 
-        #         serializer.save()
-        #     else:
-        #         return Response(data={"message":"Prescription found"})
-        # else:
-        #     return Response(data={"message":"No prescription was retrieved for provided ID"})
+        try:
+            if user:
+                serializer.save(owner=user, facility=user.facility)   
+            else:
+                return Response(data={"message":"User not retrieved"})
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"detail": ["Similar item is already added!", ]})
+
         
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -94,7 +94,7 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Prescription quoted successfully.", "prescription-quote": serializer.validated_data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Prescription quoted successfully.", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -103,17 +103,16 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Precsription not quoted", "prescription-quote": serializer.validated_data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Precsription not quoted", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
-
-class PrescriptionQuoteListAPIView(generics.ListAPIView):
+class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
     """
-    Client
+    Pharmacy Superintendent
     =============================================
-    Retrieve all prescription quotes for the logged in user's pharmacy
+    Retrieve all prescription quotes for all pharmacists in the facility
     """
     name = "prescriptionquote-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.PrescriptionQuoteSerializer
 
@@ -131,6 +130,33 @@ class PrescriptionQuoteListAPIView(generics.ListAPIView):
         # Ensure that the users belong to the company of the user that is making the request
 
         return super().get_queryset().filter(facility=self.request.user.facility)
+
+
+class PharmacistPrescriptionQuotesListAPIView(generics.ListAPIView):
+    """
+    Pharmacist
+    =============================================
+    Retrieve all prescription quotes logged in pharmacist only
+    """
+    name = "prescriptionquote-list"
+    permission_classes = (PharmacistPermission,
+                          )
+    serializer_class = serializers.PrescriptionQuoteSerializer
+
+    queryset = models.PrescriptionQuote.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(PrescriptionQuoteListAPIView, self).get_context_data(
+            *args, **kwargs)
+        # context["now"] = timezone.now()
+        context["query"] = self.request.GET.get("q")  # None
+        return context
+
+    def get_queryset(self):
+        # Ensure that the users belong to the company of the user that is making the request
+
+        return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
 
 
 class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):

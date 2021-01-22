@@ -15,8 +15,10 @@ urlpatterns = [
          name=views.PrescriptionQuoteCreate.name),
     path('prescription-quotes/<uuid:pk>/', views.PrescriptionQuoteDetailAPIView.as_view(),
          name=views.PrescriptionQuoteDetailAPIView.name),
-    path('prescription-quotes/all', views.PrescriptionQuoteListAPIView.as_view(),
-         name=views.PrescriptionQuoteListAPIView.name),
+    path('prescription-quotes/all', views.AllPrescriptionQuotesListAPIView.as_view(),
+         name=views.AllPrescriptionQuotesListAPIView.name),
+     path('prescription-quotes/pharmacist', views.PharmacistPrescriptionQuotesListAPIView.as_view(),
+         name=views.PharmacistPrescriptionQuotesListAPIView.name),
 
     path('prescription-quotes/item', views.QuoteItemCreate.as_view(),
          name=views.QuoteItemCreate.name),

@@ -39,7 +39,7 @@ class ForwardPrescription(FacilityRelatedModel):
                 fields=['facility_id', 'prescription_id'], name='forward prescription to pharmacy once')
         ]
     def __str__(self):
-        return f'{self.prescription.dependant.first_name} {self.prescription.dependant.last_name}'
+        return f'Prescription for {self.prescription.dependant.first_name} {self.prescription.dependant.last_name} from {self.prescription.owner.first_name} {self.prescription.owner.last_name} '
 
 def forward_prescription_pre_save_receiver(sender, instance, *args, **kwargs):
     if instance.facility:
