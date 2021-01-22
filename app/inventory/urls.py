@@ -11,7 +11,7 @@ urlpatterns = [
          name=views.VariationList.name),
     path('variations/<uuid:pk>', views.VariationDetail.as_view(),
          name=views.VariationDetail.name),
-    path('variations/<uuid:pk>/', views.VariationUpdate.as_view(),
+    path('variations/<uuid:pk>', views.VariationUpdate.as_view(),
          name=views.VariationUpdate.name),
 
     path('variations/<uuid:pk>/photos', views.VariationPhotoList.as_view(),

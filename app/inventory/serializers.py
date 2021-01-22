@@ -35,10 +35,12 @@ class VariationSerializer(serializers.HyperlinkedModelSerializer):
             return ProductSerializer(product, context=self.context).data
 
 
-class VariationReceiptSerializer(serializers.HyperlinkedModelSerializer):
+class VariationReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.VariationReceipt
-        fields = "__all__"
+        fields = (
+           'id','batch','variation','units_per_pack','pack_quantity','pack_buying_price','pack_selling_price', 'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'variation','facility'
+        )
         read_only_fields = (
-            'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'variation',
+            'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'variation','facility'
         )

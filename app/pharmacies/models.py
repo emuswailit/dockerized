@@ -30,7 +30,7 @@ class PrescriptionQuote(FacilityRelatedModel):
         ]
 
     def __str__(self):
-        return self.forward_prescription.dependant.first_name
+        return self.forward_prescription.prescription.dependant.first_name
 
 
 
@@ -38,10 +38,10 @@ class PrescriptionQuote(FacilityRelatedModel):
 class QuoteItem(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
     prescription_quote = models.ForeignKey(
-        PrescriptionQuote, on_delete=models.CASCADE)
+        PrescriptionQuote, on_delete=models.CASCADE,null=True,blank=True)
     prescription_item = models.ForeignKey(
-        PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE)
-    quoted_item = models.ForeignKey(
+        PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE,null=True, blank=True)
+    variation_item= models.ForeignKey(
         VariationReceipt, related_name="variation_receipt", on_delete=models.CASCADE, null=True,blank=True)
     item_cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
@@ -55,7 +55,7 @@ class QuoteItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('prescription_quote', 'prescription_item','quoted_item')
+        unique_together = ('prescription_quote', 'prescription_item','variation_item')
 
 
     # def __str__(self):

@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from django.shortcuts import render
 from core.views import FacilitySafeViewMixin
-from core.permissions import FacilitySuperintendentPermission
+from core.permissions import FacilitySuperintendentPermission, PharmacistPermission
 from rest_framework import generics, permissions, response, status, exceptions
 from . import serializers
 from rest_framework.response import Response
@@ -57,10 +57,12 @@ class VariationList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'variation-list'
     permission_classes = (
-        FacilitySuperintendentPermission,
+        PharmacistPermission,
     )
     serializer_class = serializers.VariationSerializer
     queryset = models.Variation.objects.all()
+    search_fields =('title','description', 'product__title','product__manufacturer__title')
+    ordering_fields =('title', 'id')
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
@@ -89,7 +91,7 @@ class VariationUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIVi
     """
     name = 'variation-detail'
     permission_classes = (
-        permissions.IsAuthenticated,
+        FacilitySuperintendentPermission,
     )
     serializer_class = serializers.VariationSerializer
     queryset = models.Variation.objects.all()
@@ -205,16 +207,20 @@ class VariationReceiptCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
 class VariationReceiptList(FacilitySafeViewMixin, generics.ListAPIView):
     """
-    Superintendent Pharmacist
+    Pharmacistst
     ============================================================
     1. List of product variations receipts
     """
     name = 'variationreceipt-list'
     permission_classes = (
-        permissions.IsAuthenticated,
+        PharmacistPermission,
     )
     serializer_class = serializers.VariationReceiptSerializer
     queryset = models.VariationReceipt.objects.all()
+
+    search_fields =('distributor__title','description', 'variation__title','variation__product__manufacturer__title','variation__product__title')
+    ordering_fields =('title', 'id')
+
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id

@@ -56,23 +56,8 @@ class DistributorListAPIView(generics.ListAPIView):
     queryset = models.Distributor.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DistributorListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(DistributorListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class DistributorDetailAPIView(generics.RetrieveAPIView):
@@ -80,7 +65,7 @@ class DistributorDetailAPIView(generics.RetrieveAPIView):
     Distributor details
     """
     name = "distributor-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DistributorSerializer
     queryset = models.Distributor.objects.all()
@@ -162,30 +147,15 @@ class PosologyListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "posology-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.PosologySerializer
 
     queryset = models.Posology.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(PosologyListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(PosologyListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class PosologyDetailAPIView(generics.RetrieveAPIView):
@@ -282,23 +252,8 @@ class FrequencyListAPIView(generics.ListAPIView):
     queryset = models.Frequency.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(FrequencyListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(FrequencyListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description','abbreviation','description' )
+    ordering_fields =('title', 'id')
 
 
 class FrequencyDetailAPIView(generics.RetrieveAPIView):
@@ -388,30 +343,15 @@ class InstructionListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "instruction-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.InstructionSerializer
 
     queryset = models.Instruction.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(InstructionListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(InstructionListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class InstructionDetailAPIView(generics.RetrieveAPIView):
@@ -469,7 +409,7 @@ class BodySystemCreateAPIView(generics.CreateAPIView):
     Create new frequency
     """
     name = "bodysystem-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.BodySystemSerializer
     queryset = models.BodySystem.objects.all()
@@ -500,30 +440,15 @@ class BodySystemListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "bodysystem-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.BodySystemSerializer
 
     queryset = models.BodySystem.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(BodySystemListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(BodySystemListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class BodySystemDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -586,7 +511,7 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
     Create new frequency
     """
     name = "drugclass-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.DrugClassSerializer
     queryset = models.DrugClass.objects.all()
@@ -617,30 +542,15 @@ class DrugClassListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "drugclass-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DrugClassSerializer
 
     queryset = models.DrugClass.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DrugClassListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(DrugClassListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class DrugClassDetailAPIView(generics.RetrieveUpdateAPIView):
@@ -699,7 +609,7 @@ class DrugSubClassCreateAPIView(generics.CreateAPIView):
     Create new sub class
     """
     name = "drugsubclass-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.DrugSubClassSerializer
     queryset = models.DrugSubClass.objects.all()
@@ -730,30 +640,15 @@ class DrugSubClassListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "drugsubclass-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DrugSubClassSerializer
 
     queryset = models.DrugSubClass.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DrugSubClassListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(DrugSubClassListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class DrugSubClassDetailAPIView(generics.RetrieveAPIView):
@@ -761,7 +656,7 @@ class DrugSubClassDetailAPIView(generics.RetrieveAPIView):
     DrugSubClass details
     """
     name = "drugsubclass-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DrugSubClassSerializer
     queryset = models.DrugSubClass.objects.all()
@@ -808,7 +703,7 @@ class GenericCreateAPIView(generics.CreateAPIView):
     Create new generic
     """
     name = "generic-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.GenericSerializer
     queryset = models.Generic.objects.all()
@@ -846,23 +741,11 @@ class GenericListAPIView(generics.ListAPIView):
     queryset = models.Generic.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(GenericListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    search_fields =('title','description','drug_class__title','drug_sub_class__title', )
+    ordering_fields =('title', 'id')
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(GenericListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
 
-        return qs
+  
 
 
 class GenericDetailAPIView(generics.RetrieveAPIView):
@@ -870,7 +753,7 @@ class GenericDetailAPIView(generics.RetrieveAPIView):
     Generic details
     """
     name = "generic-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.GenericSerializer
     queryset = models.Generic.objects.all()
@@ -916,7 +799,7 @@ class PreparationCreateAPIView(generics.CreateAPIView):
     Create new preparation
     """
     name = "preparation-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.PreparationSerializer
     queryset = models.Preparation.objects.all()
@@ -947,30 +830,16 @@ class PreparationListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "preparation-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.PreparationSerializer
 
     queryset = models.Preparation.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(PreparationListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    search_fields =('title','description','generic__title','formulation__title', )
+    ordering_fields =('title', 'id')
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(PreparationListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
 
 
 class PreparationDetailAPIView(generics.RetrieveAPIView):
@@ -1059,30 +928,16 @@ class FormulationListAPIView(generics.ListAPIView):
     drug formulations list
     """
     name = "formulation-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.FormulationSerializer
 
     queryset = models.Formulation.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(FormulationListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(FormulationListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
 
 
 class FormulationDetailAPIView(generics.RetrieveAPIView):
@@ -1171,30 +1026,15 @@ class ManufacturerListAPIView(generics.ListAPIView):
    Manufacturers listing
     """
     name = "manufacturer-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.ManufacturerSerializer
 
     queryset = models.Manufacturer.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(ManufacturerListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        qs = super(ManufacturerListAPIView, self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
+    search_fields =('title','description', )
+    ordering_fields =('title', 'id')
 
 
 class ManufacturerDetailAPIView(generics.RetrieveAPIView):
@@ -1286,7 +1126,7 @@ class ProductListAPIView(generics.ListAPIView):
     queryset = models.Product.objects.all()
     
     # Searching and filtering
-    search_fields =('title','description')
+    search_fields =('title','description','preparation__title', 'manufacturer__title')
     ordering_fields =('title','description','id')
 
 

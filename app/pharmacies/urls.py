@@ -20,11 +20,13 @@ urlpatterns = [
      path('prescription-quotes/pharmacist', views.PharmacistPrescriptionQuotesListAPIView.as_view(),
          name=views.PharmacistPrescriptionQuotesListAPIView.name),
 
-    path('prescription-quotes/item', views.QuoteItemCreate.as_view(),
-         name=views.QuoteItemCreate.name),
+#     path('prescription-quotes/item', views.QuoteItemCreate.as_view(),
+#          name=views.QuoteItemCreate.name),
     path('prescription-quote-item/<uuid:pk>', views.QuoteItemDetailAPIView.as_view(),
          name=views.QuoteItemDetailAPIView.name),
 
+     path('prescription-quote-item/<uuid:pk>/update', views.UpdateQuoteItem.as_view(),
+         name=views.UpdateQuoteItem.name),
     path('prescription-quote-items/', views.QuoteItemListAPIView.as_view(),
          name=views.QuoteItemListAPIView.name),
 

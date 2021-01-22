@@ -302,9 +302,9 @@ class PrescriptionItemDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     serializer_class = serializers.PrescriptionItemSerializer
     queryset = models.Prescription.objects.all()
 
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    # def get_queryset(self):
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
 
 
 class PrescriptionItemUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -321,7 +321,7 @@ class PrescriptionItemUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     serializer_class = serializers.PrescriptionItemSerializer
     queryset = models.PrescriptionItem.objects.all()
 
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    # def get_queryset(self):
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
 

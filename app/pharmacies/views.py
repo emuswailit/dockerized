@@ -8,6 +8,8 @@ from . import serializers, models
 from rest_framework.response import Response
 from core.permissions import PharmacistPermission,FacilitySuperintendentPermission
 from consultations.models import Prescription
+from inventory.models import VariationReceipt
+from django.urls import resolve
 
 # Create your views here.
 
@@ -128,7 +130,6 @@ class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         # Ensure that the users belong to the company of the user that is making the request
-
         return super().get_queryset().filter(facility=self.request.user.facility)
 
 
@@ -181,43 +182,43 @@ class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class QuoteItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
-    """
-    Pharmacist
-    ============================================================
-    1. Create quote item for forwarded prescription
+# class QuoteItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+#     """
+#     Pharmacist
+#     ============================================================
+#     1. Create quote item for forwarded prescription
 
-    """
-    name = 'quiteitem-create'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.QuoteItemSerializer
-    queryset = models.QuoteItem.objects.all()
+#     """
+#     name = 'quiteitem-create'
+#     permission_classes = (
+#         permissions.IsAuthenticated,
+#     )
+#     serializer_class = serializers.QuoteItemSerializer
+#     queryset = models.QuoteItem.objects.all()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(owner=user, facility=self.request.user.facility,)
+#     def perform_create(self, serializer):
+#         user = self.request.user
+#         serializer.save(owner=user, facility=self.request.user.facility,)
         
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
 
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Prescription forwarded successfully.", "forwarded-prescription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_create(serializer)
+#             return Response(data={"message": "Prescription forwarded successfully.", "forwarded-prescription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Precsription not forwarded", "forwarded-prescription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#             return Response(data={"message": "Precsription not forwarded", "forwarded-prescription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class QuoteItemListAPIView(generics.ListAPIView):
+class QuoteItemListAPIView(FacilitySafeViewMixin,generics.ListAPIView):
     """
     Client
     =============================================
@@ -264,3 +265,46 @@ class QuoteItemDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
+    """
+    Prescription details
+    """
+    name = "quoteitem-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.QuoteItemSerializer
+    queryset = models.QuoteItem.objects.all()
+    lookup_fields = ('pk',)
+    def get_serializer_context(self):
+        prescription_quote_item_pk = self.kwargs.get("pk")
+        context = super(UpdateQuoteItem, self).get_serializer_context()
+        
+        context.update({
+            "prescription_quote_item_pk": prescription_quote_item_pk
+            # extra data
+        })
+        return context
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+    # def put(self, request, pk=None, **kwargs):
+    #     prescription_quote_item_pk = self.kwargs.get("pk")
+
+    #     if models.QuoteItem.objects.filter(id=prescription_quote_item_pk).count()>0:
+    #         prescription_quote_item = models.QuoteItem.objects.get(id=prescription_quote_item_pk)
+    #         if prescription_quote_item.owner==request.user:
+    #             return Response(data={"message": f"You are authorized to edit this quotation {request.POST.get('variation_item')} "})
+    #         else:
+    #             return Response(data={"message": "You can only edit quotations you created"})
+               
+    #     else:
+    #         return Response(data={"message": "No prescription for this ID"})
+        
