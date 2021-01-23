@@ -49,6 +49,10 @@ class QuoteItem(FacilityRelatedModel):
     quantity_dispensed = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
     instructions = models.TextField(blank=True, null=True)
+    dose_divisible= models.BooleanField(default=True)
+    item_accepted= models.BooleanField(default=True)
+    fully_dispensed= models.BooleanField(default=False)
+    client_comment = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -60,6 +64,10 @@ class QuoteItem(FacilityRelatedModel):
 
     # def __str__(self):
     #     return self.prescription.dependant.first_name
+
+
+
+
 
 #  Check if prescribed drug is the one being quoted
 
@@ -84,18 +92,12 @@ class QuoteItem(FacilityRelatedModel):
 #                  sender=QuoteItem)
 
 
-@receiver(post_save, sender=QuoteItem, dispatch_uid="update_prescription_total")
-def create_offer(sender, instance, created, **kwargs):
-    """Calculate unit quantities and prices"""
-    if created:
-        try:
-            instance.prescription.prescription_cost = instance.prescription.prescription_cost + \
-                instance.item_cost
-
-            instance.prescription.save()
-        except:
-
-            pass
+# @receiver(post_save, sender=QuoteItem, dispatch_uid="update_prescription_total")
+# def create_offer(sender, instance, created, **kwargs):
+#     """Calculate unit quantities and prices"""
+#     if not created:
+#         raise ValidationError("Updated")
+     
 
 
 class PrescriptionSale(FacilityRelatedModel):

@@ -6,6 +6,8 @@ from consultations.models import PrescriptionItem, Prescription
 from rest_framework.validators import UniqueTogetherValidator
 
 from users.models import Facility
+from pharmacies.models import PrescriptionQuote
+
 
 
 class ForwardPrescriptionSerializer(serializers.HyperlinkedModelSerializer):
@@ -25,6 +27,7 @@ class ForwardPrescriptionSerializer(serializers.HyperlinkedModelSerializer):
             id=obj.prescription_id)
         return PrescriptionSerializer(prescription, context=self.context, many=True).data
 
+    
 
 class PharmacySerializer(serializers.HyperlinkedModelSerializer):
 

@@ -114,11 +114,15 @@ class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
     Retrieve all prescription quotes for all pharmacists in the facility
     """
     name = "prescriptionquote-list"
-    permission_classes = (FacilitySuperintendentPermission,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.PrescriptionQuoteSerializer
 
+    
     queryset = models.PrescriptionQuote.objects.all()
+    search_fields =('forward_prescription__owner__id','owner__id')
+    ordering_fields =( 'id',)
+
     # TODO : Reuse this for filtering by q.
 
     def get_context_data(self, *args, **kwargs):
@@ -160,8 +164,13 @@ class PharmacistPrescriptionQuotesListAPIView(generics.ListAPIView):
         return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
 
 
+
+
 class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
     """
+    Logged on user
+    -----------------------------------------------------------
+    View details of prescription quote
     Prescription details
     """
     name = "prescriptionquote-detail"
@@ -244,6 +253,38 @@ class QuoteItemListAPIView(FacilitySafeViewMixin,generics.ListAPIView):
 
         return super().get_queryset().filter(facility=self.request.user.facility)
 
+class PrescriptionQuoteItemsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Pharmacist
+    ============================================================
+    Retrieve quote items for given prescription ID
+
+    """
+    name = 'quoteitem-list'
+    permission_classes = (
+        PharmacistPermission,
+    )
+    serializer_class = serializers.QuoteItemSerializer
+    queryset = models.QuoteItem.objects.all()
+
+    # search_fields =('dependant__id','dependant__middle_name','dependant__last_name', 'dependant__first_name',)
+    # ordering_fields =('dependant__first_name', 'id')
+
+    def get_queryset(self):
+        user = self.request.user
+        prescription_quote_id = self.kwargs['pk']
+        if models.PrescriptionQuote.objects.filter(id=prescription_quote_id).count()>0:
+            prescription_quote = models.PrescriptionQuote.objects.get(id=prescription_quote_id)
+            if prescription_quote and prescription_quote.owner==user:
+                return models.QuoteItem.objects.filter(prescription_quote=prescription_quote)
+            else:
+                raise exceptions.NotAcceptable(
+                    {"detail": ["No quote for given ID  found in your records", ]})
+        else:
+            raise exceptions.NotAcceptable(
+                    {"detail": ["Quote for given ID not retrieved", ]})
+            
+
 
 class QuoteItemDetailAPIView(generics.RetrieveAPIView):
     """
@@ -267,15 +308,19 @@ class QuoteItemDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
+
     """
-    Prescription details
+    Pharmacist
+    ----------------------------------------------------
+    Update prescription quote item
     """
     name = "quoteitem-detail"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (PharmacistPermission,
                           )
     serializer_class = serializers.QuoteItemSerializer
     queryset = models.QuoteItem.objects.all()
     lookup_fields = ('pk',)
+    #TODO : Refer -> Pass data from view to serializer using context
     def get_serializer_context(self):
         prescription_quote_item_pk = self.kwargs.get("pk")
         context = super(UpdateQuoteItem, self).get_serializer_context()
@@ -295,16 +340,39 @@ class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-    # def put(self, request, pk=None, **kwargs):
-    #     prescription_quote_item_pk = self.kwargs.get("pk")
+  
 
-    #     if models.QuoteItem.objects.filter(id=prescription_quote_item_pk).count()>0:
-    #         prescription_quote_item = models.QuoteItem.objects.get(id=prescription_quote_item_pk)
-    #         if prescription_quote_item.owner==request.user:
-    #             return Response(data={"message": f"You are authorized to edit this quotation {request.POST.get('variation_item')} "})
-    #         else:
-    #             return Response(data={"message": "You can only edit quotations you created"})
-               
-    #     else:
-    #         return Response(data={"message": "No prescription for this ID"})
+class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
+
+    """
+    Pharmacist
+    ----------------------------------------------------
+    Update prescription quote item
+    """
+    name = "quoteitem-detail"
+    permission_classes = (PharmacistPermission,
+                          )
+    serializer_class = serializers.ClientQuoteItemSerializer
+    queryset = models.QuoteItem.objects.all()
+    lookup_fields = ('pk',)
+    #TODO : Refer -> Pass data from view to serializer using context
+    def get_serializer_context(self):
+        prescription_quote_item_pk = self.kwargs.get("pk")
+        context = super(AcceptQuoteItem, self).get_serializer_context()
         
+        context.update({
+            "prescription_quote_item_pk": prescription_quote_item_pk
+            # extra data
+        })
+        return context
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+  
