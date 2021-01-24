@@ -376,3 +376,88 @@ class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
   
+
+
+class AllOrdersList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. List of product variations
+    """
+    name = 'order-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.OrderSerializer
+    queryset = models.Order.objects.all()
+    # search_fields =('title','description', 'product__title','product__manufacturer__title')
+    # ordering_fields =('title', 'id')
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+
+class OrderDetailAPIView(generics.RetrieveAPIView):
+    """
+    Prescription details
+    """
+    name = "order-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.OrderSerializer
+    queryset = models.Order.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+class AllOrderItemsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. List of product variations
+    """
+    name = 'orderitem-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.OrderItemSerializer
+    queryset = models.OrderItem.objects.all()
+    # search_fields =('title','description', 'product__title','product__manufacturer__title')
+    # ordering_fields =('title', 'id')
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+
+class OrderItemDetailAPIView(generics.RetrieveAPIView):
+    """
+    Prescription details
+    """
+    name = "orderitem-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.OrderItemSerializer
+    queryset = models.OrderItem.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj

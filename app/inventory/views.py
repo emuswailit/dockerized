@@ -256,3 +256,5 @@ class VariationReceiptUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
+
+

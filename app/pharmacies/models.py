@@ -9,6 +9,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 User = get_user_model()
 from rest_framework.exceptions import ValidationError
+from users.models import Facility
 # Create your models here.
 
 
@@ -62,8 +63,48 @@ class QuoteItem(FacilityRelatedModel):
         unique_together = ('prescription_quote', 'prescription_item','variation_item')
 
 
-    # def __str__(self):
-    #     return self.prescription.dependant.first_name
+
+class Order(FacilityRelatedModel):
+    """Model for prescriptions raised for dependants"""
+    facility = models.ForeignKey(
+        Facility, related_name="cart_facility", on_delete=models.CASCADE)
+    prescription_quote = models.ForeignKey(
+        PrescriptionQuote, related_name="cart_prescription_quote", on_delete=models.CASCADE)
+    # items = models.ManyToManyField(OrderItem)
+    is_open = models.BooleanField(default=False)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+
+    def get_total_price(self):
+        total=0
+        for order_item in self.items.all():
+            total += order_item.get_total_item_price()
+        return total
+        
+class OrderItem(FacilityRelatedModel):
+    """Model for prescriptions raised for dependants"""
+    facility = models.ForeignKey(
+        Facility,  on_delete=models.CASCADE)
+    quote_item = models.ForeignKey(
+        QuoteItem, on_delete=models.CASCADE,null=True, blank=True)
+    order =models.ForeignKey(Order, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=0)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+
+    def get_total_item_price(self):
+        return self.quantity * self.item.variation_item.unit_selling_price
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['facility', 'quote_item'], name='One quote item in order')
+        ]
+  
+
+
 
 
 

@@ -40,5 +40,13 @@ urlpatterns = [
      path('prescription-quotes/<uuid:pk>/items', views.PrescriptionQuoteItemsList.as_view(),
          name=views.PrescriptionQuoteItemsList.name),
 
+     path('orders/all', views.AllOrdersList.as_view(),
+         name=views.AllOrdersList.name),
+    path('orders/<uuid:pk>/', views.OrderDetailAPIView.as_view(),
+         name=views.OrderDetailAPIView.name),
+     path('order-items/all', views.AllOrderItemsList.as_view(),
+         name=views.AllOrderItemsList.name),
+    path('order-items/<uuid:pk>/', views.OrderItemDetailAPIView.as_view(),
+         name=views.OrderItemDetailAPIView.name),
 
 ]
