@@ -401,13 +401,15 @@ class AllOrdersList(FacilitySafeViewMixin, generics.ListAPIView):
 
 class OrderDetailAPIView(generics.RetrieveAPIView):
     """
-    Prescription details
+    Pharmacist
+    -----------------------------------------------
+    View list of all confirmed orders
     """
     name = "order-detail"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (PharmacistPermission,
                           )
     serializer_class = serializers.OrderSerializer
-    queryset = models.Order.objects.all()
+    queryset = models.Order.objects.filter(is_confirmed=True)
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -419,6 +421,33 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+class ConfirmOrderAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Client user
+    -----------------------------------------------------
+    1. View details of own order which is not yet confirmed
+    2. Confirm order
+    3. Create a transaction
+    """
+    name = "order-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.OrderSerializer
+    queryset = models.Order.objects.filter(is_confirmed=False)
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+
 
 class AllOrderItemsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
@@ -461,3 +490,5 @@ class OrderItemDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+

@@ -66,12 +66,22 @@ class QuoteItem(FacilityRelatedModel):
 
 class Order(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
+    PAYMENT_METHOD_CHOICES =(
+        ("CASH","CASH"),
+        ("MPESA","MPESA"),
+        ("AIRTEL MONEY","AIRTEL MONEY"),
+        ("EQUITEL","EQUITEL"),
+        ("JAMBOPAY WALLET","JAMBOPAY WALLET"),
+        ("VISA","VISA"),
+    )
     facility = models.ForeignKey(
         Facility, related_name="cart_facility", on_delete=models.CASCADE)
     prescription_quote = models.ForeignKey(
         PrescriptionQuote, related_name="cart_prescription_quote", on_delete=models.CASCADE)
     # items = models.ManyToManyField(OrderItem)
-    is_open = models.BooleanField(default=False)
+    is_confirmed = models.BooleanField(default=False)
+    payment_method= models.CharField(
+        max_length=120, choices=PAYMENT_METHOD_CHOICES)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
@@ -79,8 +89,11 @@ class Order(FacilityRelatedModel):
 
     def get_total_price(self):
         total=0
-        for order_item in self.items.all():
-            total += order_item.get_total_item_price()
+
+        if OrderItem.objects.filter(order_id=self.id).count()>0:
+            items =OrderItem.objects.filter(order_id=self.id)
+            for order_item in items:
+                total += order_item.get_total_item_price()
         return total
         
 class OrderItem(FacilityRelatedModel):
@@ -97,14 +110,43 @@ class OrderItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     def get_total_item_price(self):
-        return self.quantity * self.item.variation_item.unit_selling_price
+        return self.quantity * self.quote_item.variation_item.unit_selling_price
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['facility', 'quote_item'], name='One quote item in order')
         ]
   
 
+class Payment(FacilityRelatedModel):
+    """Model for prescriptions raised for dependants"""
 
+    PAYMENT_STATUS_CHOICES =(
+        ("PENDING","PENDING"),
+        ("SUCCESS","SUCCESS"),
+        ("FAILED","FAILED"),
+    )
+    facility = models.ForeignKey(
+        Facility, related_name="payment_facility", on_delete=models.CASCADE)
+    order = models.ForeignKey(
+        Order, related_name="payment_order",  on_delete=models.CASCADE)
+    reference= models.CharField(
+        max_length=120, null=True,blank=True)
+    status= models.CharField(
+        max_length=120, choices=PAYMENT_STATUS_CHOICES)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, related_name="payment_owner", on_delete=models.CASCADE)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['facility', 'order'], name='One payment per facility per order')
+        ]
+
+    def get_payment_method(self):
+        return self.order.payment_method
+
+    def get_amount(self):
+        return self.order.get_total_price()
 
 
 

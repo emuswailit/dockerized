@@ -178,16 +178,35 @@ class OrderSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelS
         read_only=True)
     class Meta:
         model = models.Order
-        fields = "__all__"
+        fields = ('id','url','facility','prescription_quote','is_confirmed','payment_method', 'owner','get_total_price','order_items_details','created','updated')
         read_only_fields = (
-            'owner',  'facility', 'prescription_quote', 'items'
+            'owner',  'facility', 'prescription_quote', 'get_total_price'
         )
     def get_order_items_details(self, obj):
         order_item = models.OrderItem.objects.filter(
             order=obj)
         return OrderItemSerializer(order_item, context=self.context, many=True).data
+   
+    @transaction.atomic
+    def update(self, order,validated_data):
+        is_confirmed =validated_data.pop('is_confirmed')
+        payment_method =validated_data.pop('payment_method')
 
+        if is_confirmed:
+            payment = None
 
+            if order:
+                # Create or retrieve transaction
+                obj, created = models.Payment.objects.get_or_create(facility=order.facility, order=order, owner=order.owner)
+
+                if obj:
+                    order.is_confirmed=is_confirmed
+                    order.payment_method=payment_method
+                    order.save()
+
+                    #TODO : Process payment based on selected payment method
+    
+        return order
     
 
 
@@ -195,7 +214,7 @@ class OrderItemSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedMo
     
     class Meta:
         model = models.OrderItem
-        fields = "__all__"
+        fields = ('id','url','facility','quote_item','order','get_total_item_price')
         read_only_fields = (
             'owner',  'facility', 'quote_item', 'quantity'
         )

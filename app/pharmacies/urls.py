@@ -44,6 +44,8 @@ urlpatterns = [
          name=views.AllOrdersList.name),
     path('orders/<uuid:pk>/', views.OrderDetailAPIView.as_view(),
          name=views.OrderDetailAPIView.name),
+    path('orders/<uuid:pk>/confirm', views.ConfirmOrderAPIView.as_view(),
+         name=views.ConfirmOrderAPIView.name),
      path('order-items/all', views.AllOrderItemsList.as_view(),
          name=views.AllOrderItemsList.name),
     path('order-items/<uuid:pk>/', views.OrderItemDetailAPIView.as_view(),
