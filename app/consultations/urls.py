@@ -3,21 +3,33 @@ from . import views
 from django.conf.urls import url
 
 
-
 urlpatterns = [
 
+    # Slots urls
+    path('slots/create', views.SlotsCreate.as_view(),
+         name=views.SlotsCreate.name),
+    path('slots/all', views.AllSlotsList.as_view(),
+         name=views.AllSlotsList.name),
+    path('slots/available', views.AvailableSlotsList.as_view(),
+         name=views.AvailableSlotsList.name),
+    path('slots/<uuid:pk>', views.SlotDetail.as_view(),
+         name=views.SlotDetail.name),
+    path('slots/<uuid:pk>/update', views.SlotUpdate.as_view(),
+         name=views.SlotUpdate.name),
+
+    # Prescriptions urls
     path('prescriptions/all', views.AllPrescriptionList.as_view(),
          name=views.AllPrescriptionList.name),
-     path('prescriptions/dependants/<uuid:pk>', views.DependantPrescriptionsList.as_view(),
+    path('prescriptions/dependants/<uuid:pk>', views.DependantPrescriptionsList.as_view(),
          name=views.DependantPrescriptionsList.name),
-     path('prescriptions/create', views.PrescriptionCreate.as_view(),
+    path('prescriptions/create', views.PrescriptionCreate.as_view(),
          name=views.PrescriptionCreate.name),
-         
+
     path('prescriptions/<uuid:pk>', views.PrescriptionDetail.as_view(),
          name=views.PrescriptionDetail.name),
 
-     path('prescriptions/<uuid:pk>/sign', views.PrescriptionSign.as_view(),
-          name=views.PrescriptionSign.name),
+    path('prescriptions/<uuid:pk>/sign', views.PrescriptionSign.as_view(),
+         name=views.PrescriptionSign.name),
 
     path('prescriptions/<uuid:pk>/update', views.PrescriptionUpdate.as_view(),
          name=views.PrescriptionUpdate.name),

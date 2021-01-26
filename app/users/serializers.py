@@ -32,22 +32,22 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FacilitySerializer(serializers.ModelSerializer):
-    facility_image = serializers.SerializerMethodField(
-        read_only=True)
+    # facility_image = serializers.SerializerMethodField(
+    #     read_only=True)
 
     class Meta:
         model = models.Facility
-        fields = ('id', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated','facility_image')
+        fields = ('id','url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated',)
         read_only_fields = ('is_verified','is_subscribed')
     title = serializers.CharField(
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
     )
 
-    def get_facility_image(self, obj):
-        facility_image = FacilityImage.objects.filter(facility=obj)
-        return FacilityImageSerializer(facility_image, context=self.context, many=True).data
+    # def get_facility_image(self, obj):
+    #     facility_image = FacilityImage.objects.filter(facility=obj)
+    #     return FacilityImageSerializer(facility_image, context=self.context, many=True).data
 
 
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
@@ -111,8 +111,10 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'is_pharmacist',
             'is_prescriber',
             'is_superintendent',
+            'is_professional',
             'is_courier',
             'is_client',
+            'cadre',
             'subscription_details',
             'facility_details',
             'account_details',
@@ -126,7 +128,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         )
 
         read_only_fields = ('is_staff', 'is_active',  'is_pharmacist',
-                            'is_prescriber', 'is_superintendent',
+                            'is_prescriber', 'is_superintendent','cadre',
                             'is_client', 'is_courier',)
         # Make sure that the password field is never sent back to the client.
         # Make sure that the password field is never sent back to the client.
@@ -319,13 +321,13 @@ class DependantSerializer(serializers.HyperlinkedModelSerializer):
         allergy = models.Allergy.objects.filter(dependant=obj)
         return AllergySerializer(allergy, context=self.context, many=True).data
 
-# class PharmacistCertificateSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = PharmacistCertificate
-#         fields = ('id', 'url', 'pharmacist', 'certificate')
-#         read_only_fields = (
-#             'owner', 'pharmacist',
-#         )
+class CadresSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Cadres
+        fields = ('id', 'url','title','code','description', 'owner', 'created','updated')
+        read_only_fields = (
+            'owner', 'created','updated'
+        )
 
 # class PharmacistPhotoSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -429,3 +431,5 @@ class DependantSerializer(serializers.HyperlinkedModelSerializer):
 #     def get_courier_certificate_details(self, obj):
 #         cerificate = CourierPhoto.objects.filter(courier=obj)
 #         return CourierPhotoSerializer(cerificate, context=self.context, many=True).data
+
+

@@ -24,18 +24,29 @@ urlpatterns = [
 
     path('facilities/', views.FacilityDetail.as_view(),
          name=views.FacilityDetail.name),
-    path('facilities/<uuid:pk>/', views.FacilityDetail.as_view(),
+
+    path('facilities/pharmacies', views.PharmaciesList.as_view(),
+         name=views.PharmaciesList.name),
+    path('facilities/clinics', views.ClinicsList.as_view(),
+         name=views.ClinicsList.name),
+    path('facilities/pharmacies', views.PharmaciesList.as_view(),
+         name=views.PharmaciesList.name),
+    path('facilities/default', views.DefaultFacility.as_view(),
+         name=views.DefaultFacility.name),
+
+
+    path('facilities/<uuid:pk>', views.FacilityDetail.as_view(),
          name=views.FacilityDetail.name),
     path('facilities/<uuid:pk>/image', views.FacilityImageAPIView.as_view(),
-          name=views.FacilityImageAPIView.name),
-path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
+         name=views.FacilityImageAPIView.name),
+    path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
          name=views.FacilityImageDetail.name),
     #     Dependants urls
     path('dependants/all', views.AllDependantListAPIView.as_view(),
          name=views.AllDependantListAPIView.name),
-     path('dependants/active', views.ActiveDependantListAPIView.as_view(),
+    path('dependants/active', views.ActiveDependantListAPIView.as_view(),
          name=views.ActiveDependantListAPIView.name),
-      path('dependants/user', views.UserDependantsList.as_view(),
+    path('dependants/user', views.UserDependantsList.as_view(),
          name=views.UserDependantsList.name),
 
 
@@ -61,5 +72,14 @@ path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
 
     path('accounts/<uuid:pk>', views.AccountDetailAPIView.as_view(),
          name=views.AccountDetailAPIView.name),
+
+   # Cadres urls
+    path('roles/create', views.CadresCreate.as_view(),
+         name=views.CadresCreate.name),
+    path('roles/<uuid:pk>', views.CadresDetail.as_view(),
+         name=views.CadresDetail.name),
+    path('roles', views.CadresList.as_view(),
+         name=views.CadresList.name),
+
 
 ]

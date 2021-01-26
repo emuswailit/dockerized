@@ -17,7 +17,7 @@ from django.http import HttpResponse
 
 from .token_generator import account_activation_token
 from .utils import jwt_response_payload_handler
-from core.permissions import IsOwner, ClientPermission, PrescriberPermission, IsSubscribedPermission
+from core.permissions import IsOwner, ClientPermission, PrescriberPermission, IsSubscribedPermission, ClinicSuperintendentPermission
 from core.views import FacilitySafeViewMixin
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -53,6 +53,76 @@ class MerchantCreate(generics.CreateAPIView):
 #         owner_national_id = self.request.user.national_id
 #         return super().get_queryset().filter(owner_national_id=owner_national_id)
 
+# class FacilityDetail(generics.RetrieveAPIView):
+#     """
+#     Prescription details
+#     """
+#     name = "facility-detail"
+#     permission_classes = (permissions.IsAuthenticated,
+#                           )
+#     serializer_class = serializers.FacilitySerializer
+#     queryset = models.Facility.objects.all()
+#     lookup_fields = ('pk',)
+
+#     def get_object(self):
+#         queryset = self.get_queryset()
+#         filter = {}
+#         for field in self.lookup_fields:
+#             filter[field] = self.kwargs[field]
+
+#         obj = get_object_or_404(queryset, **filter)
+#         self.check_object_permissions(self.request, obj)
+#         return obj
+
+class PharmaciesList( generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all prescriptions for this
+
+    """
+    name = 'facility-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.FacilitySerializer
+    queryset = models.Facility.objects.pharmacies()
+
+    # search_fields =('title','county','town', 'description',)
+    # ordering_fields =('title','id')
+
+class ClinicsList(generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all prescriptions for this
+
+    """
+    name = 'facility-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.FacilitySerializer
+    queryset = models.Facility.objects.clinics()
+
+    search_fields =('title','county','town', 'description',)
+    ordering_fields =('title','id')
+
+class DefaultFacility(generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all prescriptions for this
+
+    """
+    name = 'facility-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.FacilitySerializer
+    queryset = models.Facility.objects.default_facility()
+
+    
 
 class FacilityDetail(generics.RetrieveAPIView):
     """
@@ -65,13 +135,14 @@ class FacilityDetail(generics.RetrieveAPIView):
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.all()
+    queryset = models.Facility.objects.all_facilities()
+    lookup_fields = ('pk',)
+    def get_object(self):
+        # Ensure that users can only see the company that they belong to
+        return self.request.user.facility
 
-    # def get_object(self):
-    #     # Ensure that users can only see the company that they belong to
-    #     return self.request.user.facility
 
-
+        
 class AnyUserRegisterAPIView(generics.CreateAPIView):
     """Allow any user to register in the system"""
     name = 'user-register'
@@ -716,3 +787,75 @@ def verify(request, uuid):
     user.save()
  
     return redirect('home')
+
+
+# Role views
+class CadresCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+
+    # TODO : Test this view later
+    """
+    Logged on user
+    ============================================================
+    Register as professional
+
+    """
+    name = 'cadres-create'
+    permission_classes = (
+        permissions.IsAdminUser,
+    )
+    serializer_class = serializers.CadresSerializer
+    queryset = models.Cadres.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            facility = self.request.user.facility
+            serializer.save(owner=user, facility=facility,)
+
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"detail": [f"Role is already added!", ]})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Role succesfully created", "role": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Role not created", "role": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class CadresList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Authenticated User
+    ============================================================
+    View list of all facility cadres
+    """
+    name = 'cadres-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.CadresSerializer
+    queryset = models.Cadres.objects.all()
+
+
+class CadresDetail(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    -----------------------------------------------------
+    View details of a cadre
+    """
+    name = 'cadres-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.CadresSerializer
+    queryset = models.Cadres.objects.all()

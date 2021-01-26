@@ -20,8 +20,8 @@ from .token_generator import account_activation_token
 from django.core.mail import send_mail
 from django.urls import reverse
 from notifications.tasks import send_verification_email
- 
- 
+
+
 # Create your models here.
 
 
@@ -32,6 +32,7 @@ def image_upload_to(instance, filename):
     new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
     return new_filename
 
+
 def facility_image_upload_to(instance, filename):
     name = instance.facility.title
     slug = slugify(name)
@@ -39,8 +40,38 @@ def facility_image_upload_to(instance, filename):
     new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
     return new_filename
 
+
+class FacilityQuerySet(models.QuerySet):
+    def all_facilities(self):
+        return self.all()
+
+    def default_facility(self):
+        return self.filter(facility_type="Default", title="Mobipharma")
+
+    def pharmacies(self):
+        return self.filter(facility_type="Pharmacy",)
+
+    def clinics(self):
+        return self.filter(facility_type="Clinic", )
+
+
 class FacilityManager(models.Manager):
     """Manager for the Facility model. Also handles the account creation"""
+
+    def get_queryset(self):
+        return FacilityQuerySet(self.model, using=self._db)
+
+    def all_facilities(self):
+        return self.get_queryset().all_facilities()
+
+    def pharmacies(self):
+        return self.get_queryset().pharmacies()
+
+    def clinics(self):
+        return self.get_queryset().clinics()
+
+    def default_facility(self):
+        return self.get_queryset().default_facility()
 
     @transaction.atomic
     def create_account(self,
@@ -83,7 +114,7 @@ class FacilityManager(models.Manager):
             facility=facility,
             password=password,
             is_administrator=True,
-            is_superintendent=True  # Set the user as superintendent of facility
+            # is_superintendent=True  # Set the user as superintendent of facility
             # confirm_password=confirm_password
 
         )
@@ -127,7 +158,6 @@ class Facility(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-  
     objects = FacilityManager()
 
     class Meta:
@@ -152,6 +182,8 @@ class Facility(models.Model):
             return False
 
         return current_date < self.paid_until
+
+
 class FacilityImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     """Model for uploading profile user image"""
@@ -165,6 +197,20 @@ class FacilityImage(models.Model):
 
     def __str__(self):
         return self.facility.title
+
+class Cadres(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
+    title = models.CharField(max_length=120, unique=True)
+    code = models.CharField(max_length=20)
+    description = models.TextField()
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        'User', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
 
 class CustomUserManager(BaseUserManager):
     """
@@ -222,10 +268,16 @@ class User(AbstractUser):
         ('Male', 'Male'),
 
     )
-    ROLE_CHOICES = (
-        ('Client', 'Client'),
-        ('Editor', 'Editor'),
-
+    ROLE_CATEGORY_CHOICES = (
+        ("ADMINISTRATIVE-ASSISTANT", "ADMINISTRATIVE ASSISTANT"),
+        ("HEALTH-RECORDS-OFFICER", "ADMINISTRATIVE ASSISTANT"),
+        ("CLERK", "CLERK"),
+        ("CLINICAL-OFFICER", "CLINICAL OFFICER"),
+        ("MEDICAL-OFFICER", "MEDICAL OFFICER"),
+        ("MEDICAL-CONSULTANT", "MEDICAL CONSULTANT"),
+        ("NURSING-OFFICER", "NURSING OFFICER"),
+        ("PHARMACEUTICAL-TECHNOLOGIST", "PHARMACEUTICAL TECHNOLOGIST"),
+        ("PHARMACIST", "PHARMACIST"),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(
@@ -238,21 +290,22 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=120)
     national_id = models.CharField(max_length=30, unique=True)
     is_client = models.BooleanField(default=True)
+    is_professional = models.BooleanField(default=False)
     is_pharmacist = models.BooleanField(default=False)
     is_prescriber = models.BooleanField(default=False)
     is_courier = models.BooleanField(default=False)
     is_superintendent = models.BooleanField(default=False)
+    is_facility_admin = models.BooleanField(default=False)
     is_administrator = models.BooleanField(default=False)
+    cadre = models.ForeignKey(Cadres, on_delete=models.CASCADE, null=True,blank=True)
     gender = models.CharField(
         max_length=120, choices=GENDER_CHOICES)
-    role = models.CharField(
-        max_length=120, choices=ROLE_CHOICES, default="client")
     date_of_birth = models.DateField(null=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     is_verified = models.BooleanField(default=False)
-    verification_uuid = models.UUIDField('Unique Verification UUID', default=uuid.uuid4)
-
+    verification_uuid = models.UUIDField(
+        'Unique Verification UUID', default=uuid.uuid4)
 
     class Meta:
         db_table = 'users'
@@ -311,6 +364,12 @@ class User(AbstractUser):
             """
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
+    def get_role(self):
+        """
+        Retrieve user role
+        """
+        return self.role
+
 
 class UserImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -342,6 +401,30 @@ class Account(models.Model):
         return self.owner.email
 
 
+class Allergy(models.Model):
+
+    ALLERGY_CATEGORY = (
+        ("Drug Allergy", "Drug Allergy"),
+        ("Food Allergy", "Food Allergy"),
+        ("Environmental Allergy", "Environmental Allargy"),
+
+    )
+    """ Model for any dependant allergies.
+    This is important for reporting any allergies that a dependant
+    has ever exhibited on drugs, environment e.t.c"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.TextField(max_length=100)
+    description = models.TextField(max_length=100, null=True, blank=True)
+    allergy_category = models.CharField(
+        max_length=100, choices=ALLERGY_CATEGORY)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
 
 class Dependant(models.Model):
     """Dependants under a user account. This include family members and other persons under the account holder's care"""
@@ -359,7 +442,8 @@ class Dependant(models.Model):
     gender = models.CharField(
         max_length=120, choices=GENDER_CHOICES)
     date_of_birth = models.DateField()
-    is_active= models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    allergy = models.ManyToManyField(Allergy)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
@@ -369,22 +453,6 @@ class Dependant(models.Model):
         return f"{self.first_name} {self.first_name} c/o {self.owner.first_name} {self.owner.last_name}"
 
 
-class Allergy(models.Model):
-    """ Model for any dependant allergies.
-    This is important for reporting any allergies that a dependant
-    has ever exhibited on drugs, environment e.t.c"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    dependant = models.ForeignKey(Dependant, on_delete=models.CASCADE)
-    allergy = models.TextField()
-    created = models.DateField(auto_now_add=True)
-    updated = models.DateField(auto_now=True)
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Allergy #: {self.first_name } {self.first_name }"
-
-
 # Create account for each registered user who is not staff and also add user as dependant of the account
 
 
@@ -392,11 +460,9 @@ def user_post_save(sender, instance, signal, *args, **kwargs):
     if not instance.is_verified:
         send_verification_email.delay(instance.pk)
         # Send verification email
-    
-
 
         # Send verification email
-           # Send email
+        # Send email
         # if Site._meta.installed:
         #     current_site = Site.objects.get_current()
         # current_site = get_current_site(request)
@@ -410,8 +476,8 @@ def user_post_save(sender, instance, signal, *args, **kwargs):
         # to_email = instance.email
         # email = EmailMessage(email_subject, message, to=[to_email])
         # email.send()
-     
- 
+
+
 signals.post_save.connect(user_post_save, sender=User)
 
 

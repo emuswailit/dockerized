@@ -45,10 +45,10 @@ class PharmacistPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            if request.user.is_pharmacist:
+            if request.user.get_role()=="PHARMACIST" or request.user.get_role()=="PHARMACEUTICAL-TECHNOLOGIST":
                 return True
             else:
-                raise NotAcceptable("Pharmacists only")
+                raise NotAcceptable("Pharmacists or Pharmaceutical Technologists only")
         else:
             raise NotAcceptable("Pharmacists only")
 
@@ -125,5 +125,35 @@ class FacilitySuperintendentPermission(permissions.BasePermission):
             else:
                 raise NotAcceptable(
                     "Facility superintendent only!")
+        else:
+            raise NotAcceptable("Please log in")
+
+
+class ClinicSuperintendentPermission(permissions.BasePermission):
+    """Facility Superintendent permissions"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            
+            if request.user.is_superintendent and request.user.facility.facility_type=="Clinic":
+                return True
+
+            else:
+                raise NotAcceptable(
+                    "Clinic superintendents only!")
+        else:
+            raise NotAcceptable("Please log in")
+
+class PharmacySuperintendentPermission(permissions.BasePermission):
+    """Facility Superintendent permissions"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            
+            if request.user.is_superintendent and request.user.facility.facility_type=="Pharmacy":
+                return True
+            else:
+                raise NotAcceptable(
+                    "Clinic superintendents only!")
         else:
             raise NotAcceptable("Please log in")

@@ -6,6 +6,26 @@ from users.models import Dependant, Allergy
 from drugs.models import Preparation, Product
 from drugs.serializers import PreparationSerializer
 from users.serializers import AllergySerializer
+from core.serializers import FacilitySafeSerializerMixin
+
+
+#Slots Serializer
+class SlotSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+   
+    class Meta:
+        model = models.Slots
+        fields = ('id', 'url', 'clinic', 'doctor', 'start', 'end',
+                  'is_available', 'created', 'updated')
+
+        read_only_fields = ('id', 'url', 
+                            'created', 'updated')
+
+    def create(self, validated_data):
+         start = validated_data.pop('start')
+         if start:
+             raise serializers.ValidationError("Date is {start}")
+
+
 
 
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
@@ -100,12 +120,3 @@ class DependantSerializer(serializers.HyperlinkedModelSerializer):
         return AllergySerializer(allergy, context=self.context, many=True).data
 
 
-# class DependantSerializer(serializers.HyperlinkedModelSerializer):
-
-#     class Meta:
-#         model = models.Dependant
-#         fields = ('id', 'url', 'account', 'owner', 'first_name', 'middle_name',
-#                   'last_name', 'gender', 'date_of_birth', 'allergy_details', 'created', 'updated')
-
-#         read_only_fields = ('id', 'url', 'account', 'owner',
-#                             'created', 'updated')
