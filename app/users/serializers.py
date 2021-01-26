@@ -3,9 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from core.serializers import FacilitySafeSerializerMixin
 from users.models import FacilityImage
-from entities.models import Pharmacist, Courier, Prescriber
 from users.models import UserImage
-from entities.serializers import PharmacistSerializer, CourierSerializer, PrescriberSerializer
 from subscriptions.serializers import SubscriptionSerializer
 from subscriptions.models import Subscription
 

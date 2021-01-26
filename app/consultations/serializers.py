@@ -7,6 +7,7 @@ from drugs.models import Preparation, Product
 from drugs.serializers import PreparationSerializer
 from users.serializers import AllergySerializer
 from core.serializers import FacilitySafeSerializerMixin
+from datetime import *
 
 
 #Slots Serializer
@@ -14,16 +15,36 @@ class SlotSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
    
     class Meta:
         model = models.Slots
-        fields = ('id', 'url', 'clinic', 'doctor', 'start', 'end',
-                  'is_available', 'created', 'updated')
+        fields = ('id', 'url',  'employee', 'start', 'end',
+                  'is_available','owner', 'created', 'updated')
 
-        read_only_fields = ('id', 'url', 
+        read_only_fields = ('id', 'url', 'owner','is_available',
                             'created', 'updated')
 
     def create(self, validated_data):
          start = validated_data.pop('start')
-         if start:
-             raise serializers.ValidationError("Date is {start}")
+         end = validated_data.pop('end')
+
+         if end.timestamp() <= start.timestamp():
+             raise serializers.ValidationError("End time cannot be earlier that start time")
+
+         if start.timestamp() >= end.timestamp():
+             raise serializers.ValidationError("Start time cannot be later that end time")
+
+         if start and end:
+             
+            if models.Slots.objects.all().count()>0:
+                for slot in models.Slots.objects.all():
+                    if start.timestamp() >= slot.start.timestamp() and end.timestamp() <= slot.end.timestamp():
+                        raise serializers.ValidationError(f"{start.timestamp()} vs {slot.start.timestamp()}Slot is not available")
+                    else:
+                        created =models.Slots.objects.create(start=start,end=end, **validated_data) 
+            else:
+                created =models.Slots.objects.create(start=start,end=end, **validated_data)           
+
+         return created
+                    #  if start_time.timestamp()=>slot.start_time.timestamp() and  end_time.timestamp()=<slot.end_time.timestamp():
+                    #     raise serializers.ValidationError(f"Start at {start_time} <>{slot.start_time} and end {datetime.now()} is impossible")
 
 
 

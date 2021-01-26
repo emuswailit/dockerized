@@ -4,65 +4,77 @@ from users.models import Dependant, Allergy
 from drugs.models import Preparation, Product, Posology, Frequency
 from django.contrib.auth import get_user_model
 from drugs.models import Generic
-# from entities.models import FacilityPrescriber
+from entities.models import Employees
 
 User = get_user_model()
+
 
 class SlotsQuerySet(models.QuerySet):
     def all_slots(self):
         return self.all()
+
     def available_slots(self):
-        return self.filter(is_available=True) 
+        return self.filter(is_available=True)
+
 
 class SlotsManager(models.Manager):
     def get_queryset(self):
         return SlotsQuerySet(self.model, using=self._db)
+
     def all_slots(self):
         return self.get_queryset().all_slots()
+
     def available_slots(self):
         return self.get_queryset().available_slots()
 
+
 class Slots(FacilityRelatedModel):
-    # clinic = models.ForeignKey(Department,related_name="slot_clinic", on_delete=models.CASCADE)
-    # doctor = models.ForeignKey(FacilityPrescriber,related_name="slot_doctor", on_delete=models.CASCADE)
+
+    employee = models.ForeignKey(
+        Employees, related_name="slot_employee", on_delete=models.CASCADE)
     start = models.DateTimeField(default=None)
     end = models.DateTimeField(default=None)
-    is_available=models.BooleanField(default=True)
+    is_available = models.BooleanField(default=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-  
-    objects= SlotsManager()
+
+    objects = SlotsManager()
+
 
 class Appointments(FacilityRelatedModel):
     dependant = models.ForeignKey(
         Dependant, related_name="patient_consultation_dependant", on_delete=models.CASCADE)
-    
-    slot = models.ForeignKey(Slots,related_name="appointment_slot", on_delete=models.CASCADE)
+    slot = models.ForeignKey(
+        Slots, related_name="appointment_slot", on_delete=models.CASCADE)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['slot', 'dependant'], name='One patient per appointment slot')
+            models.UniqueConstraint(
+                fields=['slot', 'dependant'], name='One patient per appointment slot')
         ]
+
 
 class PatientConsultations(FacilityRelatedModel):
 
     COMPLAINT_DURATION_UNIT = (
-        ("Days","Days"),
-        ("Weeks","Weeks"),
-        ("Months","Months"),
-        ("Years","Years"),
+        ("Days", "Days"),
+        ("Weeks", "Weeks"),
+        ("Months", "Months"),
+        ("Years", "Years"),
     )
     appointment = models.ForeignKey(
         Appointments, related_name="patient_consultation_appointment", on_delete=models.CASCADE)
-    
+
     current_complaint = models.TextField()
     complaint_duration_length = models.IntegerField(default=0)
-    complaint_duration_unit = models.CharField(max_length=100,choices=COMPLAINT_DURATION_UNIT)
+    complaint_duration_unit = models.CharField(
+        max_length=100, choices=COMPLAINT_DURATION_UNIT)
     location = models.CharField(max_length=100)
     onset = models.CharField(max_length=300)
     course = models.CharField(max_length=300)
@@ -81,7 +93,6 @@ class PatientConsultations(FacilityRelatedModel):
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-
 
 
 class PrescriptionQuerySet(models.query.QuerySet):
@@ -124,7 +135,8 @@ class PrescriptionManager(models.Manager):
 
 class Prescription(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
-    patient_consultation=models.ForeignKey(PatientConsultations, on_delete=models.CASCADE,null=True,blank=True)
+    patient_consultation = models.ForeignKey(
+        PatientConsultations, on_delete=models.CASCADE, null=True, blank=True)
     dependant = models.ForeignKey(
         Dependant, related_name="prescription_dependant", on_delete=models.CASCADE)
 
@@ -142,19 +154,19 @@ class Prescription(FacilityRelatedModel):
     def get_absolute_url(self):
         return self.product.get_absolute_url()
 
-class PrescriberQuerySet(models.QuerySet):
-    def all_prescribers(self):
-        return self.all()
-    def available_prescribers(self):
-        return self.filter(is_available=True) 
 
-class PrescriberManager(models.Manager):
+class PrescriptionItemQuerySet(models.QuerySet):
+    def all_prescription_items(self):
+        return self.all()
+
+
+
+class PrescriptionItemManager(models.Manager):
     def get_queryset(self):
-        return PrescriberQuerySet(self.model, using=self._db)
-    def all_prescribers(self):
-        return self.get_queryset().all_prescribers()
-    def available_prescribers(self):
-        return self.get_queryset().available_prescribers()
+        return PrescriptionItemQuerySet(self.model, using=self._db)
+
+    def all_prescription_items(self):
+        return self.get_queryset().all_prescription_items()
 
 
 class PrescriptionItem(FacilityRelatedModel):
@@ -176,13 +188,12 @@ class PrescriptionItem(FacilityRelatedModel):
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-    
+
     class Meta:
-        unique_together = ('prescription', 'preparation','product')
+        unique_together = ('prescription', 'preparation', 'product')
 
+    objects = PrescriptionItemManager()
 
-    objects = PrescriptionManager()
-    
     def __str__(self):
         return f"{self.preparation.title} - {self.product.title}"
 

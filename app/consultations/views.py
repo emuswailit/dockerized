@@ -92,7 +92,7 @@ class SlotDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     View details of a given slot id
 
     """
-    name = 'prescription-detail'
+    name = 'slots-detail'
     permission_classes = (
         ClinicSuperintendentPermission,
     )
