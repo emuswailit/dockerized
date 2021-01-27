@@ -43,4 +43,16 @@ urlpatterns = [
     # path('prescription-items/<uuid:pk>/', views.PrescriptionItemUpdate.as_view(),
     #      name=views.PrescriptionItemUpdate.name),
 
+
+    # Appointments urls
+    path('appointments/all', views.AppointmentsList.as_view(),
+         name=views.AllPrescriptionList.name),
+#     path('appointments/dependants/<uuid:pk>', views.DependantPrescriptionsList.as_view(),
+#          name=views.DependantPrescriptionsList.name),
+    path('appointments/create', views.AppointmentsCreate.as_view(),
+         name=views.AppointmentsCreate.name),
+
+    path('appointments/<uuid:pk>', views.AppointmentsDetail.as_view(),
+         name=views.AppointmentsDetail.name),
+
 ]

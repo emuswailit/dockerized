@@ -5,6 +5,10 @@ from drugs.models import Preparation, Product, Posology, Frequency
 from django.contrib.auth import get_user_model
 from drugs.models import Generic
 from entities.models import Employees
+from payments.models import Payment
+from django.db.models import signals
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -43,11 +47,22 @@ class Slots(FacilityRelatedModel):
     objects = SlotsManager()
 
 
+
+
 class Appointments(FacilityRelatedModel):
+    APPOINTMENT_STATUS_CHOICES = (
+        ("PENDING","PENDING"),
+        ("ATTENDED","ATTENDED"),
+        ("ABSCONDED","ABSCONDED"),
+        ("RESCHEDULED","RESCHEDULED"),
+        ("CANCELLED","CANCELLED"),
+    )
+
     dependant = models.ForeignKey(
         Dependant, related_name="patient_consultation_dependant", on_delete=models.CASCADE)
     slot = models.ForeignKey(
         Slots, related_name="appointment_slot", on_delete=models.CASCADE)
+    status = models.CharField(max_length=100, choices=APPOINTMENT_STATUS_CHOICES, default="PENDING")
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
@@ -58,8 +73,18 @@ class Appointments(FacilityRelatedModel):
             models.UniqueConstraint(
                 fields=['slot', 'dependant'], name='One patient per appointment slot')
         ]
+@receiver(post_save, sender=Appointments)
+def create_appointment_payment(sender, instance, created, **kwargs):
+    """
+    Create payment for a booked appointment
+
+    """
+    if created:
+        Payment.objects.create(facility=instance.facility,
+                              narrative=f"Payment : Appointment # {instance}", amount=slot.employee.department.get_total_departmental_charges , owner=instance.owner)
 
 
+ 
 class PatientConsultations(FacilityRelatedModel):
 
     COMPLAINT_DURATION_UNIT = (

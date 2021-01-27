@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/v1/consultations/', include('consultations.urls')),
     path('api/v1/clients/', include('clients.urls')),
     path('api/v1/pharmacies/', include('pharmacies.urls')),
+    path('api/v1/payments/', include('payments.urls')),
     path('admin/', admin.site.urls),
     url(r'^verify/(?P<uuid>[a-z0-9\-]+)/', verify, name='verify'),
 ]

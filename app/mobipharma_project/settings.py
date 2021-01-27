@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'frontend',
     'users',
+    'payments',
     'subscriptions',
     'entities',
     'celery',

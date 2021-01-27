@@ -10,6 +10,7 @@ from django.dispatch import receiver
 User = get_user_model()
 from rest_framework.exceptions import ValidationError
 from users.models import Facility
+
 # Create your models here.
 
 
@@ -65,23 +66,15 @@ class QuoteItem(FacilityRelatedModel):
 
 
 class Order(FacilityRelatedModel):
+
+    #TODO : Create payment for the order using a post save signal
     """Model for prescriptions raised for dependants"""
-    PAYMENT_METHOD_CHOICES =(
-        ("CASH","CASH"),
-        ("MPESA","MPESA"),
-        ("AIRTEL MONEY","AIRTEL MONEY"),
-        ("EQUITEL","EQUITEL"),
-        ("JAMBOPAY WALLET","JAMBOPAY WALLET"),
-        ("VISA","VISA"),
-    )
     facility = models.ForeignKey(
         Facility, related_name="cart_facility", on_delete=models.CASCADE)
     prescription_quote = models.ForeignKey(
         PrescriptionQuote, related_name="cart_prescription_quote", on_delete=models.CASCADE)
     # items = models.ManyToManyField(OrderItem)
     is_confirmed = models.BooleanField(default=False)
-    payment_method= models.CharField(
-        max_length=120, choices=PAYMENT_METHOD_CHOICES)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
@@ -117,36 +110,36 @@ class OrderItem(FacilityRelatedModel):
         ]
   
 
-class Payment(FacilityRelatedModel):
-    """Model for prescriptions raised for dependants"""
+# class Payment(FacilityRelatedModel):
+#     """Model for prescriptions raised for dependants"""
 
-    PAYMENT_STATUS_CHOICES =(
-        ("PENDING","PENDING"),
-        ("SUCCESS","SUCCESS"),
-        ("FAILED","FAILED"),
-    )
-    facility = models.ForeignKey(
-        Facility, related_name="payment_facility", on_delete=models.CASCADE)
-    order = models.ForeignKey(
-        Order, related_name="payment_order",  on_delete=models.CASCADE)
-    reference= models.CharField(
-        max_length=120, null=True,blank=True)
-    status= models.CharField(
-        max_length=120, choices=PAYMENT_STATUS_CHOICES)
-    created = models.DateField(auto_now_add=True)
-    updated = models.DateField(auto_now=True)
-    owner = models.ForeignKey(
-        User, related_name="payment_owner", on_delete=models.CASCADE)
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['facility', 'order'], name='One payment per facility per order')
-        ]
+#     PAYMENT_STATUS_CHOICES =(
+#         ("PENDING","PENDING"),
+#         ("SUCCESS","SUCCESS"),
+#         ("FAILED","FAILED"),
+#     )
+#     facility = models.ForeignKey(
+#         Facility, related_name="payment_facility", on_delete=models.CASCADE)
+#     order = models.ForeignKey(
+#         Order, related_name="payment_order",  on_delete=models.CASCADE)
+#     reference= models.CharField(
+#         max_length=120, null=True,blank=True)
+#     status= models.CharField(
+#         max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+#     created = models.DateField(auto_now_add=True)
+#     updated = models.DateField(auto_now=True)
+#     owner = models.ForeignKey(
+#         User, related_name="payment_owner", on_delete=models.CASCADE)
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(fields=['facility', 'order'], name='One payment per facility per order')
+#         ]
 
-    def get_payment_method(self):
-        return self.order.payment_method
+#     def get_payment_method(self):
+#         return self.order.payment_method
 
-    def get_amount(self):
-        return self.order.get_total_price()
+#     def get_amount(self):
+#         return self.order.get_total_price()
 
 
 

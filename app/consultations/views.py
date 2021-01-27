@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from users.models import Dependant
 from . import models, serializers
 
+
 # Slots Views
 
 
@@ -427,3 +428,67 @@ class PrescriptionItemUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     #     facility_id = self.request.user.facility_id
     #     return super().get_queryset().filter(facility_id=facility_id)
 
+class AppointmentsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+
+    # TODO : Test this view later
+    """
+   Clinic Superintendent
+    ============================================================
+    Create an appointment
+
+    """
+    name = 'appointment-create'
+    permission_classes = (
+        ClinicSuperintendentPermission,
+    )
+    serializer_class = serializers.AppointmentsSerializer
+    queryset = models.Appointments.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        facility = self.request.user.facility
+        # dependant_pk = self.kwargs.get("pk")
+        serializer.save(owner=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Appointment succesfully created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+class AppointmentsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all appointments
+
+    """
+    name = 'appointments-list'
+    permission_classes = (
+        ClinicSuperintendentPermission,
+    )
+    serializer_class = serializers.AppointmentsSerializer
+    queryset = models.Appointments.objects.all()
+
+    # search_fields = ('dependant__id', 'dependant__middle_name',
+    #                  'dependant__last_name', 'dependant__first_name',)
+    # ordering_fields = ('dependant__first_name', 'id')
+
+class AppointmentsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointments-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.AppointmentsSerializer
+    queryset = models.Appointments.objects.all()

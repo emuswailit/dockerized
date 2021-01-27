@@ -29,7 +29,7 @@ class ForwardPrescription(FacilityRelatedModel):
     status = models.CharField(
         max_length=100, choices=PRESCRIPTION_STATUS_CHOICES, default="Forwarded")
     created = models.DateField(auto_now_add=True)
-    updated = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
@@ -50,3 +50,4 @@ def forward_prescription_pre_save_receiver(sender, instance, *args, **kwargs):
 
 pre_save.connect(forward_prescription_pre_save_receiver,
                  sender=ForwardPrescription)
+

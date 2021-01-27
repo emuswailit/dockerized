@@ -34,6 +34,11 @@ User = get_user_model()
 #         return self.title
 
 
+
+
+    
+
+
 def professional_certificate_upload_to(instance, filename):
     email = instance.owner.email
     slug = slugify(email)
@@ -227,6 +232,34 @@ class Department(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
+    
+
+class DepartmentalCharges(FacilityRelatedModel):
+    
+    """
+    Model for all clinic charges where consultation fee and other charges can be set
+    """
+    department = models.OneToOneField(Department, on_delete=models.CASCADE)
+    consultation_fee = models.DecimalField(
+        max_digits=9, default=0.00, decimal_places=2)
+    other_charges = models.DecimalField(
+        max_digits=9, default=0.00, decimal_places=2)
+    
+    owner = models.ForeignKey(
+        User, related_name='departmental_charges_owner', on_delete=models.CASCADE)
+
+    def get_total_departmental_charges(self):
+        return self.consultation_fee + self.other_charges 
+
+# Create a departmental charges model immediately a department is created
+
+
+@receiver(post_save, sender=Department)
+def create_departmental_charges(sender, instance, created, **kwargs):
+    if created:
+        DepartmentalCharges.objects.create(facility=instance.facility,
+                              department=instance, owner=instance.owner)
+
 
 
 class Employees(FacilityRelatedModel):
