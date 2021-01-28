@@ -15,7 +15,7 @@ class PaymentMethodSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.PaymentMethods
-        fields = "__all__"
+        fields = ('id','url','facility','title','description','is_active','owner')
         read_only_fields = (
-            'owner',
+            'owner','facility',
         )

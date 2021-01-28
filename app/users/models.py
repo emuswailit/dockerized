@@ -41,6 +41,10 @@ def facility_image_upload_to(instance, filename):
     return new_filename
 
 
+
+
+
+
 class FacilityQuerySet(models.QuerySet):
     def all_facilities(self):
         return self.all()
@@ -114,8 +118,8 @@ class FacilityManager(models.Manager):
             facility=facility,
             password=password,
             is_administrator=True,
-            # is_superintendent=True  # Set the user as superintendent of facility
-            # confirm_password=confirm_password
+            is_superintendent=True  # Set the owner as superintendent of facility
+           
 
         )
 
@@ -155,6 +159,7 @@ class Facility(models.Model):
     is_subscribed = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    trial_done = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -179,9 +184,13 @@ class Facility(models.Model):
         current_date=datetime.date.today()
     ):
         if self.paid_until is None:
+            self.is_subscribed=False
             return False
 
         return current_date < self.paid_until
+
+    def get_is_subscribed(self):
+        return self.is_subscribed
 
 
 class FacilityImage(models.Model):

@@ -859,3 +859,5 @@ class CadresDetail(generics.RetrieveAPIView):
     )
     serializer_class = serializers.CadresSerializer
     queryset = models.Cadres.objects.all()
+
+

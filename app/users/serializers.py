@@ -36,8 +36,8 @@ class FacilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Facility
         fields = ('id','url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'created', 'updated',)
-        read_only_fields = ('is_verified','is_subscribed')
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed','trial_done', 'created', 'updated',)
+        read_only_fields = ('is_verified','trial_done','is_subscribed')
     title = serializers.CharField(
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
@@ -73,12 +73,6 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         read_only=True)
     facility_details = serializers.SerializerMethodField(
         read_only=True)
-    pharmacist_details = serializers.SerializerMethodField(
-        read_only=True)
-    prescriber_details = serializers.SerializerMethodField(
-        read_only=True)
-    courier_details = serializers.SerializerMethodField(
-        read_only=True)
     user_image = serializers.SerializerMethodField(
         read_only=True)
     password = serializers.CharField(
@@ -106,6 +100,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'user_image',
             'is_staff',
             'is_active',
+            'is_administrator',
             'is_pharmacist',
             'is_prescriber',
             'is_superintendent',
@@ -116,17 +111,14 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'subscription_details',
             'facility_details',
             'account_details',
-            'courier_details',
-            'pharmacist_details',
-            'prescriber_details',
-
+            
 
 
             # 'portfolio_details',
         )
 
         read_only_fields = ('is_staff', 'is_active',  'is_pharmacist',
-                            'is_prescriber', 'is_superintendent','cadre',
+                            'is_prescriber', 'is_superintendent','is_administrator','cadre',
                             'is_client', 'is_courier',)
         # Make sure that the password field is never sent back to the client.
         # Make sure that the password field is never sent back to the client.
@@ -187,17 +179,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         account = models.Account.objects.get(owner=obj)
         return AccountSerializer(account, context=self.context).data
 
-    def get_pharmacist_details(self, obj):
-        pharmacist = Pharmacist.objects.filter(owner=obj)
-        return PharmacistSerializer(pharmacist, context=self.context, many=True).data
 
-    def get_prescriber_details(self, obj):
-        prescriber = Prescriber.objects.filter(owner=obj)
-        return PrescriberSerializer(prescriber, context=self.context, many=True).data
-
-    def get_courier_details(self, obj):
-        courier = Courier.objects.filter(owner=obj)
-        return CourierSerializer(courier, context=self.context, many=True).data
     
     def get_user_image(self, obj):
         user_image = UserImage.objects.filter(owner=obj)
@@ -326,108 +308,4 @@ class CadresSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'owner', 'created','updated'
         )
-
-# class PharmacistPhotoSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = PharmacistPhoto
-#         fields = "__all__"
-#         read_only_fields = ('owner', 'pharmacist')
-
-
-# class PharmacistSerializer(serializers.HyperlinkedModelSerializer):
-#     class Meta:
-#         model = Pharmacist
-#         fields = "__all__"
-
-#         read_only_fields = ('id', 'url', 'cadre',  'is_available',
-#                             'is_active', 'is_verified', 'owner', 'created', 'updated', )
-
-# class PharmacistSerializer(serializers.ModelSerializer):
-#     pharmacist_photo_details = serializers.SerializerMethodField(
-#         read_only=True)
-
-#     class Meta:
-#         model = Pharmacist
-#         fields = ('id', 'url', 'cadre', 'certificate', 'board_number', 'is_available',
-#                   'is_active', 'is_verified', 'owner', 'pharmacist_photo_details', 'created', 'updated', )
-
-#         read_only_fields = ('id', 'url',  'is_available',
-#                             'is_active', 'is_verified', 'owner', 'created', 'pharmacist_photo_details', 'updated', )
-
-#     def get_pharmacist_photo_details(self, obj):
-#         photo = PharmacistPhoto.objects.filter(pharmacist=obj)
-#         return PharmacistPhotoSerializer(photo, context=self.context, many=True).data
-
-
-# class PharmacistVerifySerializer(serializers.ModelSerializer):
-#     """Serializer for setting pharmacist to is verified after due diligence and KYC"""
-#     class Meta:
-#         model = Pharmacist
-#         fields = ('is_verified',)
-
-
-# class PrescriberPhotoSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = PrescriberPhoto
-#         fields = "__all__"
-#         read_only_fields = ('owner', 'prescriber')
-
-
-# class PrescriberSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Prescriber
-#         fields = ('id', 'url', 'cadre', 'certificate', 'board_number', 'is_available',
-#                   'is_active', 'is_verified', 'owner', 'created', 'updated', )
-
-#         read_only_fields = ('id', 'url', 'cadre',  'is_available',
-#                             'is_active', 'is_verified', 'owner', 'created', 'updated', )
-
-
-# class CourierPhotoSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = CourierPhoto
-#         fields = "__all__"
-#         # fields = (
-#         #     'id',
-#         #     'url',
-#         #     'courier',
-#         #     'certificate',
-#         #     'owner',
-#         #     'created',
-#         #     'updated'
-#         # )
-
-#         read_only_fields = (
-#             'id',
-#             'url',
-#             'owner',
-#             'courier',
-#             'created',
-#             'updated'
-#         )
-
-
-# class CourierSerializer(serializers.ModelSerializer):
-#     owner_details = serializers.SerializerMethodField(
-#         read_only=True)
-#     courier_certificate_details = serializers.SerializerMethodField(
-#         read_only=True)
-
-#     class Meta:
-#         model = Courier
-#         # fields = "__all__"
-#         fields = ('id', 'url', 'vehicle', 'vehicle_number', 'permit_number', 'is_available', 'is_verified', 'owner_details',
-#                   'courier_certificate_details', 'created', 'updated')
-
-#         read_only_fields = ('id', 'url', 'user',
-#                             'is_available', 'is_verified', 'owner', 'created', 'updated')
-
-#     def get_owner_details(self, obj):
-#         owner = User.objects.get(id=obj.owner.id)
-#         return UserSerializer(owner, context=self.context).data
-
-#     def get_courier_certificate_details(self, obj):
-#         cerificate = CourierPhoto.objects.filter(courier=obj)
-#         return CourierPhotoSerializer(cerificate, context=self.context, many=True).data
-
 

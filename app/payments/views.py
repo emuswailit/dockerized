@@ -1,13 +1,17 @@
 from django.shortcuts import render
 from . import serializers, models
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions,status
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 # # PaymentMethods
 class PaymentMethodCreateAPIView(generics.CreateAPIView):
     """
-    Create new payment
+    Admin
+    ---------------------------------------------
+    Create new payment method
     """
-    name = "paymentmethod-create"
+    name = "paymentmethods-create"
     permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.PaymentMethodSerializer
@@ -16,7 +20,7 @@ class PaymentMethodCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
 
-        serializer.save(owner=user,)
+        serializer.save(owner=user,facility=user.facility)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -37,9 +41,11 @@ class PaymentMethodCreateAPIView(generics.CreateAPIView):
 
 class PaymentMethodListAPIView(generics.ListAPIView):
     """
-    PaymentMethods list
+    Authenticated user
+    -------------------------------------------
+    View listing of payment methods
     """
-    name = "paymentmethod-list"
+    name = "paymentmethods-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.PaymentMethodSerializer
@@ -70,9 +76,11 @@ class PaymentMethodListAPIView(generics.ListAPIView):
 
 class PaymentMethodDetailAPIView(generics.RetrieveAPIView):
     """
-    PaymentMethod details
+    Authenticated user
+    ----------------------------------------
+    View details of a payment method
     """
-    name = "paymentmethod-detail"
+    name = "paymentmethods-detail"
     permission_classes = (permissions.AllowAny,
                           )
     serializer_class = serializers.PaymentMethodSerializer
@@ -92,9 +100,11 @@ class PaymentMethodDetailAPIView(generics.RetrieveAPIView):
 
 class PaymentMethodUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    PaymentMethod update
+    Admin
+    ------------------------------
+    Update payment method details
     """
-    name = "paymentmethod-update"
+    name = "paymentmethods-update"
     permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.PaymentMethodSerializer
@@ -142,6 +152,37 @@ class PaymentCreateAPIView(generics.CreateAPIView):
 
             return Response(data={"message": "Payment not created", "payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
+
+# # Payments
+class PaymentCreateAPIView(generics.CreateAPIView):
+    """
+    Create new payment
+    """
+    name = "payment-create"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.PaymentSerializer
+    queryset = models.Payment.objects.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(owner=user, facility_id=user.facility.id)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Payment created successfully.", "payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Payment not created", "payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 class PaymentListAPIView(generics.ListAPIView):
     """

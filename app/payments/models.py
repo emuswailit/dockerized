@@ -11,29 +11,32 @@ class PaymentMethods(FacilityRelatedModel):
     """
     Model for all payment methods
     """
-    title =models.CharField(max_length=120)
+    title =models.CharField(max_length=120, unique=True)
     description =models.TextField()
+    is_active=models.BooleanField(default=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.title
+
 class Payment(FacilityRelatedModel):
-    """Model for prescriptions raised for dependants"""
+    """Model for payments made to facility"""
 
     PAYMENT_STATUS_CHOICES =(
         ("PENDING","PENDING"),
         ("SUCCESS","SUCCESS"),
         ("FAILED","FAILED"),
     )
-    
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     payment_method = models.ForeignKey(
         PaymentMethods, related_name="payment_payment_method",  on_delete=models.CASCADE)
-    narrative = models.CharField(max_length=300)
+    narrative = models.CharField(max_length=300, null=False, blank=False)
     reference= models.CharField(
-        max_length=120, null=True,blank=True)
+        max_length=120,null=False,blank=False)
     status= models.CharField(
         max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
     created = models.DateField(auto_now_add=True)
