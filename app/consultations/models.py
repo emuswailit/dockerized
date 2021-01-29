@@ -4,14 +4,14 @@ from users.models import Dependant, Allergy
 from drugs.models import Preparation, Product, Posology, Frequency
 from django.contrib.auth import get_user_model
 from drugs.models import Generic
-from entities.models import Employees
+from entities.models import Employees, Department
 from payments.models import Payment
 from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from payments.models import PaymentMethods
 
 User = get_user_model()
-
 
 class SlotsQuerySet(models.QuerySet):
     def all_slots(self):
@@ -33,6 +33,11 @@ class SlotsManager(models.Manager):
 
 
 class Slots(FacilityRelatedModel):
+    """
+    Model for appointment slots
+    -Slots must be created prior by a doctor(employee)
+    -Users will only see available slots and pay to reserve them
+    """
 
     employee = models.ForeignKey(
         Employees, related_name="slot_employee", on_delete=models.CASCADE)
@@ -44,45 +49,66 @@ class Slots(FacilityRelatedModel):
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return f"From {self.start} to {self.end}"
+
     objects = SlotsManager()
 
 
+class AppointmentPayments(FacilityRelatedModel):
+    
+    """
+    -Model for a appointment payment
 
+    -Create an appointment only after this payment is saved
+    """
+    PAYMENT_STATUS_CHOICES =(
+        ("PENDING","PENDING"),
+        ("SUCCESS","SUCCESS"),
+        ("FAILED","FAILED"),
+    )
+    dependant = models.ForeignKey(
+        Dependant, related_name="appointment_dependant", on_delete=models.CASCADE)
+    slot = models.ForeignKey(Slots, on_delete=models.CASCADE)
+    payment_method = models.ForeignKey(PaymentMethods, on_delete=models.CASCADE)
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    narrative = models.CharField(max_length=300, null=False, blank=False)
+    reference= models.CharField(
+        max_length=120,null=False,blank=False)
+    status= models.CharField(
+        max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+    appointment_created = models.BooleanField(default=False)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.facility.title
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[
+                                    'facility', 'dependant','slot'], name='One payment per appointment')
+        ]
 
 class Appointments(FacilityRelatedModel):
     APPOINTMENT_STATUS_CHOICES = (
-        ("PENDING","PENDING"),
+        ("SCHEDULED","SCHEDULED"),
         ("ATTENDED","ATTENDED"),
         ("ABSCONDED","ABSCONDED"),
         ("RESCHEDULED","RESCHEDULED"),
         ("CANCELLED","CANCELLED"),
     )
 
-    dependant = models.ForeignKey(
-        Dependant, related_name="patient_consultation_dependant", on_delete=models.CASCADE)
-    slot = models.ForeignKey(
-        Slots, related_name="appointment_slot", on_delete=models.CASCADE)
+    appointment_payment = models.OneToOneField(
+        AppointmentPayments, related_name="appointment_slot", on_delete=models.CASCADE)
     status = models.CharField(max_length=100, choices=APPOINTMENT_STATUS_CHOICES, default="PENDING")
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['slot', 'dependant'], name='One patient per appointment slot')
-        ]
-@receiver(post_save, sender=Appointments)
-def create_appointment_payment(sender, instance, created, **kwargs):
-    """
-    Create payment for a booked appointment
-
-    """
-    if created:
-        Payment.objects.create(facility=instance.facility,
-                              narrative=f"Payment : Appointment # {instance}", amount=slot.employee.department.get_total_departmental_charges , owner=instance.owner)
-
 
  
 class PatientConsultations(FacilityRelatedModel):

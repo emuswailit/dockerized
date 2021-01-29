@@ -92,7 +92,7 @@ class ProfessionalProfile(FacilitySafeViewMixin, generics.ListAPIView):
         return super().get_queryset().filter(user=user)
 
 
-class AllProfessionalsList(FacilitySafeViewMixin, generics.ListAPIView):
+class AllProfessionalsList(generics.ListAPIView):
     """
     Admin User
     ============================================================
@@ -101,7 +101,7 @@ class AllProfessionalsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'professionals-list'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        permissions.IsAdminUser,
     )
     serializer_class = serializers.ProfessionalSerializer
     queryset = models.Professionals.objects.all_professionals()
@@ -110,7 +110,7 @@ class AllProfessionalsList(FacilitySafeViewMixin, generics.ListAPIView):
     # ordering_fields =('dependant__first_name', 'id')
 
 
-class AvailableProfessionalsList(FacilitySafeViewMixin, generics.ListAPIView):
+class AvailableProfessionalsList(generics.ListAPIView):
     """
     Clients
     ============================================================
@@ -125,7 +125,7 @@ class AvailableProfessionalsList(FacilitySafeViewMixin, generics.ListAPIView):
     queryset = models.Professionals.objects.available_professionals()
 
 
-class ProfessionalDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+class ProfessionalDetail(generics.RetrieveAPIView):
     """
 
 
@@ -196,16 +196,10 @@ class DepartmentCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     queryset = models.Department.objects.all()
 
     def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
 
-        try:
-            user = self.request.user
-
-            serializer.save(owner=user, facility=user.facility)
-
-        except IntegrityError as e:
-            raise exceptions.NotAcceptable(
-                {"detail": ["Facility clinic item must be to be unique. Similar item is already added!", ]})
-
+     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         # print(request.data['facility'])

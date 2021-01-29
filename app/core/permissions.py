@@ -24,10 +24,22 @@ class ClinicSuperintendentPermission(permissions.BasePermission):
             return request.user.is_prescriber and request.user.is_superintendent
         else:
             raise NotAcceptable("Med Sups only")
+class SubscribedOrStaffPermission(permissions.BasePermission):
+    """Subscribed or Staff permissions"""
 
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            print(request.user.facility.is_subscribed)
 
+            if request.user.facility.is_subscribed or request.user.is_staff:
+                return True
+            else:
+                raise NotAcceptable(
+                    {"response_code":1, "response_message":"You are not authorized to view this content: admins or subscribed users only" })
+
+ 
 class IsSubscribedPermission(permissions.BasePermission):
-    """Pharmacist permissions"""
+    """Subscribed Only permissions"""
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:

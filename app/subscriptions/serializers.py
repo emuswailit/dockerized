@@ -93,6 +93,7 @@ class SubscriptionPaymentsSerializer(serializers.HyperlinkedModelSerializer):
                     #Facility no longer eligible for trial
                     if user.facility.trial_done == False:
                         user.facility.trial_done=True
+                        user.facility.is_subscribed=True
                         user.facility.save()
                     subscription_payment.subscription_created=True
                     subscription_payment.save()

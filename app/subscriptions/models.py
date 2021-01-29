@@ -34,8 +34,11 @@ class Plan(FacilityRelatedModel):
         return self.title
 
 class SubscriptionPayments(FacilityRelatedModel):
+    
     """
-    Model for a subscription payment
+    -Model for a subscription payment
+
+    -Create a subscription only after this payment is saved
     """
     PAYMENT_STATUS_CHOICES =(
         ("PENDING","PENDING"),
@@ -64,7 +67,7 @@ class SubscriptionPayments(FacilityRelatedModel):
 
 class Subscription(FacilityRelatedModel):
     """
-    To be created upon succesfull payment
+    To be created upon succesfull subscription payment
     """
     subscription_payment = models.OneToOneField(SubscriptionPayments, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False) #TODO: Update this variable every hour using scheduled tasks in celery
@@ -78,46 +81,5 @@ class Subscription(FacilityRelatedModel):
     def __str__(self):
         return self.facility.title
 
-
-# @receiver(post_save, sender=Payment, dispatch_uid="create_subscription_after_payment")
-# def create_subscription(sender, instance, created, **kwargs):
-#     """Create subscription after succesfful payment"""
-#     if created:
-#         start_date = None
-#         # Retrieve facility current subscription due date
-#         paid_until = instance.facility.paid_until
-#         print("Paid Until")
-#         print(paid_until)
-
-#         if paid_until is None:
-#             # No subscription due date, set today as start date
-#             start_date = date.today()
-#         else:
-#             # Set start date as date for expiry of current subscription
-#             start_date = paid_until
-
-#         print("Start date")
-#         print(start_date)
-
-#         # Calculate days paid for from plan subscribed for
-#         days = None
-#         if instance.plan.title == 'Monthly':
-#             days = 30
-#         elif instance.plan.title == 'Yearly':
-#             days = 366
-#         elif instance.plan.title == 'Trial':
-#             days = 30
-
-#         print("days")
-#         print(days)
-#         # Create then save subscription
-#         subscription = Subscription.objects.create(
-#             owner=instance.owner, facility_id=instance.facility_id, payment=instance, is_active=True, initiated_on=start_date, terminated_on=start_date + timedelta(days=days))
-#         subscription.save()
-
-#         # Update facility subscription status
-
-#         if subscription:
-#             instance.facility.set_paid_until(days)
-#             instance.facility.is_subscribed = True
-#             instance.facility.save()
+    def get_subscription_status(self):
+        return self.is_active

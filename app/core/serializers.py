@@ -23,20 +23,20 @@ class FacilitySafeSerializerMixin(object):
 
 
 
-class EnterprisesSafeRelatedField(serializers.HyperlinkedRelatedField):
+class OwnerSafeRelatedField(serializers.HyperlinkedRelatedField):
     """
-    Ensures that the queryset only returns values for the facility
+    Ensures that the queryset only returns values for the user
     """
 
     def get_queryset(self):
 
         request = self.context['request']
         if request.user.is_authenticated:
-            return super().get_queryset().filter(title="Mobipharma")
+            return super().get_queryset().filter(owner=user)
 
 
-class EnterprisesSafeSerializerMixin(object):
+class OwnerSafeSerializerMixin(object):
     """
     Mixin to be used with HyperlinkedModelSerializer to ensure that only facility values are returned
     """
-    serializer_related_field = EnterprisesSafeRelatedField
+    serializer_related_field = OwnerSafeRelatedField

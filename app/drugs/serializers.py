@@ -164,8 +164,10 @@ class GenericSerializer(serializers.ModelSerializer):
             )]
     )
 
+    
     class Meta:
         model = models.Generic
+        extra_kwargs = {'response_message': "Request successful"}
         fields = ('id', 'url', 'title', 'description', 'drug_class', 'drug_sub_class', 'drug_class_details', 'drug_sub_class_details',  'owner',
                   'created', 'updated',)
 

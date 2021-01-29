@@ -234,48 +234,7 @@ class SubscriptionPaymentsUpdate(generics.RetrieveUpdateAPIView):
 
 
 
-# # Subscriptions
-
-
-class SubscriptionCreateAPIView(generics.CreateAPIView):
-    """
-    Create new plan
-    """
-    name = "plan-create"
-    permission_classes = (FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.SubscriptionSerializer
-    queryset = models.Subscription.objects.all()
-    def get_serializer_context(self):
-        user_pk = self.request.user.id
-        context = super(SubscriptionCreateAPIView, self).get_serializer_context()
-
-        context.update({
-            "user_pk": user_pk
-
-        })
-        return context
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(owner=user,facility=user.facility)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Subscription created successfully.", "subscription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
-
-            return Response(data={"message": "Subscription not created", "subscription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
+# # Subscriptions : no create view because it is created automatically
 
 class SubscriptionListAPIView(generics.ListAPIView):
     """

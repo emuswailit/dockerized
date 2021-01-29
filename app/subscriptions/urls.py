@@ -16,11 +16,9 @@ urlpatterns = [
 
 
     # Subscriptions methods
-    path('subscriptions/create', views.SubscriptionCreateAPIView.as_view(),
-         name=views.SubscriptionCreateAPIView.name),
+   
     path('subscriptions/', views.SubscriptionListAPIView.as_view(),
          name=views.SubscriptionListAPIView.name),
-
     path('subscriptions/<uuid:pk>/', views.SubscriptionDetailAPIView.as_view(),
          name=views.SubscriptionDetailAPIView.name),
     path('subscriptions/<uuid:pk>/update', views.SubscriptionUpdateAPIView.as_view(),

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_countries.serializers import CountryFieldMixin
 from rest_framework.filters import SearchFilter, OrderingFilter
+from core.permissions import IsSubscribedPermission,SubscribedOrStaffPermission
 
 
 # Distributors
@@ -734,7 +735,7 @@ class GenericListAPIView(generics.ListAPIView):
     List of generic drugs
     """
     name = "generic-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (SubscribedOrStaffPermission,
                           )
     serializer_class = serializers.GenericSerializer
 

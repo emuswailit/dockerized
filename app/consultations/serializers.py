@@ -6,8 +6,13 @@ from users.models import Dependant, Allergy
 from drugs.models import Preparation, Product
 from drugs.serializers import PreparationSerializer
 from users.serializers import AllergySerializer
-from core.serializers import FacilitySafeSerializerMixin
+from core.serializers import FacilitySafeSerializerMixin, OwnerSafeSerializerMixin
 from datetime import *
+from django.db import transaction
+from django.contrib.auth import get_user_model
+from entities.models import DepartmentalCharges
+
+User = get_user_model()
 
 
 class SlotSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
@@ -32,11 +37,11 @@ Create slot after validating if time in betweeen in not taken
 
         if end.timestamp() <= start.timestamp():
             raise serializers.ValidationError(
-                    "End time cannot be earlier that start time")
+                "End time cannot be earlier that start time")
 
         if start.timestamp() >= end.timestamp():
-                raise serializers.ValidationError(
-                    "Start time cannot be later that end time")
+            raise serializers.ValidationError(
+                "Start time cannot be later that end time")
 
         if start and end:
 
@@ -46,11 +51,82 @@ Create slot after validating if time in betweeen in not taken
                         raise serializers.ValidationError(
                             f"Slot is not available")
                     else:
-                        created = models.Slots.objects.create(start=start, end=end, **validated_data)
+                        created = models.Slots.objects.create(
+                            start=start, end=end, **validated_data)
             else:
-                created = models.Slots.objects.create(start=start, end=end, **validated_data)
+                created = models.Slots.objects.create(
+                    start=start, end=end, **validated_data)
 
         return created
+
+
+class AppointmentPaymentsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.AppointmentPayments
+        fields = ('id', 'url', 'facility', 'dependant', 'slot', 'payment_method',
+                  'amount', 'narrative', 'status', 'appointment_created', 'created', 'updated')
+        read_only_fields = (
+            'owner', 'facility', 'id', 'amount', 'narrative', 'status', 'subscription_created', 'appointment_created',
+        )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user_pk = self.context.get("user_pk")
+        user = User.objects.get(id=user_pk)
+        slot = validated_data.pop('slot')
+        dependant = validated_data.pop('dependant')
+        if dependant and slot and user:
+            # Facility has already done a trial plan
+            if dependant.owner != user:
+                raise serializers.ValidationError(
+                    {"response_code":"1", "response_message": f"Selected dependant is not in your list"})
+
+            appointment_payment = None
+            today_payment = None
+
+            if models.AppointmentPayments.objects.filter(
+                    created__gt=datetime.today(), appointment_created=False).count() > 0:
+                today_payment = models.AppointmentPayments.objects.get(
+                    created__gt=datetime.today(), appointment_created=False)
+            if today_payment:
+                appointment_payment = today_payment
+            else:
+                if DepartmentalCharges.objects.filter(department=slot.employee.department).count() > 0:
+                    departmental_charges = DepartmentalCharges.objects.get(
+                        department=slot.employee.department)
+
+                    new_appointment_payment = models.AppointmentPayments.objects.create(
+                        dependant=dependant,
+                        slot=slot,
+                        amount=departmental_charges.get_total_departmental_charges(), 
+                        narrative="Clinic charges", reference="fgvvvxdvfsgcg", **validated_data)
+                    if new_appointment_payment:
+                        appointment_payment = new_appointment_payment
+                    else:
+                        raise serializers.ValidationError(
+                            "Appointment payment could not be created")
+                    if appointment_payment:
+
+                        created = models.Appointments.objects.create(
+                            facility=user.facility,
+                            owner=user,
+                            appointment_payment=appointment_payment,
+                            status="SCHEDULED")
+
+                        if created:
+                            # Mark slot as created
+                            slot.is_available = False
+                            slot.save()
+
+                            appointment_payment.appointment_created = True
+                            appointment_payment.save()
+
+                else:
+                    raise serializers.ValidationError(
+                        f"Required data was not retrieved")
+        return appointment_payment
+
 
 class AppointmentsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     """
@@ -62,11 +138,8 @@ class AppointmentsSerializer(FacilitySafeSerializerMixin, serializers.Hyperlinke
         fields = ('id', 'url',  'facility', 'dependant', 'slot',
                   'status', 'owner', 'created', 'updated')
 
-        read_only_fields = ('id', 'url','facility', 'owner', 'status',
+        read_only_fields = ('id', 'url', 'facility', 'owner', 'status',
                             'created', 'updated')
-
-
-
 
 
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
@@ -76,7 +149,7 @@ class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.PrescriptionItem
         fields = (
-            'id', 'url', 'facility', 'prescription','preparation','product','frequency','posology','instruction','duration','owner','preparation_details'
+            'id', 'url', 'facility', 'prescription', 'preparation', 'product', 'frequency', 'posology', 'instruction', 'duration', 'owner', 'preparation_details'
         )
         read_only_fields = (
             'created', 'updated', 'owner', 'facility', 'prescription'
@@ -115,7 +188,8 @@ class PrescriptionSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Prescription
-        fields = ('id', 'url', 'dependant', 'comment','owner','prescription_item_details','is_signed')
+        fields = ('id', 'url', 'dependant', 'comment', 'owner',
+                  'prescription_item_details', 'is_signed')
         read_only_fields = (
             'created', 'updated', 'owner', 'facility', 'is_signed'
         )
@@ -132,8 +206,10 @@ class PrescriptionUpdateSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Prescription
-        fields = ('id', 'url', 'dependant', 'comment','owner','prescription_item_details')
-        read_only_fields = ('id', 'url', 'dependant', 'comment','owner','prescription_item_details')
+        fields = ('id', 'url', 'dependant', 'comment',
+                  'owner', 'prescription_item_details')
+        read_only_fields = ('id', 'url', 'dependant', 'comment',
+                            'owner', 'prescription_item_details')
 
     def get_prescription_item_details(self, obj):
         prescription_item = models.PrescriptionItem.objects.filter(
@@ -141,7 +217,7 @@ class PrescriptionUpdateSerializer(serializers.HyperlinkedModelSerializer):
         return PrescriptionItemSerializer(prescription_item, context=self.context, many=True).data
 
 
-class DependantSerializer(serializers.HyperlinkedModelSerializer):
+class DependantSerializer(OwnerSafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     allergy_details = serializers.SerializerMethodField(
         read_only=True)
 

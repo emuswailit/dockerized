@@ -230,6 +230,12 @@ class Department(FacilityRelatedModel):
 
     objects = DepartmentManager()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[
+                                    'facility', 'title'], name='Unique department title in each facility')
+        ]
+ 
     def __str__(self):
         return self.title
     
@@ -269,7 +275,7 @@ class Employees(FacilityRelatedModel):
 
     They are created by the facility administrator
     """
-    professional = models.OneToOneField(
+    professional = models.ForeignKey(
         Professionals, related_name="employee_professional", on_delete=models.CASCADE)
     department = models.ForeignKey(
         Department, related_name="employee_department", on_delete=models.CASCADE, null=True, blank=True)

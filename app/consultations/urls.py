@@ -55,4 +55,16 @@ urlpatterns = [
     path('appointments/<uuid:pk>', views.AppointmentsDetail.as_view(),
          name=views.AppointmentsDetail.name),
 
+
+                # Appointment payments
+    path('appointment-payments/create', views.AppointmentPaymentsCreate.as_view(),
+         name=views.AppointmentPaymentsCreate.name),
+    path('appointment-payments/', views.AppointmentPaymentsList.as_view(),
+         name=views.AppointmentPaymentsList.name),
+
+    path('appointment-payments/<uuid:pk>/', views.AppointmentPaymentsDetail.as_view(),
+         name=views.AppointmentPaymentsDetail.name),
+    path('appointment-payments/<uuid:pk>/update', views.AppointmentPaymentsUpdate.as_view(),
+         name=views.AppointmentPaymentsUpdate.name),
+
 ]
