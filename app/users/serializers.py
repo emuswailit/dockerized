@@ -276,30 +276,23 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
-class AllergySerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = models.Allergy
-        fields = ('id', 'url', 'dependant', 'allergy',
-                  'owner', 'created', 'updated')
-        read_only_fields = ('id', 'url', 'dependant',
-                            'owner', 'created', 'updated')
 
 
 class DependantSerializer(serializers.HyperlinkedModelSerializer):
-    allergy_details = serializers.SerializerMethodField(
-        read_only=True)
+    # allergy_details = serializers.SerializerMethodField(
+    #     read_only=True)
 
     class Meta:
         model = models.Dependant
-        fields = ('id', 'url','allergy_details', 'is_active', 'account', 'owner', 'first_name', 'middle_name',
+        fields = ('id', 'url','is_active', 'account', 'owner', 'first_name', 'middle_name',
                   'last_name', 'gender', 'date_of_birth',  'created', 'updated')
 
         read_only_fields = ('id', 'url', 'account', 'owner',
                             'created', 'updated')
 
-    def get_allergy_details(self, obj):
-        allergy = models.Allergy.objects.filter(dependant=obj)
-        return AllergySerializer(allergy, context=self.context, many=True).data
+    # def get_allergy_details(self, obj):
+    #     allergy = models.Allergy.objects.filter(dependant=obj)
+    #     return AllergySerializer(allergy, context=self.context, many=True).data
 
 class CadresSerializer(serializers.ModelSerializer):
     class Meta:

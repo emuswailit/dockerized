@@ -17,7 +17,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import url
-from users.views import verify
+# from users.views import verify
 
 urlpatterns = [
     path('', include('frontend.urls')),
@@ -32,7 +32,7 @@ urlpatterns = [
     path('api/v1/pharmacies/', include('pharmacies.urls')),
     path('api/v1/payments/', include('payments.urls')),
     path('admin/', admin.site.urls),
-    url(r'^verify/(?P<uuid>[a-z0-9\-]+)/', verify, name='verify'),
+    # url(r'^verify/(?P<uuid>[a-z0-9\-]+)/', verify, name='verify'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL,

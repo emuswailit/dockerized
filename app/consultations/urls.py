@@ -67,4 +67,25 @@ urlpatterns = [
     path('appointment-payments/<uuid:pk>/update', views.AppointmentPaymentsUpdate.as_view(),
          name=views.AppointmentPaymentsUpdate.name),
 
+                         # Appointment consultations
+    path('appointment-consultations/create', views.AppointmentConsultationsCreate.as_view(),
+         name=views.AppointmentConsultationsCreate.name),
+    path('appointment-consultations/', views.AppointmentConsultationsList.as_view(),
+         name=views.AppointmentConsultationsList.name),
+
+    path('appointment-consultations/<uuid:pk>/', views.AppointmentConsultationsDetail.as_view(),
+         name=views.AppointmentConsultationsDetail.name),
+    path('appointment-consultations/<uuid:pk>/update', views.AppointmentConsultationsUpdate.as_view(),
+         name=views.AppointmentConsultationsUpdate.name),
+
+     #     Allergy urls
+    path('allergies', views.AllergyListAPIView.as_view(),
+         name=views.AllergyListAPIView.name),
+    path('allergies/<uuid:pk>', views.AllergyDetailAPIView.as_view(),
+         name=views.AllergyDetailAPIView.name),
+    path('allergies/<uuid:pk>/update', views.AllergyUpdateAPIView.as_view(),
+         name=views.AllergyUpdateAPIView.name),
+    path('allergies/create', views.AllergyCreateAPIView.as_view(),
+         name=views.AllergyCreateAPIView.name),
+
 ]

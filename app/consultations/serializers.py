@@ -2,10 +2,9 @@
 from rest_framework.validators import UniqueTogetherValidator
 from rest_framework import serializers
 from . import models
-from users.models import Dependant, Allergy
+from users.models import Dependant
 from drugs.models import Preparation, Product
 from drugs.serializers import PreparationSerializer
-from users.serializers import AllergySerializer
 from core.serializers import FacilitySafeSerializerMixin, OwnerSafeSerializerMixin
 from datetime import *
 from django.db import transaction
@@ -141,6 +140,41 @@ class AppointmentsSerializer(FacilitySafeSerializerMixin, serializers.Hyperlinke
         read_only_fields = ('id', 'url', 'facility', 'owner', 'status',
                             'created', 'updated')
 
+class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+    """
+    Appointment Consultations serializer
+    """
+
+    class Meta:
+        model = models.AppointmentConsultations
+        fields = (
+            'id', 
+            'url',  
+            'facility', 
+            'appointment', 
+            'complaint_duration_length',
+            'complaint_duration_unit',
+            'location',
+            'onset',
+            'course',
+            'aggravating_factors',
+            'previous_treatment',
+            'current_medication',
+            'uses_alcohol',
+            'uses_tobbaco',
+            'is_married',
+            'current_occupation',
+            'allergies',
+            'owner', 
+            'created', 
+            'updated'
+            )
+
+        read_only_fields = ('id', 'url', 'facility', 'owner', 'status',
+                            'created', 'updated')
+
+
+
 
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
     preparation_details = serializers.SerializerMethodField(
@@ -232,3 +266,11 @@ class DependantSerializer(OwnerSafeSerializerMixin, serializers.HyperlinkedModel
     def get_allergy_details(self, obj):
         allergy = Allergy.objects.filter(dependant=obj)
         return AllergySerializer(allergy, context=self.context, many=True).data
+
+class AllergySerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Allergy
+        fields = ('id', 'url', 'title', 'description','allergy_category',
+                  'owner', 'created', 'updated')
+        read_only_fields = ('id', 'url', 'dependant',
+                            'owner', 'created', 'updated')

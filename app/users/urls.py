@@ -57,15 +57,7 @@ urlpatterns = [
     path('accounts/<uuid:pk>/dependant', views.DependantCreateAPIView.as_view(),
          name=views.DependantCreateAPIView.name),
 
-    #     Allergy urls
-    path('allergies', views.AllergyListAPIView.as_view(),
-         name=views.AllergyListAPIView.name),
-    path('allergies/<uuid:pk>', views.AllergyDetailAPIView.as_view(),
-         name=views.AllergyDetailAPIView.name),
-    path('allergies/<uuid:pk>/update', views.AllergyUpdateAPIView.as_view(),
-         name=views.AllergyUpdateAPIView.name),
-    path('dependants/<uuid:pk>/allergy', views.AllergyCreateAPIView.as_view(),
-         name=views.AllergyCreateAPIView.name),
+    
 
     path('accounts', views.AccountListAPIView.as_view(),
          name=views.AccountListAPIView.name),

@@ -614,3 +614,202 @@ class AppointmentsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     )
     serializer_class = serializers.AppointmentsSerializer
     queryset = models.Appointments.objects.all()
+
+
+# Appointment consultations
+
+class AppointmentConsultationsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+
+    # TODO : Test this view later
+    """
+   Doctor
+    ============================================================
+    Create a consultation
+
+    """
+    name = 'appointment-create'
+    permission_classes = (
+        ClinicSuperintendentPermission,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        facility = self.request.user.facility
+        # dependant_pk = self.kwargs.get("pk")
+        serializer.save(owner=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Appointment succesfully created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all appointments
+
+    """
+    name = 'appointments-list'
+    permission_classes = (
+        ClinicSuperintendentPermission,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+    # search_fields = ('dependant__id', 'dependant__middle_name',
+    #                  'dependant__last_name', 'dependant__first_name',)
+    # ordering_fields = ('dependant__first_name', 'id')
+
+class AppointmentConsultationsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointments-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+
+class AppointmentConsultationsUpdate(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointments-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+# # Allergy
+
+
+class AllergyCreateAPIView(generics.CreateAPIView):
+    """
+    Post new allergy for dependant
+    """
+    name = "allergy-create"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.AllergySerializer
+    queryset = models.Allergy.objects.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
+       
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Allergy created successfully.", "allergy": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Allergy not created", "allergy": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class AllergyListAPIView(generics.ListAPIView):
+    """
+    Allergies list
+    """
+    name = "allergy-list"
+    permission_classes = (permissions.AllowAny,
+                          )
+    serializer_class = serializers.AllergySerializer
+
+    queryset = models.Allergy.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(AllergyListAPIView, self).get_context_data(
+            *args, **kwargs)
+        # context["now"] = timezone.now()
+        context["query"] = self.request.GET.get("q")  # None
+        return context
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super(AllergyListAPIView, self).get_queryset(*args, **kwargs)
+        query = self.request.GET.get("q")
+        if query:
+            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
+                Q(title__icontains=query) |
+                Q(description__icontains=query)
+            )
+
+        return qs
+
+
+class AllergyDetailAPIView(generics.RetrieveAPIView):
+    """
+    Allergy details
+    """
+    name = "allergy-detail"
+    permission_classes = (permissions.AllowAny,
+                          )
+    serializer_class = serializers.AllergySerializer
+    queryset = models.Allergy.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class AllergyUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Allergy update
+    """
+    name = "allergy-update"
+    permission_classes = (IsOwner,
+                          )
+    serializer_class = serializers.AllergySerializer
+    queryset = models.Allergy.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+def verify(request, uuid):
+    try:
+        user = User.objects.get(verification_uuid=uuid, is_verified=False)
+    except User.DoesNotExist:
+        raise Http404("User does not exist or is already verified")
+ 
+    user.is_verified = True
+    user.save()
+ 
+    return redirect('home')
+  

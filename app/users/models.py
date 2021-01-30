@@ -410,30 +410,6 @@ class Account(models.Model):
         return self.owner.email
 
 
-class Allergy(models.Model):
-
-    ALLERGY_CATEGORY = (
-        ("Drug Allergy", "Drug Allergy"),
-        ("Food Allergy", "Food Allergy"),
-        ("Environmental Allergy", "Environmental Allargy"),
-
-    )
-    """ Model for any dependant allergies.
-    This is important for reporting any allergies that a dependant
-    has ever exhibited on drugs, environment e.t.c"""
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    title = models.TextField(max_length=100)
-    description = models.TextField(max_length=100, null=True, blank=True)
-    allergy_category = models.CharField(
-        max_length=100, choices=ALLERGY_CATEGORY)
-    created = models.DateField(auto_now_add=True)
-    updated = models.DateField(auto_now=True)
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.title
-
 
 class Dependant(models.Model):
     """Dependants under a user account. This include family members and other persons under the account holder's care"""
@@ -452,7 +428,7 @@ class Dependant(models.Model):
         max_length=120, choices=GENDER_CHOICES)
     date_of_birth = models.DateField()
     is_active = models.BooleanField(default=True)
-    allergy = models.ManyToManyField(Allergy)
+    # allergy = models.ManyToManyField(Allergy)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(

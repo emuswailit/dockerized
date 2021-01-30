@@ -1,6 +1,6 @@
 from django.db import models
 from core.models import FacilityRelatedModel
-from users.models import Dependant, Allergy
+from users.models import Dependant
 from drugs.models import Preparation, Product, Posology, Frequency
 from django.contrib.auth import get_user_model
 from drugs.models import Generic
@@ -12,6 +12,33 @@ from django.dispatch import receiver
 from payments.models import PaymentMethods
 
 User = get_user_model()
+
+
+
+
+class Allergy(FacilityRelatedModel):
+
+    ALLERGY_CATEGORY = (
+        ("Drug Allergy", "Drug Allergy"),
+        ("Food Allergy", "Food Allergy"),
+        ("Environmental Allergy", "Environmental Allargy"),
+
+    )
+    """ Model for any dependant allergies.
+    This is important for reporting any allergies that a dependant
+    has ever exhibited on drugs, environment e.t.c"""
+   
+    title = models.TextField(max_length=100)
+    description = models.TextField(max_length=100, null=True, blank=True)
+    allergy_category = models.CharField(
+        max_length=100, choices=ALLERGY_CATEGORY)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
 
 class SlotsQuerySet(models.QuerySet):
     def all_slots(self):
@@ -90,7 +117,7 @@ class AppointmentPayments(FacilityRelatedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=[
-                                    'facility', 'dependant','slot'], name='One payment per appointment')
+                                    'facility', 'dependant','slot','reference'], name='One payment per appointment')
         ]
 
 class Appointments(FacilityRelatedModel):
@@ -111,7 +138,7 @@ class Appointments(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
  
-class PatientConsultations(FacilityRelatedModel):
+class AppointmentConsultations(FacilityRelatedModel):
 
     COMPLAINT_DURATION_UNIT = (
         ("Days", "Days"),
@@ -131,7 +158,7 @@ class PatientConsultations(FacilityRelatedModel):
     course = models.CharField(max_length=300)
     aggravating_factors = models.CharField(max_length=300)
     previous_treatment = models.CharField(max_length=300)
-    current_medication = models.ManyToManyField(Generic)
+    current_medication = models.ManyToManyField(Generic,null=True, blank=True)
 
     uses_alcohol = models.BooleanField(default=False)
     uses_tobbaco = models.BooleanField(default=False)
@@ -187,7 +214,7 @@ class PrescriptionManager(models.Manager):
 class Prescription(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
     patient_consultation = models.ForeignKey(
-        PatientConsultations, on_delete=models.CASCADE, null=True, blank=True)
+        AppointmentConsultations, on_delete=models.CASCADE, null=True, blank=True)
     dependant = models.ForeignKey(
         Dependant, related_name="prescription_dependant", on_delete=models.CASCADE)
 
