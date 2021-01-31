@@ -113,7 +113,7 @@ class ProfessionalAnnualLicenceSerializer(FacilitySafeSerializerMixin, serialize
                             'created', 'updated')
 
 
-class DepartmentSerializer(serializers.HyperlinkedModelSerializer):
+class DepartmentSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Department
@@ -156,10 +156,14 @@ class EmployeesSerializer(serializers.HyperlinkedModelSerializer):
         professional = validated_data.pop('professional')
         job = validated_data.pop('job')
 
+        if job.maximum_positions == 0:
+            raise NotAcceptable(
+                {"response_code": 1, "response_message": f"Please specify maximum positions for {job.title}s in your facility"})
+
         if job.cadre != professional.cadre:
             raise NotAcceptable(
                 {"response_code": 1, "response_message": f"{professional.cadre.title} cannot be employed as {job.cadre}. Please select correct job for the selected professional"})
-        i
+
         if user_pk and professional:
             # Retrieve user using forwarded ID and set cadre
             employee_creator = User.objects.get(id=user_pk)
@@ -170,6 +174,7 @@ class EmployeesSerializer(serializers.HyperlinkedModelSerializer):
                 professional.user.facility = employee_creator.facility
                 created = models.Employees.objects.create(
                     professional=professional, job=job, **validated_data)
+
         else:
             raise serializers.ValidationError(
                 f"You may not be registered in the system as a professional")

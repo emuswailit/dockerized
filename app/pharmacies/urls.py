@@ -11,8 +11,8 @@ urlpatterns = [
 #          name=views.ForwardPrescriptionDetailAPIView.name),
 
 
-    path('prescription-quotes/create', views.PrescriptionQuoteCreate.as_view(),
-         name=views.PrescriptionQuoteCreate.name),
+    #     path('prescription-quotes/create', views.PrescriptionQuoteCreate.as_view(),
+    #          name=views.PrescriptionQuoteCreate.name),
     path('prescription-quotes/<uuid:pk>/', views.PrescriptionQuoteDetailAPIView.as_view(),
          name=views.PrescriptionQuoteDetailAPIView.name),
     path('prescription-quotes/all', views.AllPrescriptionQuotesListAPIView.as_view(),
@@ -21,7 +21,8 @@ urlpatterns = [
          # Prescription quotes for a pharmacist
      path('prescription-quotes/pharmacist', views.PharmacistPrescriptionQuotesListAPIView.as_view(),
          name=views.PharmacistPrescriptionQuotesListAPIView.name),
-
+    path('prescription-quotes/<uuid:pk>/pharmacist-confirm', views.PharmacistConfirmQuote.as_view(),
+         name=views.PharmacistConfirmQuote.name),
      
 #     path('prescription-quotes/item', views.QuoteItemCreate.as_view(),
 #          name=views.QuoteItemCreate.name),

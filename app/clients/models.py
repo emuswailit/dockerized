@@ -41,13 +41,13 @@ class ForwardPrescription(FacilityRelatedModel):
     def __str__(self):
         return f'Prescription for {self.prescription.dependant.first_name} {self.prescription.dependant.last_name} from {self.prescription.owner.first_name} {self.prescription.owner.last_name} '
 
-def forward_prescription_pre_save_receiver(sender, instance, *args, **kwargs):
-    if instance.facility:
-        if instance.facility.facility_type == 'Default' or instance.facility.facility_type == 'Clinic':
-            raise exceptions.NotAcceptable(
-                {"detail": ["The selected facility is not a pharmacy", ]})
+# def forward_prescription_pre_save_receiver(sender, instance, *args, **kwargs):
+#     if instance.facility:
+#         if instance.facility.facility_type == 'Default' or instance.facility.facility_type == 'Clinic':
+#             raise exceptions.NotAcceptable(
+#                 {"detail": ["The selected facility is not a pharmacy", ]})
 
 
-pre_save.connect(forward_prescription_pre_save_receiver,
-                 sender=ForwardPrescription)
+# pre_save.connect(forward_prescription_pre_save_receiver,
+#                  sender=ForwardPrescription)
 

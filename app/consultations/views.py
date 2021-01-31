@@ -640,13 +640,13 @@ class PrescriptionItemList(FacilitySafeViewMixin, generics.ListAPIView):
         return super().get_queryset().filter(facility_id=facility_id)
 
 
-class PrescriptionItemDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+class PrescriptionItemDetail(generics.RetrieveAPIView):
     name = 'prescriptionitem-detail'
     permission_classes = (
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.PrescriptionItemSerializer
-    queryset = models.Prescription.objects.all()
+    queryset = models.PrescriptionItem.objects.all()
 
     # def get_queryset(self):
     #     facility_id = self.request.user.facility_id

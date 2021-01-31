@@ -6,7 +6,7 @@ from rest_framework import generics, exceptions, permissions, status
 from core.views import FacilitySafeViewMixin
 from . import serializers, models
 from rest_framework.response import Response
-from core.app_permissions import PharmacistPermission, FacilitySuperintendentPermission
+from core.app_permissions import PharmacistPermission, FacilitySuperintendentPermission, IsOwner
 from consultations.models import Prescription
 from inventory.models import VariationReceipt
 from django.urls import resolve
@@ -63,51 +63,51 @@ from django.urls import resolve
 #         return obj
 
 
-class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
-    """
-    Pharmacist
-    ============================================================
-    1. Create quote for forwarded prescription
+# class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+#     """
+#     Pharmacist
+#     ============================================================
+#     1. Create quote for forwarded prescription
 
-    """
-    name = 'prescriptionquote-create'
-    permission_classes = (
-        PharmacistPermission,
-    )
-    serializer_class = serializers.PrescriptionQuoteSerializer
-    queryset = models.PrescriptionQuote.objects.all()
+#     """
+#     name = 'prescriptionquote-create'
+#     permission_classes = (
+#         PharmacistPermission,
+#     )
+#     serializer_class = serializers.PrescriptionQuoteSerializer
+#     queryset = models.PrescriptionQuote.objects.all()
 
-    def perform_create(self, serializer):
-        user = self.request.user
+#     def perform_create(self, serializer):
+#         user = self.request.user
 
-        try:
-            if user:
-                serializer.save(owner=user, facility=user.facility)
-            else:
-                return Response(data={"message": "User not retrieved"})
-        except IntegrityError as e:
-            raise exceptions.NotAcceptable(
-                {"detail": ["Similar item is already added!", ]})
+#         try:
+#             if user:
+#                 serializer.save(owner=user, facility=user.facility)
+#             else:
+#                 return Response(data={"message": "User not retrieved"})
+#         except IntegrityError as e:
+#             raise exceptions.NotAcceptable(
+#                 {"detail": ["Similar item is already added!", ]})
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
 
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Prescription quoted successfully.", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_create(serializer)
+#             return Response(data={"message": "Prescription quoted successfully.", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Precsription not quoted", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#             return Response(data={"message": "Precsription not quoted", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
+class AllPrescriptionQuotesListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Pharmacy Superintendent
     =============================================
@@ -124,16 +124,16 @@ class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
 
     # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(PrescriptionQuoteListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    # def get_context_data(self, *args, **kwargs):
+    #     context = super(PrescriptionQuoteListAPIView, self).get_context_data(
+    #         *args, **kwargs)
+    #     # context["now"] = timezone.now()
+    #     context["query"] = self.request.GET.get("q")  # None
+    #     return context
 
-    def get_queryset(self):
-        # Ensure that the users belong to the company of the user that is making the request
-        return super().get_queryset().filter(facility=self.request.user.facility)
+    # def get_queryset(self):
+    #     # Ensure that the users belong to the company of the user that is making the request
+    #     return super().get_queryset().filter(facility=self.request.user.facility)
 
 
 class PharmacistPrescriptionQuotesListAPIView(generics.ListAPIView):
@@ -187,6 +187,29 @@ class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+
+class PharmacistConfirmQuote(generics.RetrieveUpdateAPIView):
+    """
+    Pharmacist
+    -----------------------------------------------------------
+    Confirm that prescription quote has been quoted fully, client can now access to view
+    """
+    name = "prescriptionquote-detail"
+    permission_classes = (FacilitySuperintendentPermission,
+                          )
+    serializer_class = serializers.PharmacistConfirmQuoteSerializer
+    queryset = models.PrescriptionQuote.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 # class QuoteItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 #     """
@@ -306,15 +329,15 @@ class QuoteItemDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
+class UpdateQuoteItem(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
 
     """
     Pharmacist
     ----------------------------------------------------
     Update prescription quote item
     """
-    name = "quoteitem-detail"
-    permission_classes = (PharmacistPermission,
+    name = "quoteitem-update"
+    permission_classes = (FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.QuoteItemSerializer
     queryset = models.QuoteItem.objects.all()
@@ -349,9 +372,10 @@ class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
     ----------------------------------------------------
     Update prescription quote item
     """
-    name = "quoteitem-detail"
-    permission_classes = (PharmacistPermission,
-                          )
+    name = "quoteitem-accept"
+    permission_classes = (
+        IsOwner,
+    )
     serializer_class = serializers.ClientQuoteItemSerializer
     queryset = models.QuoteItem.objects.all()
     lookup_fields = ('pk',)
@@ -359,6 +383,7 @@ class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
 
     def get_serializer_context(self):
         prescription_quote_item_pk = self.kwargs.get("pk")
+
         context = super(AcceptQuoteItem, self).get_serializer_context()
 
         context.update({

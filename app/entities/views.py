@@ -252,7 +252,7 @@ class DepartmentsList(generics.ListAPIView):
         return super().get_queryset().filter(facility=user.facility)
 
 
-class AllDepartmentListAPIView(generics.ListAPIView):
+class AllDepartmentListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Client
     =============================================
@@ -419,7 +419,7 @@ class EmployeeList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'employees-list'
     permission_classes = (
-        permissions.IsAuthenticated,
+        app_permissions.FacilityAdministratorPermission,
     )
     serializer_class = serializers.EmployeesSerializer
     queryset = models.Employees.objects.all()
@@ -492,6 +492,12 @@ class JobsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             user = self.request.user
             facility = self.request.user.facility
 
+            # Cannot add employee to default facilit
+            if facility == Facility.objects.default_facility():
+                raise exceptions.NotAcceptable(
+                    {"response_code": 1, "response_message": "Not on the default facility"})
+
+            #Admin not admissible here
             if user.is_staff:
                 raise exceptions.NotAcceptable("Not for administrators")
             else:

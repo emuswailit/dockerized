@@ -1,3 +1,5 @@
+from users.models import Facility
+from rest_framework.exceptions import ValidationError
 from django.db import models
 from core.models import FacilityRelatedModel
 from clients.models import ForwardPrescription
@@ -8,8 +10,6 @@ from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 User = get_user_model()
-from rest_framework.exceptions import ValidationError
-from users.models import Facility
 
 # Create your models here.
 
@@ -19,41 +19,49 @@ class PrescriptionQuote(FacilityRelatedModel):
 
     forward_prescription = models.ForeignKey(
         ForwardPrescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
-    prescription_cost = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
     client_confirmed = models.BooleanField(default=False)
+    pharmacist_confirmed = models.BooleanField(default=False)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['facility', 'prescription'], name='One quote per prescription')
+            models.UniqueConstraint(
+                fields=['facility', 'prescription'], name='One quote per prescription')
         ]
 
     def __str__(self):
         return self.forward_prescription.prescription.dependant.first_name
 
+    def get_total_quote_cost(self):
+        total = 0
+        if QuoteItem.objects.filter(prescription_quote=self).count() > 0:
+            items = QuoteItem.objects.filter(prescription_quote=self)
+            for item in items:
+                total += item.item_cost
 
+        else:
+            pass
+        return total
 
 
 class QuoteItem(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
     prescription_quote = models.ForeignKey(
-        PrescriptionQuote, on_delete=models.CASCADE,null=True,blank=True)
+        PrescriptionQuote, on_delete=models.CASCADE, null=True, blank=True)
     prescription_item = models.ForeignKey(
-        PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE,null=True, blank=True)
-    variation_item= models.ForeignKey(
-        VariationReceipt, related_name="variation_receipt", on_delete=models.CASCADE, null=True,blank=True)
-    item_cost = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
+        PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE, null=True, blank=True)
+    variation_item = models.ForeignKey(
+        VariationReceipt, related_name="variation_receipt", on_delete=models.CASCADE, null=True, blank=True)
     quantity_required = models.IntegerField(default=0)
     quantity_dispensed = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
     instructions = models.TextField(blank=True, null=True)
-    dose_divisible= models.BooleanField(default=True)
-    item_accepted= models.BooleanField(default=True)
-    fully_dispensed= models.BooleanField(default=False)
+    dose_divisible = models.BooleanField(default=True)
+    item_accepted = models.BooleanField(default=True)
+    fully_dispensed = models.BooleanField(default=False)
     client_comment = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -61,13 +69,22 @@ class QuoteItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('prescription_quote', 'prescription_item','variation_item')
+        unique_together = ('prescription_quote',
+                           'prescription_item', 'variation_item')
 
+    def get_total_items_cost(self):
+        return self.quantity_required * self.variation_item.unit_buying_price
+
+    def get_dispensed_items_cost(self):
+        return self.quantity_dispensed * self.variation_item.unit_buying_price
+
+    def get_pending_items_cost(self):
+        return self.get_total_items_cost() - self.get_dispensed_items_cost()
 
 
 class Order(FacilityRelatedModel):
 
-    #TODO : Create payment for the order using a post save signal
+    # TODO : Create payment for the order using a post save signal
     """Model for prescriptions raised for dependants"""
     facility = models.ForeignKey(
         Facility, related_name="cart_facility", on_delete=models.CASCADE)
@@ -81,21 +98,22 @@ class Order(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     def get_total_price(self):
-        total=0
+        total = 0
 
-        if OrderItem.objects.filter(order_id=self.id).count()>0:
-            items =OrderItem.objects.filter(order_id=self.id)
+        if OrderItem.objects.filter(order_id=self.id).count() > 0:
+            items = OrderItem.objects.filter(order_id=self.id)
             for order_item in items:
                 total += order_item.get_total_item_price()
         return total
-        
+
+
 class OrderItem(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
     facility = models.ForeignKey(
         Facility,  on_delete=models.CASCADE)
     quote_item = models.ForeignKey(
-        QuoteItem, on_delete=models.CASCADE,null=True, blank=True)
-    order =models.ForeignKey(Order, on_delete=models.CASCADE)
+        QuoteItem, on_delete=models.CASCADE, null=True, blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -104,11 +122,13 @@ class OrderItem(FacilityRelatedModel):
 
     def get_total_item_price(self):
         return self.quantity * self.quote_item.variation_item.unit_selling_price
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['facility', 'quote_item'], name='One quote item in order')
+            models.UniqueConstraint(
+                fields=['facility', 'quote_item'], name='One quote item in order')
         ]
-  
+
 
 # class Payment(FacilityRelatedModel):
 #     """Model for prescriptions raised for dependants"""
@@ -142,9 +162,6 @@ class OrderItem(FacilityRelatedModel):
 #         return self.order.get_total_price()
 
 
-
-
-
 #  Check if prescribed drug is the one being quoted
 
 
@@ -173,7 +190,6 @@ class OrderItem(FacilityRelatedModel):
 #     """Calculate unit quantities and prices"""
 #     if not created:
 #         raise ValidationError("Updated")
-     
 
 
 class PrescriptionSale(FacilityRelatedModel):
@@ -268,8 +284,6 @@ class CounterSaleItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
 
-
-
 def counter_sale_pre_save_receiver(sender, instance, *args, **kwargs):
     if instance.item.unit_quantity < instance.quantity:
         raise exceptions.NotAcceptable(
@@ -295,21 +309,19 @@ def create_offer(sender, instance, created, **kwargs):
             pass
 
 
-    
-@receiver(post_save, sender=PrescriptionQuote, dispatch_uid="create_prescription_items")
-def create_offer(sender, instance, created, **kwargs):
-    """Deduct from inventoty"""
-    if created:
-        prescription_id = instance.forward_prescription.prescription.id
+# @receiver(post_save, sender=PrescriptionQuote, dispatch_uid="create_prescription_items")
+# def create_offer(sender, instance, created, **kwargs):
+#     """Deduct from inventoty"""
+#     if created:
+#         prescription_id = instance.forward_prescription.prescription.id
 
-        if PrescriptionItem.objects.filter(prescription_id=prescription_id).count()>0:
-            prescription_items = PrescriptionItem.objects.filter(prescription_id=prescription_id)
+#         if PrescriptionItem.objects.filter(prescription_id=prescription_id).count()>0:
+#             prescription_items = PrescriptionItem.objects.filter(prescription_id=prescription_id)
 
-            for item in prescription_items:
-                QuoteItem.objects.create(facility=instance.facility,owner=instance.owner,prescription_quote=instance,prescription_item=item)
+#             for item in prescription_items:
+#                 QuoteItem.objects.create(facility=instance.facility,owner=instance.owner,prescription_quote=instance,prescription_item=item)
 
-                raise ValidationError(f"Ziko {prescription_items.count()}") 
-            
-        else:
-            raise ValidationError(f"Hakuna kitu ya {prescription_id}") 
-     
+#                 raise ValidationError(f"Ziko {prescription_items.count()}")
+
+#         else:
+#             raise ValidationError(f"Hakuna kitu ya {prescription_id}")

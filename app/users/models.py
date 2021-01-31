@@ -386,7 +386,8 @@ class User(AbstractUser):
         """
         Retrieve user role
         """
-        return self.role
+        return None
+
 
 
 class UserImage(models.Model):

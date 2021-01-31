@@ -113,11 +113,12 @@ class PharmacistPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            if request.user.get_role() == "PHARMACIST" or request.user.get_role() == "PHARMACEUTICAL-TECHNOLOGIST":
-                return True
-            else:
-                raise NotAcceptable(
-                    "Pharmacists or Pharmaceutical Technologists only")
+            if request.user.cadre:
+                if request.user.cadre.cluster == "PHARMACY":
+                    return True
+                else:
+                    raise NotAcceptable(
+                        "Pharmacists or Pharmaceutical Technologists only")
         else:
             raise NotAcceptable("Pharmacists only")
 
