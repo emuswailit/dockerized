@@ -11,7 +11,6 @@ User = get_user_model()
 
 
 class Distributor(FacilityRelatedModel):
-
     title = models.CharField(max_length=100, unique=True)
     description = models.TextField(max_length=100, null=True, blank=True)
     phone = models.CharField(max_length=30, null=True)
@@ -43,7 +42,6 @@ class Posology(FacilityRelatedModel):
 
 
 class Frequency(FacilityRelatedModel):
-
     title = models.CharField(max_length=100)
     latin = models.CharField(max_length=100)
     abbreviation = models.CharField(max_length=100)
@@ -187,7 +185,7 @@ class Preparation(FacilityRelatedModel):
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title} - {self.unit}"
+        return f"{self.title} - {self.formulation}"
 
         class Meta:
             db_table = 'drug_preparations'

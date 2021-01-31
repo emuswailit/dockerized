@@ -9,7 +9,7 @@ from entities.models import Professionals, Employees
 from . import models, serializers
 
 
-# Slots Views
+# Appointment slots
 
 
 class SlotsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
@@ -32,8 +32,9 @@ class SlotsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         user = self.request.user
         facility = self.request.user.facility
-        # dependant_pk = self.kwargs.get("pk")
-        serializer.save(owner=user, facility=facility,)
+        professional = Professionals.objects.get(owner=user)
+        employee = Employees.objects.get(professional=professional)
+        serializer.save(owner=user, facility=facility, employee=employee)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -121,6 +122,247 @@ class SlotUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
         return super().get_queryset().filter(facility_id=facility_id)
 
 
+# Payment for available appointment slots
+class AppointmentPaymentsCreate(generics.CreateAPIView):
+    """
+    Authenticated user
+    -----------------------------------------------------
+    Pay for consultation
+    """
+    name = "appointmentpayments-create"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.AppointmentPaymentsSerializer
+    queryset = models.AppointmentPayments.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(AppointmentPaymentsCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"Payment for this appointment already done"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Appointment payment created successfully.", "appointment-payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Appointment payments not created", "appointment-payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class AppointmentPaymentsList(generics.ListAPIView):
+    """
+    AppointmentPaymentss list
+    """
+    name = "appointmentpayments-list"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
+    serializer_class = serializers.AppointmentPaymentsSerializer
+
+    queryset = models.AppointmentPayments.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(AppointmentPaymentsList, self).get_context_data(
+            *args, **kwargs)
+        # context["now"] = timezone.now()
+        context["query"] = self.request.GET.get("q")  # None
+        return context
+
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        qs = super(AppointmentPaymentsList,
+                   self).get_queryset(*args, **kwargs)
+        query = self.request.GET.get("q")
+        if query:
+            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
+                Q(title__icontains=query) |
+                Q(description__icontains=query)
+            )
+
+        return qs.filter(owner=user)
+
+
+class AppointmentPaymentsDetail(generics.RetrieveAPIView):
+    """
+    AppointmentPayments details
+    """
+    name = "appointmentpayments-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.AppointmentPaymentsSerializer
+    queryset = models.AppointmentPayments.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class AppointmentPaymentsUpdate(generics.RetrieveUpdateAPIView):
+    """
+    Appointment payment update
+    """
+    name = "appointmentpayments-update"
+    permission_classes = (app_permissions.IsOwner,
+                          )
+    serializer_class = serializers.AppointmentPaymentsSerializer
+    queryset = models.AppointmentPayments.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class AppointmentsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all appointments
+
+    """
+    name = 'appointments-list'
+    permission_classes = (
+        app_permissions.PrescriberPermission,
+    )
+    serializer_class = serializers.AppointmentsSerializer
+    queryset = models.Appointments.objects.all()
+
+    search_fields = ('dependant__id', 'dependant__middle_name',
+                     'dependant__last_name', 'dependant__first_name', 'owner__first_name', 'owner__last_name', 'owner__phone')
+    ordering_fields = ('dependant__first_name', 'id')
+
+
+class AppointmentsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointments-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.AppointmentsSerializer
+    queryset = models.Appointments.objects.all()
+
+
+# Consultation
+class AppointmentConsultationsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+    """
+   Doctor
+    ============================================================
+    Create a consultation
+
+    """
+    name = 'appointmentconsultations-create'
+    permission_classes = (
+        app_permissions.PrescriberPermission,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(AppointmentConsultationsCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        facility = self.request.user.facility
+        # dependant_pk = self.kwargs.get("pk")
+        serializer.save(owner=user, facility=facility)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Appointment succesfully created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Prescriber
+    ============================================================
+    1. List of all appointments
+
+    """
+    name = 'appointmentconsultations-list'
+    permission_classes = (
+        app_permissions.PrescriberPermission,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+    # search_fields = ('dependant__id', 'dependant__middle_name',
+    #                  'dependant__last_name', 'dependant__first_name',)
+    # ordering_fields = ('dependant__first_name', 'id')
+
+
+class AppointmentConsultationsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointmentconsultations-detail'
+    permission_classes = (
+        app_permissions.PrescriberPermission,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+
+class AppointmentConsultationsUpdate(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'appointments-update'
+    permission_classes = (
+        app_permissions.IsOwner,
+    )
+    serializer_class = serializers.AppointmentConsultationsSerializer
+    queryset = models.AppointmentConsultations.objects.all()
+
+
 # Prescription Views
 class PrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
@@ -198,9 +440,9 @@ class AllPrescriptionList(FacilitySafeViewMixin, generics.ListAPIView):
                      'dependant__last_name', 'dependant__first_name',)
     ordering_fields = ('dependant__first_name', 'id')
 
-    # def get_queryset(self):
-    #     facility_id = self.request.user.facility_id
-    #     return super().get_queryset().filter(facility_id=facility_id)
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(owner=self.request.user)
 
 
 class DependantPrescriptionsList(FacilitySafeViewMixin, generics.ListAPIView):
@@ -252,7 +494,7 @@ class PrescriptionUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAP
     1. Update prescription
 
     """
-    name = 'prescription-detail'
+    name = 'prescription-update'
     permission_classes = (
         app_permissions.PrescriberPermission, app_permissions.IsOwner
     )
@@ -271,7 +513,7 @@ class PrescriptionSign(generics.RetrieveUpdateAPIView):
     ---------------------------------------
     Digitally sign a prescription created by this prescriber
     """
-    name = "prescription-detail"
+    name = "prescription-sign"
     permission_classes = (app_permissions.PrescriberPermission,
                           )
     serializer_class = serializers.PrescriptionUpdateSerializer
@@ -429,246 +671,6 @@ class PrescriptionItemUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     #     facility_id = self.request.user.facility_id
     #     return super().get_queryset().filter(facility_id=facility_id)
 
-
-class AppointmentPaymentsCreate(generics.CreateAPIView):
-    """
-    Create new plan
-    """
-    name = "appointmentpayments-create"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.AppointmentPaymentsSerializer
-    queryset = models.AppointmentPayments.objects.all()
-
-    def get_serializer_context(self):
-        user_pk = self.request.user.id
-        context = super(AppointmentPaymentsCreate,
-                        self).get_serializer_context()
-
-        context.update({
-            "user_pk": user_pk
-
-        })
-        return context
-
-    def perform_create(self, serializer):
-        try:
-            user = self.request.user
-            serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
-            raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"Payment for this appointment already done"})
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Appointment payment created successfully.", "appointment-payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
-
-            return Response(data={"message": "Appointment payments not created", "appointment-payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
-
-class AppointmentPaymentsList(generics.ListAPIView):
-    """
-    AppointmentPaymentss list
-    """
-    name = "appointmentpayments-list"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.AppointmentPaymentsSerializer
-
-    queryset = models.AppointmentPayments.objects.all()
-    # TODO : Reuse this for filtering by q.
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(AppointmentPaymentsList, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        user = self.request.user
-        qs = super(AppointmentPaymentsList,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs.filter(owner=user)
-
-
-class AppointmentPaymentsDetail(generics.RetrieveAPIView):
-    """
-    AppointmentPayments details
-    """
-    name = "appointmentpayments-detail"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.AppointmentPaymentsSerializer
-    queryset = models.AppointmentPayments.objects.all()
-    lookup_fields = ('pk',)
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
-
-
-class AppointmentPaymentsUpdate(generics.RetrieveUpdateAPIView):
-    """
-    Appointment payment update
-    """
-    name = "appointmentpayments-update"
-    permission_classes = (app_permissions.IsOwner,
-                          )
-    serializer_class = serializers.AppointmentPaymentsSerializer
-    queryset = models.AppointmentPayments.objects.all()
-    lookup_fields = ('pk',)
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
-
-
-class AppointmentsList(FacilitySafeViewMixin, generics.ListAPIView):
-    """
-    Prescriber
-    ============================================================
-    1. List of all appointments
-
-    """
-    name = 'appointments-list'
-    permission_classes = (
-        app_permissions.ClinicSuperintendentPermission,
-    )
-    serializer_class = serializers.AppointmentsSerializer
-    queryset = models.Appointments.objects.all()
-
-    search_fields = ('dependant__id', 'dependant__middle_name',
-                     'dependant__last_name', 'dependant__first_name', 'owner__first_name', 'owner__last_name', 'owner__phone')
-    ordering_fields = ('dependant__first_name', 'id')
-
-
-class AppointmentsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'appointments-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.AppointmentsSerializer
-    queryset = models.Appointments.objects.all()
-
-
-# Appointment consultations
-
-class AppointmentConsultationsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
-
-    # TODO : Test this view later
-    """
-   Doctor
-    ============================================================
-    Create a consultation
-
-    """
-    name = 'appointment-create'
-    permission_classes = (
-        app_permissions.ConsultationPermission,
-    )
-    serializer_class = serializers.AppointmentConsultationsSerializer
-    queryset = models.AppointmentConsultations.objects.all()
-
-    def get_serializer_context(self):
-        user_pk = self.request.user.id
-        context = super(AppointmentConsultationsCreate,
-                        self).get_serializer_context()
-
-        context.update({
-            "user_pk": user_pk
-
-        })
-        return context
-
-    def perform_create(self, serializer):
-
-        user = self.request.user
-        facility = self.request.user.facility
-        # dependant_pk = self.kwargs.get("pk")
-        serializer.save(owner=user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Appointment succesfully created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
-
-            return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
-
-class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
-    """
-    Prescriber
-    ============================================================
-    1. List of all appointments
-
-    """
-    name = 'appointments-list'
-    permission_classes = (
-        app_permissions.ClinicSuperintendentPermission,
-    )
-    serializer_class = serializers.AppointmentConsultationsSerializer
-    queryset = models.AppointmentConsultations.objects.all()
-
-    # search_fields = ('dependant__id', 'dependant__middle_name',
-    #                  'dependant__last_name', 'dependant__first_name',)
-    # ordering_fields = ('dependant__first_name', 'id')
-
-
-class AppointmentConsultationsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'appointments-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.AppointmentConsultationsSerializer
-    queryset = models.AppointmentConsultations.objects.all()
-
-
-class AppointmentConsultationsUpdate(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'appointments-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.AppointmentConsultationsSerializer
-    queryset = models.AppointmentConsultations.objects.all()
 
 # # Allergy
 

@@ -9,7 +9,7 @@ from core.serializers import FacilitySafeSerializerMixin, OwnerSafeSerializerMix
 from datetime import *
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from entities.models import DepartmentalCharges
+from entities.models import DepartmentalCharges, Professionals, Employees
 
 User = get_user_model()
 
@@ -24,12 +24,12 @@ class SlotSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         fields = ('id', 'url',  'employee', 'start', 'end',
                   'is_available', 'owner', 'created', 'updated')
 
-        read_only_fields = ('id', 'url', 'owner', 'is_available',
+        read_only_fields = ('id', 'url', 'owner', 'employee', 'is_available',
                             'created', 'updated')
 
     def create(self, validated_data):
         """
-Create slot after validating if time in betweeen in not taken
+    Create slot after validating if time in betweeen in not taken
         """
         start = validated_data.pop('start')
         end = validated_data.pop('end')
@@ -56,9 +56,10 @@ Create slot after validating if time in betweeen in not taken
 
                 for slot in models.Slots.objects.all():
                     # Delete all stale slots
-                    if slot.is_available and slot.start < datetime.now():
+                    if slot.is_available and slot.start.timestamp() < datetime.now().timestamp():
                         slot.delete()
 
+                    # Check if slotted time is not taken
                     if start.timestamp() >= slot.start.timestamp() and end.timestamp() <= slot.end.timestamp():
                         raise serializers.ValidationError(
                             {"response_code": "1", "response_message": f"Slotted time is not available"})
@@ -193,15 +194,21 @@ class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializer
         user_pk = self.context.get("user_pk")
         user = User.objects.get(id=user_pk)
         appointment = validated_data.pop('appointment')
+        current_medication = validated_data.pop('current_medication')
+        allergies = validated_data.pop('allergies')
         professional = Professionals.objects.get(owner=user)
         employee = Employees.objects.get(professional=professional)
         if employee:
             # Check if appointment is on the logged on doctor's schedule
-            if appointment.appointment_payment.slot_employee != employee:
+            if appointment.appointment_payment.slot.employee != employee:
                 raise serializers.ValidationError(
                     {"response_code": "1", "response_message": f"Not your patient"})
 
-
+            created = models.AppointmentConsultations.objects.create(
+                appointment=appointment, **validated_data)
+            created.current_medication.set(current_medication)
+            created.allergies.set(allergies)
+            return created
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
     preparation_details = serializers.SerializerMethodField(
         read_only=True)
@@ -214,6 +221,12 @@ class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = (
             'created', 'updated', 'owner', 'facility', 'prescription'
         )
+
+    def validate_duration(self, duration):
+        if duration == 0:
+            raise serializers.ValidationError(
+                "Enter the number of days the drugs will be taken")
+        return duration
 
     # TODO: Validate foreign key parameters
     @transaction.atomic

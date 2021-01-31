@@ -89,6 +89,17 @@ class ForwardPrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     serializer_class = serializers.ForwardPrescriptionSerializer
     queryset = models.ForwardPrescription.objects.all()
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(ForwardPrescriptionCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def perform_create(self, serializer):
 
         try:
@@ -98,7 +109,7 @@ class ForwardPrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": ["Prescription item must be to be unique. Similar item is already added!", ]})
+                {"detail": [f"{e}", ]})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

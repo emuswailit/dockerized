@@ -152,9 +152,8 @@ class AppointmentConsultations(FacilityRelatedModel):
         ("Months", "Months"),
         ("Years", "Years"),
     )
-    appointment = models.ForeignKey(
+    appointment = models.OneToOneField(
         Appointments, related_name="patient_consultation_appointment", on_delete=models.CASCADE)
-
     current_complaint = models.TextField()
     complaint_duration_length = models.IntegerField(default=0)
     complaint_duration_unit = models.CharField(
@@ -170,11 +169,11 @@ class AppointmentConsultations(FacilityRelatedModel):
     uses_tobbaco = models.BooleanField(default=False)
     is_married = models.BooleanField(default=False)
     current_occupation = models.TextField()
-    allergies = models.ManyToManyField(Allergy)
+    allergies = models.ManyToManyField(Allergy, null=True, blank=True)
 
     current_diagnosis = models.TextField()
-    created = models.DateField(auto_now_add=True)
-    updated = models.DateField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
@@ -283,7 +282,7 @@ class PrescriptionItem(FacilityRelatedModel):
     posology = models.ForeignKey(
         Posology, related_name="prescription_item_posology", on_delete=models.CASCADE)
     instruction = models.TextField(null=True, blank=True)
-    duration = models.IntegerField(default=0)
+    duration = models.IntegerField()
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
