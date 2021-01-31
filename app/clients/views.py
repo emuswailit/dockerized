@@ -9,7 +9,7 @@ from users.models import Dependant, Facility
 from users.serializers import FacilitySerializer
 from core.views import FacilitySafeViewMixin
 from django.db.models import Q
-from core.permissions import PrescriberPermission
+from core.app_permissions import PrescriberPermission
 
 # Create your views here.
 
@@ -95,7 +95,7 @@ class ForwardPrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             user = self.request.user
 
             serializer.save(owner=user)
-           
+
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
                 {"detail": ["Prescription item must be to be unique. Similar item is already added!", ]})
@@ -134,12 +134,12 @@ class ForwardPrescriptionsForFacility(generics.ListAPIView):
     queryset = models.ForwardPrescription.objects.all()
     # TODO : Reuse this for filtering by q.
 
-
     def get_queryset(self):
-        user =self.request.user
+        user = self.request.user
         # Ensure that the users belong to the company of the user that is making the request
         # dependant = Dependant.objects.get(owner=self.request.user)
         return super().get_queryset().filter(facility=user.facility)
+
 
 class ForwardPrescriptionListAPIView(generics.ListAPIView):
     """
@@ -190,7 +190,6 @@ class ForwardPrescriptionDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-
 
 
 class PharmacyListAPIView(generics.ListAPIView):

@@ -50,7 +50,7 @@ class FacilityQuerySet(models.QuerySet):
         return self.all()
 
     def default_facility(self):
-        return self.filter(facility_type="Default", title="Mobipharma")
+        return self.get(facility_type="Default", title="Mobipharma")
 
     def pharmacies(self):
         return self.filter(facility_type="Pharmacy",)
@@ -208,10 +208,19 @@ class FacilityImage(models.Model):
         return self.facility.title
 
 class Cadres(models.Model):
+    CADRE_CLUSTERS = (
+        ("ADMIN","ADMIN"),
+        ("CLERICAL","CLERICAL"),
+        ("CONSULTATION","CONSULTATION"),
+        ("NURSING","NURSING"),
+        ("OTHERS","OTHERS"),
+        ("PHARMACY","PHARMACY"),
+    )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
     title = models.CharField(max_length=120, unique=True)
     code = models.CharField(max_length=20)
+    cluster = models.CharField(max_length=20, choices=CADRE_CLUSTERS, default="OTHERS")
     description = models.TextField()
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)

@@ -1,10 +1,11 @@
-from core.permissions import IsOwner, PrescriberPermission, FacilitySuperintendentPermission, ClinicSuperintendentPermission
+from core import app_permissions
 from core.views import FacilitySafeViewMixin
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework import exceptions, generics, permissions, status
 from rest_framework.response import Response
 from users.models import Dependant
+from entities.models import Professionals, Employees
 from . import models, serializers
 
 
@@ -22,7 +23,7 @@ class SlotsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'slots-create'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        app_permissions.PrescriberPermission,
     )
     serializer_class = serializers.SlotSerializer
     queryset = models.Slots.objects.all()
@@ -53,14 +54,14 @@ class SlotsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
 class AllSlotsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
-    Clinic Superintendent
+    Authenticated users
     ============================================================
-    List of all slots for own clinic
+    List of all slots for  clinic
 
     """
     name = 'slots-list'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        permissions.IsAuthenticated,
     )
     serializer_class = serializers.SlotSerializer
     queryset = models.Slots.objects.all_slots()
@@ -95,7 +96,7 @@ class SlotDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     """
     name = 'slots-detail'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        permissions.IsAuthenticated,
     )
     serializer_class = serializers.SlotSerializer
     queryset = models.Slots.objects.all()
@@ -110,7 +111,7 @@ class SlotUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     name = 'prescription-detail'
     permission_classes = (
-        ClinicSuperintendentPermission, IsOwner
+        app_permissions.IsOwner,
     )
     serializer_class = serializers.SlotSerializer
     queryset = models.Slots.objects.all()
@@ -130,7 +131,7 @@ class PrescriptionCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'prescription-create'
     permission_classes = (
-        PrescriberPermission,
+        app_permissions.PrescriberPermission,
     )
     serializer_class = serializers.PrescriptionSerializer
     queryset = models.Prescription.objects.all()
@@ -188,7 +189,7 @@ class AllPrescriptionList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'prescription-list'
     permission_classes = (
-        PrescriberPermission,
+        app_permissions.PrescriberPermission,
     )
     serializer_class = serializers.PrescriptionSerializer
     queryset = models.Prescription.objects.filter(is_signed=False)
@@ -253,7 +254,7 @@ class PrescriptionUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAP
     """
     name = 'prescription-detail'
     permission_classes = (
-        PrescriberPermission, IsOwner
+        app_permissions.PrescriberPermission, app_permissions.IsOwner
     )
     serializer_class = serializers.PrescriptionSerializer
     queryset = models.Prescription.objects.all()
@@ -271,7 +272,7 @@ class PrescriptionSign(generics.RetrieveUpdateAPIView):
     Digitally sign a prescription created by this prescriber
     """
     name = "prescription-detail"
-    permission_classes = (PrescriberPermission,
+    permission_classes = (app_permissions.PrescriberPermission,
                           )
     serializer_class = serializers.PrescriptionUpdateSerializer
     queryset = models.Prescription.objects.all()
@@ -320,7 +321,7 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'prescriptionitem-create'
     permission_classes = (
-        PrescriberPermission,
+        app_permissions.PrescriberPermission,
     )
     serializer_class = serializers.PrescriptionItemSerializer
     queryset = models.PrescriptionItem.objects.all()
@@ -419,7 +420,7 @@ class PrescriptionItemUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     """
     name = 'prescriptionitem-detail'
     permission_classes = (
-        PrescriberPermission, IsOwner
+        app_permissions.PrescriberPermission, app_permissions.IsOwner
     )
     serializer_class = serializers.PrescriptionItemSerializer
     queryset = models.PrescriptionItem.objects.all()
@@ -434,13 +435,15 @@ class AppointmentPaymentsCreate(generics.CreateAPIView):
     Create new plan
     """
     name = "appointmentpayments-create"
-    permission_classes = (FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.AppointmentPaymentsSerializer
     queryset = models.AppointmentPayments.objects.all()
+
     def get_serializer_context(self):
         user_pk = self.request.user.id
-        context = super(AppointmentPaymentsCreate, self).get_serializer_context()
+        context = super(AppointmentPaymentsCreate,
+                        self).get_serializer_context()
 
         context.update({
             "user_pk": user_pk
@@ -451,11 +454,11 @@ class AppointmentPaymentsCreate(generics.CreateAPIView):
     def perform_create(self, serializer):
         try:
             user = self.request.user
-            serializer.save(owner=user,facility=user.facility)
+            serializer.save(owner=user, facility=user.facility)
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"response_code":"1", "response_message": f"Payment for this appointment already done"})
-        
+                {"response_code": "1", "response_message": f"Payment for this appointment already done"})
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -478,7 +481,7 @@ class AppointmentPaymentsList(generics.ListAPIView):
     AppointmentPaymentss list
     """
     name = "appointmentpayments-list"
-    permission_classes = (FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.AppointmentPaymentsSerializer
 
@@ -511,7 +514,7 @@ class AppointmentPaymentsDetail(generics.RetrieveAPIView):
     AppointmentPayments details
     """
     name = "appointmentpayments-detail"
-    permission_classes = (FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.AppointmentPaymentsSerializer
     queryset = models.AppointmentPayments.objects.all()
@@ -533,7 +536,7 @@ class AppointmentPaymentsUpdate(generics.RetrieveUpdateAPIView):
     Appointment payment update
     """
     name = "appointmentpayments-update"
-    permission_classes = (IsOwner,
+    permission_classes = (app_permissions.IsOwner,
                           )
     serializer_class = serializers.AppointmentPaymentsSerializer
     queryset = models.AppointmentPayments.objects.all()
@@ -550,45 +553,6 @@ class AppointmentPaymentsUpdate(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class AppointmentsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
-
-    # TODO : Test this view later
-    """
-   Clinic Superintendent
-    ============================================================
-    Create an appointment
-
-    """
-    name = 'appointment-create'
-    permission_classes = (
-        ClinicSuperintendentPermission,
-    )
-    serializer_class = serializers.AppointmentsSerializer
-    queryset = models.Appointments.objects.all()
-
-    def perform_create(self, serializer):
-
-        user = self.request.user
-        facility = self.request.user.facility
-        # dependant_pk = self.kwargs.get("pk")
-        serializer.save(owner=user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Appointment succesfully created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
-
-            return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
 class AppointmentsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Prescriber
@@ -598,14 +562,15 @@ class AppointmentsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'appointments-list'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        app_permissions.ClinicSuperintendentPermission,
     )
     serializer_class = serializers.AppointmentsSerializer
     queryset = models.Appointments.objects.all()
 
-    # search_fields = ('dependant__id', 'dependant__middle_name',
-    #                  'dependant__last_name', 'dependant__first_name',)
-    # ordering_fields = ('dependant__first_name', 'id')
+    search_fields = ('dependant__id', 'dependant__middle_name',
+                     'dependant__last_name', 'dependant__first_name', 'owner__first_name', 'owner__last_name', 'owner__phone')
+    ordering_fields = ('dependant__first_name', 'id')
+
 
 class AppointmentsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     name = 'appointments-detail'
@@ -629,10 +594,21 @@ class AppointmentConsultationsCreate(FacilitySafeViewMixin, generics.CreateAPIVi
     """
     name = 'appointment-create'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        app_permissions.ConsultationPermission,
     )
     serializer_class = serializers.AppointmentConsultationsSerializer
     queryset = models.AppointmentConsultations.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(AppointmentConsultationsCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
 
@@ -657,6 +633,7 @@ class AppointmentConsultationsCreate(FacilitySafeViewMixin, generics.CreateAPIVi
 
             return Response(data={"message": "Appointment not created", "appointment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
+
 class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Prescriber
@@ -666,7 +643,7 @@ class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     name = 'appointments-list'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        app_permissions.ClinicSuperintendentPermission,
     )
     serializer_class = serializers.AppointmentConsultationsSerializer
     queryset = models.AppointmentConsultations.objects.all()
@@ -674,6 +651,7 @@ class AppointmentConsultationsList(FacilitySafeViewMixin, generics.ListAPIView):
     # search_fields = ('dependant__id', 'dependant__middle_name',
     #                  'dependant__last_name', 'dependant__first_name',)
     # ordering_fields = ('dependant__first_name', 'id')
+
 
 class AppointmentConsultationsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     name = 'appointments-detail'
@@ -708,7 +686,6 @@ class AllergyCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(owner=user, facility=user.facility)
-       
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -785,7 +762,7 @@ class AllergyUpdateAPIView(generics.RetrieveUpdateAPIView):
     Allergy update
     """
     name = "allergy-update"
-    permission_classes = (IsOwner,
+    permission_classes = (app_permissions.IsOwner,
                           )
     serializer_class = serializers.AllergySerializer
     queryset = models.Allergy.objects.all()
@@ -807,9 +784,8 @@ def verify(request, uuid):
         user = User.objects.get(verification_uuid=uuid, is_verified=False)
     except User.DoesNotExist:
         raise Http404("User does not exist or is already verified")
- 
+
     user.is_verified = True
     user.save()
- 
+
     return redirect('home')
-  

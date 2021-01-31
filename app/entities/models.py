@@ -14,30 +14,6 @@ from django.dispatch import receiver
 
 User = get_user_model()
 
-# class Professions(FacilityRelatedModel):
-
-#     """
-#     Model for all facility sjob roles
-#     They are created by the facility administrator
-#     """
-#     title = models.CharField(max_length=100)
-#     description = models.CharField(max_length=300)
-#     regulator = models.CharField(max_length=100)
-#     professional_role = models.ForeignKey(Cadres, on_delete=models.CASCADE,null=True,blank=True)
-#     is_active = models.BooleanField(default=True)
-#     created = models.DateField(auto_now_add=True)
-#     updated = models.DateField(auto_now=True)
-#     owner = models.ForeignKey(
-#         User, related_name='profession_owner', on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return self.title
-
-
-
-
-    
-
 
 def professional_certificate_upload_to(instance, filename):
     email = instance.owner.email
@@ -93,7 +69,7 @@ class Professionals(FacilityRelatedModel):
     national_id = models.FileField(upload_to=professional_licence_upload_to)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
-    owner = models.ForeignKey(
+    owner = models.OneToOneField(
         User, related_name='professional_owner', on_delete=models.CASCADE)
 
     objects = ProfessionalsManager()
@@ -214,7 +190,7 @@ class Department(FacilityRelatedModel):
 
     """
     title = models.CharField(max_length=120, unique=True)
-    description = models.CharField(max_length=300, null=True)
+    description = models.CharField(max_length=300, null=True, blank=True)
     is_active = models.BooleanField(default=False)
     open_monday = models.BooleanField(default=False)
     open_tuesday = models.BooleanField(default=False)
@@ -235,13 +211,13 @@ class Department(FacilityRelatedModel):
             models.UniqueConstraint(fields=[
                                     'facility', 'title'], name='Unique department title in each facility')
         ]
- 
+
     def __str__(self):
         return self.title
-    
+
 
 class DepartmentalCharges(FacilityRelatedModel):
-    
+
     """
     Model for all clinic charges where consultation fee and other charges can be set
     """
@@ -250,12 +226,12 @@ class DepartmentalCharges(FacilityRelatedModel):
         max_digits=9, default=0.00, decimal_places=2)
     other_charges = models.DecimalField(
         max_digits=9, default=0.00, decimal_places=2)
-    
+
     owner = models.ForeignKey(
         User, related_name='departmental_charges_owner', on_delete=models.CASCADE)
 
     def get_total_departmental_charges(self):
-        return self.consultation_fee + self.other_charges 
+        return self.consultation_fee + self.other_charges
 
 # Create a departmental charges model immediately a department is created
 
@@ -264,23 +240,85 @@ class DepartmentalCharges(FacilityRelatedModel):
 def create_departmental_charges(sender, instance, created, **kwargs):
     if created:
         DepartmentalCharges.objects.create(facility=instance.facility,
-                              department=instance, owner=instance.owner)
+                                           department=instance, owner=instance.owner)
 
+
+class JobsQuerySet(models.QuerySet):
+    def all_jobs(self):
+        return self.all()
+
+    def active_jobs(self):
+        return self.filter(is_active=True)
+
+    def vacant_jobs(self):
+        return self.filter(is_vacant=True)
+
+    def advertised_jobs(self):
+        return self.filter(is_advertised=True)
+
+
+class JobsManager(models.Manager):
+    def get_queryset(self):
+        return JobsQuerySet(self.model, using=self._db)
+
+    def all_jobs(self):
+        return self.get_queryset().all_jobs()
+
+    def active_jobs(self):
+        return self.get_queryset().active_jobs()
+
+    def advertised_jobs(self):
+        return self.get_queryset().advertised_jobs()
+
+
+class Jobs(FacilityRelatedModel):
+    """
+    -Model for where facility defines its established job designations/vacancies
+    -Ensures that employees are added based on established positions
+    -Positions are created by the administrator 
+    """
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=300, null=True, blank=True)
+    cadre = models.ForeignKey(
+        Cadres, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_advertised = models.BooleanField(default=False)
+    maximum_positions = models.IntegerField(default=0)
+    filled_positions = models.IntegerField(default=0)
+    advertised_positions = models.IntegerField(default=0)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, related_name='profession_owner', on_delete=models.CASCADE)
+
+    def vacant_positions(self):
+        return self.maximum_positions - self.filled_positions()
+
+    objects = JobsManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[
+                                    'facility', 'title'], name='Title to be unique per facility')
+        ]
+
+    def __str__(self):
+        return self.title
 
 
 class Employees(FacilityRelatedModel):
     """
-    Model for all facility employee such as clerks and secretaries to doctors. 
-    They manage administrative services in the facility such as appointments, records, etc.
+    Model for all facility employees 
 
-    They are created by the facility administrator
+    They are created by the facility administrator or superintendent
     """
+
+    department = models.ForeignKey(
+        Department, related_name="employee_department", on_delete=models.CASCADE)
     professional = models.ForeignKey(
         Professionals, related_name="employee_professional", on_delete=models.CASCADE)
-    department = models.ForeignKey(
-        Department, related_name="employee_department", on_delete=models.CASCADE, null=True, blank=True)
-    designation = models.CharField(max_length=100, null=True, blank=True)
-    description = models.CharField(max_length=100, null=True, blank=True)
+    job = models.ForeignKey(
+        Jobs, related_name="employee_designation", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_superintendent = models.BooleanField(default=False)
@@ -288,7 +326,7 @@ class Employees(FacilityRelatedModel):
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, related_name='facility_admin_owner', on_delete=models.CASCADE)
-#  Employee can only be employed once in a facility
+    #  Employee can only be employed once in a facility
 
     class Meta:
         constraints = [

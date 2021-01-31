@@ -6,7 +6,7 @@ from rest_framework import generics, exceptions, permissions, status
 from core.views import FacilitySafeViewMixin
 from . import serializers, models
 from rest_framework.response import Response
-from core.permissions import PharmacistPermission,FacilitySuperintendentPermission
+from core.app_permissions import PharmacistPermission, FacilitySuperintendentPermission
 from consultations.models import Prescription
 from inventory.models import VariationReceipt
 from django.urls import resolve
@@ -82,14 +82,13 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         try:
             if user:
-                serializer.save(owner=user, facility=user.facility)   
+                serializer.save(owner=user, facility=user.facility)
             else:
-                return Response(data={"message":"User not retrieved"})
+                return Response(data={"message": "User not retrieved"})
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
                 {"detail": ["Similar item is already added!", ]})
 
-        
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
@@ -107,6 +106,7 @@ class PrescriptionQuoteCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
             return Response(data={"message": "Precsription not quoted", "prescription-quote": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
+
 class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
     """
     Pharmacy Superintendent
@@ -118,10 +118,9 @@ class AllPrescriptionQuotesListAPIView(generics.ListAPIView):
                           )
     serializer_class = serializers.PrescriptionQuoteSerializer
 
-    
     queryset = models.PrescriptionQuote.objects.all()
-    search_fields =('forward_prescription__owner__id','owner__id')
-    ordering_fields =( 'id',)
+    search_fields = ('forward_prescription__owner__id', 'owner__id')
+    ordering_fields = ('id',)
 
     # TODO : Reuse this for filtering by q.
 
@@ -162,8 +161,6 @@ class PharmacistPrescriptionQuotesListAPIView(generics.ListAPIView):
         # Ensure that the users belong to the company of the user that is making the request
 
         return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
-
-
 
 
 class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
@@ -208,7 +205,7 @@ class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
 #     def perform_create(self, serializer):
 #         user = self.request.user
 #         serializer.save(owner=user, facility=self.request.user.facility,)
-        
+
 #     def create(self, request, *args, **kwargs):
 #         serializer = self.get_serializer(data=request.data)
 
@@ -227,7 +224,7 @@ class PrescriptionQuoteDetailAPIView(generics.RetrieveAPIView):
 #             return Response(data={"message": "Precsription not forwarded", "forwarded-prescription": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class QuoteItemListAPIView(FacilitySafeViewMixin,generics.ListAPIView):
+class QuoteItemListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Client
     =============================================
@@ -253,6 +250,7 @@ class QuoteItemListAPIView(FacilitySafeViewMixin,generics.ListAPIView):
 
         return super().get_queryset().filter(facility=self.request.user.facility)
 
+
 class PrescriptionQuoteItemsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Pharmacist
@@ -273,17 +271,17 @@ class PrescriptionQuoteItemsList(FacilitySafeViewMixin, generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         prescription_quote_id = self.kwargs['pk']
-        if models.PrescriptionQuote.objects.filter(id=prescription_quote_id).count()>0:
-            prescription_quote = models.PrescriptionQuote.objects.get(id=prescription_quote_id)
-            if prescription_quote and prescription_quote.owner==user:
+        if models.PrescriptionQuote.objects.filter(id=prescription_quote_id).count() > 0:
+            prescription_quote = models.PrescriptionQuote.objects.get(
+                id=prescription_quote_id)
+            if prescription_quote and prescription_quote.owner == user:
                 return models.QuoteItem.objects.filter(prescription_quote=prescription_quote)
             else:
                 raise exceptions.NotAcceptable(
                     {"detail": ["No quote for given ID  found in your records", ]})
         else:
             raise exceptions.NotAcceptable(
-                    {"detail": ["Quote for given ID not retrieved", ]})
-            
+                {"detail": ["Quote for given ID not retrieved", ]})
 
 
 class QuoteItemDetailAPIView(generics.RetrieveAPIView):
@@ -307,6 +305,7 @@ class QuoteItemDetailAPIView(generics.RetrieveAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+
 class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
 
     """
@@ -320,11 +319,12 @@ class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
     serializer_class = serializers.QuoteItemSerializer
     queryset = models.QuoteItem.objects.all()
     lookup_fields = ('pk',)
-    #TODO : Refer -> Pass data from view to serializer using context
+    # TODO : Refer -> Pass data from view to serializer using context
+
     def get_serializer_context(self):
         prescription_quote_item_pk = self.kwargs.get("pk")
         context = super(UpdateQuoteItem, self).get_serializer_context()
-        
+
         context.update({
             "prescription_quote_item_pk": prescription_quote_item_pk
             # extra data
@@ -340,7 +340,7 @@ class UpdateQuoteItem(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-  
+
 
 class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
 
@@ -355,11 +355,12 @@ class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
     serializer_class = serializers.ClientQuoteItemSerializer
     queryset = models.QuoteItem.objects.all()
     lookup_fields = ('pk',)
-    #TODO : Refer -> Pass data from view to serializer using context
+    # TODO : Refer -> Pass data from view to serializer using context
+
     def get_serializer_context(self):
         prescription_quote_item_pk = self.kwargs.get("pk")
         context = super(AcceptQuoteItem, self).get_serializer_context()
-        
+
         context.update({
             "prescription_quote_item_pk": prescription_quote_item_pk
             # extra data
@@ -375,7 +376,6 @@ class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-  
 
 
 class AllOrdersList(FacilitySafeViewMixin, generics.ListAPIView):
@@ -396,7 +396,6 @@ class AllOrdersList(FacilitySafeViewMixin, generics.ListAPIView):
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
-
 
 
 class OrderDetailAPIView(generics.RetrieveAPIView):
@@ -421,6 +420,8 @@ class OrderDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+
 class ConfirmOrderAPIView(generics.RetrieveUpdateAPIView):
     """
     Client user
@@ -447,8 +448,6 @@ class ConfirmOrderAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-
-
 class AllOrderItemsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Superintendent Pharmacist
@@ -467,7 +466,6 @@ class AllOrderItemsList(FacilitySafeViewMixin, generics.ListAPIView):
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
-
 
 
 class OrderItemDetailAPIView(generics.RetrieveAPIView):
@@ -490,5 +488,3 @@ class OrderItemDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-
-

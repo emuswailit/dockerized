@@ -14,8 +14,6 @@ from payments.models import PaymentMethods
 User = get_user_model()
 
 
-
-
 class Allergy(FacilityRelatedModel):
 
     ALLERGY_CATEGORY = (
@@ -27,7 +25,7 @@ class Allergy(FacilityRelatedModel):
     """ Model for any dependant allergies.
     This is important for reporting any allergies that a dependant
     has ever exhibited on drugs, environment e.t.c"""
-   
+
     title = models.TextField(max_length=100)
     description = models.TextField(max_length=100, null=True, blank=True)
     allergy_category = models.CharField(
@@ -39,6 +37,7 @@ class Allergy(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
+
 
 class SlotsQuerySet(models.QuerySet):
     def all_slots(self):
@@ -83,27 +82,28 @@ class Slots(FacilityRelatedModel):
 
 
 class AppointmentPayments(FacilityRelatedModel):
-    
+
     """
     -Model for a appointment payment
 
     -Create an appointment only after this payment is saved
     """
-    PAYMENT_STATUS_CHOICES =(
-        ("PENDING","PENDING"),
-        ("SUCCESS","SUCCESS"),
-        ("FAILED","FAILED"),
+    PAYMENT_STATUS_CHOICES = (
+        ("PENDING", "PENDING"),
+        ("SUCCESS", "SUCCESS"),
+        ("FAILED", "FAILED"),
     )
     dependant = models.ForeignKey(
         Dependant, related_name="appointment_dependant", on_delete=models.CASCADE)
     slot = models.ForeignKey(Slots, on_delete=models.CASCADE)
-    payment_method = models.ForeignKey(PaymentMethods, on_delete=models.CASCADE)
+    payment_method = models.ForeignKey(
+        PaymentMethods, on_delete=models.CASCADE)
     amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     narrative = models.CharField(max_length=300, null=False, blank=False)
-    reference= models.CharField(
-        max_length=120,null=False,blank=False)
-    status= models.CharField(
+    reference = models.CharField(
+        max_length=120, null=False, blank=False)
+    status = models.CharField(
         max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
     appointment_created = models.BooleanField(default=False)
     owner = models.ForeignKey(
@@ -117,27 +117,33 @@ class AppointmentPayments(FacilityRelatedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=[
-                                    'facility', 'dependant','slot','reference'], name='One payment per appointment')
+                                    'facility', 'dependant', 'slot', 'reference'], name='One payment per appointment')
         ]
+
 
 class Appointments(FacilityRelatedModel):
     APPOINTMENT_STATUS_CHOICES = (
-        ("SCHEDULED","SCHEDULED"),
-        ("ATTENDED","ATTENDED"),
-        ("ABSCONDED","ABSCONDED"),
-        ("RESCHEDULED","RESCHEDULED"),
-        ("CANCELLED","CANCELLED"),
+        ("SCHEDULED", "SCHEDULED"),
+        ("ATTENDED", "ATTENDED"),
+        ("ABSCONDED", "ABSCONDED"),
+        ("RESCHEDULED", "RESCHEDULED"),
+        ("CANCELLED", "CANCELLED"),
     )
 
     appointment_payment = models.OneToOneField(
         AppointmentPayments, related_name="appointment_slot", on_delete=models.CASCADE)
-    status = models.CharField(max_length=100, choices=APPOINTMENT_STATUS_CHOICES, default="PENDING")
+    dependant = models.ForeignKey(Dependant, on_delete=models.CASCADE)
+    status = models.CharField(
+        max_length=100, choices=APPOINTMENT_STATUS_CHOICES, default="PENDING")
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
- 
+    def __str__(self):
+        return f"Appointment: {self.dependant.first_name} {self.dependant.last_name} c/o {self.owner.first_name} {self.owner.last_name}"
+
+
 class AppointmentConsultations(FacilityRelatedModel):
 
     COMPLAINT_DURATION_UNIT = (
@@ -158,7 +164,7 @@ class AppointmentConsultations(FacilityRelatedModel):
     course = models.CharField(max_length=300)
     aggravating_factors = models.CharField(max_length=300)
     previous_treatment = models.CharField(max_length=300)
-    current_medication = models.ManyToManyField(Generic,null=True, blank=True)
+    current_medication = models.ManyToManyField(Generic, null=True, blank=True)
 
     uses_alcohol = models.BooleanField(default=False)
     uses_tobbaco = models.BooleanField(default=False)
@@ -212,7 +218,10 @@ class PrescriptionManager(models.Manager):
 
 
 class Prescription(FacilityRelatedModel):
-    """Model for prescriptions raised for dependants"""
+    """
+    -Model for prescriptions raised for dependants
+    -Prescription can be created on creation of an appointment or deliberately
+    """
     patient_consultation = models.ForeignKey(
         AppointmentConsultations, on_delete=models.CASCADE, null=True, blank=True)
     dependant = models.ForeignKey(
@@ -233,10 +242,23 @@ class Prescription(FacilityRelatedModel):
         return self.product.get_absolute_url()
 
 
+@receiver(post_save, sender=AppointmentConsultations)
+def create_prescription_for_appointment(sender, instance, created, **kwargs):
+    """
+    Create a prescription for an appointment
+    """
+    if created:
+        Prescription.objects.create(
+            patient_consultation=instance,
+            dependant=instance.appointment.appointment_payment.dependant,
+            facility=instance.facility,
+            owner=instance.owner
+        )
+
+
 class PrescriptionItemQuerySet(models.QuerySet):
     def all_prescription_items(self):
         return self.all()
-
 
 
 class PrescriptionItemManager(models.Manager):

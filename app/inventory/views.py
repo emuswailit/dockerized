@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from django.shortcuts import render
 from core.views import FacilitySafeViewMixin
-from core.permissions import FacilitySuperintendentPermission, PharmacistPermission
+from core.app_permissions import FacilitySuperintendentPermission, PharmacistPermission
 from rest_framework import generics, permissions, response, status, exceptions
 from . import serializers
 from rest_framework.response import Response
@@ -61,8 +61,9 @@ class VariationList(FacilitySafeViewMixin, generics.ListAPIView):
     )
     serializer_class = serializers.VariationSerializer
     queryset = models.Variation.objects.all()
-    search_fields =('title','description', 'product__title','product__manufacturer__title')
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', 'product__title',
+                     'product__manufacturer__title')
+    ordering_fields = ('title', 'id')
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
@@ -218,9 +219,9 @@ class VariationReceiptList(FacilitySafeViewMixin, generics.ListAPIView):
     serializer_class = serializers.VariationReceiptSerializer
     queryset = models.VariationReceipt.objects.all()
 
-    search_fields =('distributor__title','description', 'variation__title','variation__product__manufacturer__title','variation__product__title')
-    ordering_fields =('title', 'id')
-
+    search_fields = ('distributor__title', 'description', 'variation__title',
+                     'variation__product__manufacturer__title', 'variation__product__title')
+    ordering_fields = ('title', 'id')
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
@@ -256,5 +257,3 @@ class VariationReceiptUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestr
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
-
-

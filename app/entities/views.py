@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.db import IntegrityError
 from rest_framework import permissions
 from rest_framework import generics, exceptions, status
@@ -7,10 +8,8 @@ from . import serializers
 from . import models
 from core.views import FacilitySafeViewMixin
 from users.models import Facility
-from core.permissions import FacilitySuperintendentPermission, ClinicSuperintendentPermission, IsOwner
-from django.shortcuts import get_object_or_404
+from core import app_permissions
 User = get_user_model()
-
 
 
 # Professionals Views
@@ -26,7 +25,7 @@ class ProfessionalsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'professionals-create'
     permission_classes = (
-        permissions.IsAuthenticated,
+        app_permissions.NonProfessionalsPermission,
     )
     serializer_class = serializers.ProfessionalSerializer
     queryset = models.Professionals.objects.all()
@@ -75,14 +74,14 @@ class ProfessionalsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
 class ProfessionalProfile(FacilitySafeViewMixin, generics.ListAPIView):
     """
-    Admin User
+    Professional
     ============================================================
-    List of all professionals 
+    View self professional profile
 
     """
     name = 'professionals-list'
     permission_classes = (
-        permissions.IsAuthenticated,
+        app_permissions.ProfessionalsOnlyPermission,
     )
     serializer_class = serializers.ProfessionalSerializer
     queryset = models.Professionals.objects.all()
@@ -119,7 +118,7 @@ class AvailableProfessionalsList(generics.ListAPIView):
     """
     name = 'professionals-list'
     permission_classes = (
-        permissions.IsAdminUser,
+        app_permissions.ClinicSuperintendentPermission,
     )
     serializer_class = serializers.ProfessionalSerializer
     queryset = models.Professionals.objects.available_professionals()
@@ -149,7 +148,7 @@ class ProfessionalUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
     Update professional: set if is verified, is active
 
     """
-    name = 'professionals-detail'
+    name = 'professionals-update'
     permission_classes = (
         permissions.IsAdminUser,
     )
@@ -168,12 +167,23 @@ class SetProfessionalAvailability(FacilitySafeViewMixin, generics.RetrieveUpdate
     Update profile: set self as available for hiring or not
 
     """
-    name = 'professionals-detail'
+    name = 'professionals-availability'
     permission_classes = (
-        permissions.IsAuthenticated, IsOwner
+        app_permissions.ProfessionalsOnlyPermission,
     )
     serializer_class = serializers.ProfessionalAvailabilitySerializer
     queryset = models.Professionals.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(SetProfessionalAvailability,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
@@ -190,7 +200,7 @@ class DepartmentCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'department-create'
     permission_classes = (
-        ClinicSuperintendentPermission,
+        app_permissions.ClinicSuperintendentPermission,
     )
     serializer_class = serializers.DepartmentSerializer
     queryset = models.Department.objects.all()
@@ -199,7 +209,6 @@ class DepartmentCreate(FacilitySafeViewMixin, generics.CreateAPIView):
         user = self.request.user
         serializer.save(owner=user, facility=user.facility)
 
-     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         # print(request.data['facility'])
@@ -307,6 +316,7 @@ class UpdateDepartment(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+
 class ProfessionalAnnualLicenceCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
     # TODO : Test this view later
@@ -382,7 +392,7 @@ class EmployeesCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": [f"Professional is already hired in your facility!", ]})
+                {"detail": {e}})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -415,7 +425,7 @@ class EmployeeList(FacilitySafeViewMixin, generics.ListAPIView):
     queryset = models.Employees.objects.all()
 
 
-class EmployeeDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+class EmployeeDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     """
     Authorized user
     -----------------------------------------------------
@@ -431,3 +441,134 @@ class EmployeeDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIVie
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
+
+
+class EmployeeUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Authorized user
+    -----------------------------------------------------
+    View details of an employee
+    """
+    name = 'employees-update'
+    permission_classes = (
+        app_permissions.FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.EmployeesSerializer
+    queryset = models.Employees.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+class JobsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+
+    """
+    Administrator
+    ============================================================
+    Create a job description
+
+    """
+    name = 'designations-create'
+    permission_classes = (
+        app_permissions.FacilityAdministratorPermission,
+    )
+    serializer_class = serializers.JobsSerializer
+    queryset = models.Jobs.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(JobsCreate, self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
+    def perform_create(self, serializer):
+
+        try:
+            user = self.request.user
+            facility = self.request.user.facility
+
+            if user.is_staff:
+                raise exceptions.NotAcceptable("Not for administrators")
+            else:
+                serializer.save(owner=user, facility=facility,)
+
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"detail": ["User must be to be unique. Similar user is already added!", ]})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "You have succesfully created a job", "job": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Job was not successfully created", "job": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class FacilityJobsList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Facility Administrator
+    ============================================================
+    View list of all facility jobs
+    """
+    name = 'jobs-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.JobsSerializer
+    queryset = models.Jobs.objects.all()
+
+
+class AdvertisedJobsList(generics.ListAPIView):
+    """
+    Facility Administrator
+    ============================================================
+    View list of all facility jobs
+    """
+    name = 'jobs-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.JobsSerializer
+    queryset = models.Jobs.objects.advertised_jobs()
+
+
+class JobsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    """
+    Authorized user
+    -----------------------------------------------------
+    View details of a job 
+    """
+    name = 'jobs-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.JobsSerializer
+    queryset = models.Jobs.objects.all()
+
+
+class JobsUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
+    """
+    Authorized user
+    -----------------------------------------------------
+    View details of a job 
+    """
+    name = 'jobs-update'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.JobsSerializer
+    queryset = models.Jobs.objects.all()

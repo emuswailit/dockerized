@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from django_countries.serializers import CountryFieldMixin
 from rest_framework.filters import SearchFilter, OrderingFilter
-from core.permissions import IsSubscribedPermission,SubscribedOrStaffPermission
+from core.app_permissions import IsSubscribedPermission, SubscribedOrStaffPermission
 
 
 # Distributors
@@ -57,8 +57,8 @@ class DistributorListAPIView(generics.ListAPIView):
     queryset = models.Distributor.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class DistributorDetailAPIView(generics.RetrieveAPIView):
@@ -155,8 +155,8 @@ class PosologyListAPIView(generics.ListAPIView):
     queryset = models.Posology.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class PosologyDetailAPIView(generics.RetrieveAPIView):
@@ -253,8 +253,8 @@ class FrequencyListAPIView(generics.ListAPIView):
     queryset = models.Frequency.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description','abbreviation','description' )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', 'abbreviation', 'description')
+    ordering_fields = ('title', 'id')
 
 
 class FrequencyDetailAPIView(generics.RetrieveAPIView):
@@ -351,8 +351,8 @@ class InstructionListAPIView(generics.ListAPIView):
     queryset = models.Instruction.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class InstructionDetailAPIView(generics.RetrieveAPIView):
@@ -448,8 +448,8 @@ class BodySystemListAPIView(generics.ListAPIView):
     queryset = models.BodySystem.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class BodySystemDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -550,8 +550,8 @@ class DrugClassListAPIView(generics.ListAPIView):
     queryset = models.DrugClass.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class DrugClassDetailAPIView(generics.RetrieveUpdateAPIView):
@@ -648,8 +648,8 @@ class DrugSubClassListAPIView(generics.ListAPIView):
     queryset = models.DrugSubClass.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class DrugSubClassDetailAPIView(generics.RetrieveAPIView):
@@ -742,11 +742,9 @@ class GenericListAPIView(generics.ListAPIView):
     queryset = models.Generic.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description','drug_class__title','drug_sub_class__title', )
-    ordering_fields =('title', 'id')
-
-
-  
+    search_fields = ('title', 'description',
+                     'drug_class__title', 'drug_sub_class__title', )
+    ordering_fields = ('title', 'id')
 
 
 class GenericDetailAPIView(generics.RetrieveAPIView):
@@ -838,9 +836,9 @@ class PreparationListAPIView(generics.ListAPIView):
     queryset = models.Preparation.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description','generic__title','formulation__title', )
-    ordering_fields =('title', 'id')
-
+    search_fields = ('title', 'description',
+                     'generic__title', 'formulation__title', )
+    ordering_fields = ('title', 'id')
 
 
 class PreparationDetailAPIView(generics.RetrieveAPIView):
@@ -936,9 +934,8 @@ class FormulationListAPIView(generics.ListAPIView):
     queryset = models.Formulation.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
-
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class FormulationDetailAPIView(generics.RetrieveAPIView):
@@ -1034,8 +1031,8 @@ class ManufacturerListAPIView(generics.ListAPIView):
     queryset = models.Manufacturer.objects.all()
     # TODO : Reuse this for filtering by q.
 
-    search_fields =('title','description', )
-    ordering_fields =('title', 'id')
+    search_fields = ('title', 'description', )
+    ordering_fields = ('title', 'id')
 
 
 class ManufacturerDetailAPIView(generics.RetrieveAPIView):
@@ -1125,11 +1122,11 @@ class ProductListAPIView(generics.ListAPIView):
     serializer_class = serializers.ProductSerializer
 
     queryset = models.Product.objects.all()
-    
-    # Searching and filtering
-    search_fields =('title','description','preparation__title', 'manufacturer__title')
-    ordering_fields =('title','description','id')
 
+    # Searching and filtering
+    search_fields = ('title', 'description',
+                     'preparation__title', 'manufacturer__title')
+    ordering_fields = ('title', 'description', 'id')
 
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
@@ -1176,7 +1173,6 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-
 class ProductImageList(generics.ListCreateAPIView):
     """
     Logged In User
@@ -1217,7 +1213,6 @@ class ProductImageList(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         return super().get_queryset().filter(created_by=user)
-
 
 
 class ProductImageDetail(generics.RetrieveAPIView):

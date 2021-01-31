@@ -4,6 +4,17 @@ from django.shortcuts import get_object_or_404
 from users.models import Facility
 
 
+class FacilityAdministratorPermission(permissions.BasePermission):
+    """Facility administrator permissions"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+
+            return request.user.is_administrator
+        else:
+            raise NotAcceptable("Administrators only")
+
+
 class FacilitySuperintendentPermission(permissions.BasePermission):
     """Facility superintendent permissions"""
 
@@ -12,7 +23,7 @@ class FacilitySuperintendentPermission(permissions.BasePermission):
             print(request.user.role)
             return request.user.is_pharmacist and request.user.is_superintendent
         else:
-            raise NotAcceptable("Administrators only")
+            raise NotAcceptable("Superintendents only")
 
 
 class ClinicSuperintendentPermission(permissions.BasePermission):
@@ -24,6 +35,8 @@ class ClinicSuperintendentPermission(permissions.BasePermission):
             return request.user.is_prescriber and request.user.is_superintendent
         else:
             raise NotAcceptable("Med Sups only")
+
+
 class SubscribedOrStaffPermission(permissions.BasePermission):
     """Subscribed or Staff permissions"""
 
@@ -35,9 +48,52 @@ class SubscribedOrStaffPermission(permissions.BasePermission):
                 return True
             else:
                 raise NotAcceptable(
-                    {"response_code":1, "response_message":"You are not authorized to view this content: admins or subscribed users only" })
+                    {"response_code": 1, "response_message": "You are not authorized to view this content: admins or subscribed users only"})
 
- 
+
+class ConsultationPermission(permissions.BasePermission):
+    """Permissions for users who can create consultations: doctors and clinical officers"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            user = request.user
+            if not user.cadre:
+                raise NotAcceptable(
+                    {"response_code": 1, "response_message": "You are not registered as a professional"})
+
+            if user.cadre.cluster == "CONSULTATION":
+                return True
+            else:
+                raise NotAcceptable(
+                    {"response_code": 1, "response_message": "You are not authorized to view this content"})
+
+
+class NonProfessionalsPermission(permissions.BasePermission):
+    """Only users not registered as professionals can access"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+
+            if request.user.is_professional == False:
+                return True
+            else:
+                raise NotAcceptable(
+                    {"response_code": 1, "response_message": "You have already created your professional profile in the system"})
+
+
+class ProfessionalsOnlyPermission(permissions.BasePermission):
+    """Only users registered as professionals can access"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+
+            if request.user.is_professional == True:
+                return True
+            else:
+                raise NotAcceptable(
+                    {"response_code": 1, "response_message": "You have not created your professional profile in the system"})
+
+
 class IsSubscribedPermission(permissions.BasePermission):
     """Subscribed Only permissions"""
 
@@ -57,23 +113,28 @@ class PharmacistPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            if request.user.get_role()=="PHARMACIST" or request.user.get_role()=="PHARMACEUTICAL-TECHNOLOGIST":
+            if request.user.get_role() == "PHARMACIST" or request.user.get_role() == "PHARMACEUTICAL-TECHNOLOGIST":
                 return True
             else:
-                raise NotAcceptable("Pharmacists or Pharmaceutical Technologists only")
+                raise NotAcceptable(
+                    "Pharmacists or Pharmaceutical Technologists only")
         else:
             raise NotAcceptable("Pharmacists only")
 
 
 class PrescriberPermission(permissions.BasePermission):
-    """Prescriber permissions"""
+    """Prescriber permissions: doctors and clinical officers"""
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-
-            return request.user.is_prescriber
-        else:
-            raise NotAcceptable("Prescribers only")
+            if request.user.cadre:
+                if request.user.cadre.cluster == "CONSULTATION":
+                    return True
+                else:
+                    raise NotAcceptable("Prescribers only")
+            else:
+                raise NotAcceptable(
+                    {"response_code": 1, "response_message": "You do not have permissions to access this content"})
 
 
 class IsMyFacilityObjectPermission(permissions.BasePermission):
@@ -146,8 +207,8 @@ class ClinicSuperintendentPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            
-            if request.user.is_superintendent and request.user.facility.facility_type=="Clinic":
+
+            if request.user.is_superintendent and request.user.facility.facility_type == "Clinic":
                 return True
 
             else:
@@ -156,13 +217,14 @@ class ClinicSuperintendentPermission(permissions.BasePermission):
         else:
             raise NotAcceptable("Please log in")
 
+
 class PharmacySuperintendentPermission(permissions.BasePermission):
     """Facility Superintendent permissions"""
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
-            
-            if request.user.is_superintendent and request.user.facility.facility_type=="Pharmacy":
+
+            if request.user.is_superintendent and request.user.facility.facility_type == "Pharmacy":
                 return True
             else:
                 raise NotAcceptable(

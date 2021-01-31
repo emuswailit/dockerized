@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from . import serializers, models
-from core.permissions import IsOwner, FacilitySuperintendentPermission
+from core.app_permissions import IsOwner, FacilitySuperintendentPermission
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
@@ -21,7 +21,7 @@ class PlanCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(owner=user,facility=user.facility)
+        serializer.save(owner=user, facility=user.facility)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -125,9 +125,11 @@ class SubscriptionPaymentsCreate(generics.CreateAPIView):
                           )
     serializer_class = serializers.SubscriptionPaymentsSerializer
     queryset = models.SubscriptionPayments.objects.all()
+
     def get_serializer_context(self):
         user_pk = self.request.user.id
-        context = super(SubscriptionPaymentsCreate, self).get_serializer_context()
+        context = super(SubscriptionPaymentsCreate,
+                        self).get_serializer_context()
 
         context.update({
             "user_pk": user_pk
@@ -137,7 +139,7 @@ class SubscriptionPaymentsCreate(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(owner=user,facility=user.facility)
+        serializer.save(owner=user, facility=user.facility)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -231,7 +233,6 @@ class SubscriptionPaymentsUpdate(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-
 
 
 # # Subscriptions : no create view because it is created automatically

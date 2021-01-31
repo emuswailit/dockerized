@@ -43,12 +43,25 @@ Create slot after validating if time in betweeen in not taken
                 "Start time cannot be later that end time")
 
         if start and end:
+            # You cannot add a past date
+            if start.timestamp() < datetime.now().timestamp():
+                raise serializers.ValidationError(
+                    {"response_code": "1", "response_message": f"Selected start time is in the past"})
+
+            if end.timestamp() < datetime.now().timestamp():
+                raise serializers.ValidationError(
+                    {"response_code": "1", "response_message": f"Selected ending start time is in the past"})
 
             if models.Slots.objects.all().count() > 0:
+
                 for slot in models.Slots.objects.all():
+                    # Delete all stale slots
+                    if slot.is_available and slot.start < datetime.now():
+                        slot.delete()
+
                     if start.timestamp() >= slot.start.timestamp() and end.timestamp() <= slot.end.timestamp():
                         raise serializers.ValidationError(
-                            f"Slot is not available")
+                            {"response_code": "1", "response_message": f"Slotted time is not available"})
                     else:
                         created = models.Slots.objects.create(
                             start=start, end=end, **validated_data)
@@ -79,7 +92,7 @@ class AppointmentPaymentsSerializer(serializers.HyperlinkedModelSerializer):
             # Facility has already done a trial plan
             if dependant.owner != user:
                 raise serializers.ValidationError(
-                    {"response_code":"1", "response_message": f"Selected dependant is not in your list"})
+                    {"response_code": "1", "response_message": f"Selected dependant is not in your list"})
 
             appointment_payment = None
             today_payment = None
@@ -98,7 +111,7 @@ class AppointmentPaymentsSerializer(serializers.HyperlinkedModelSerializer):
                     new_appointment_payment = models.AppointmentPayments.objects.create(
                         dependant=dependant,
                         slot=slot,
-                        amount=departmental_charges.get_total_departmental_charges(), 
+                        amount=departmental_charges.get_total_departmental_charges(),
                         narrative="Clinic charges", reference="fgvvvxdvfsgcg", **validated_data)
                     if new_appointment_payment:
                         appointment_payment = new_appointment_payment
@@ -110,6 +123,7 @@ class AppointmentPaymentsSerializer(serializers.HyperlinkedModelSerializer):
                         created = models.Appointments.objects.create(
                             facility=user.facility,
                             owner=user,
+                            dependant=appointment_payment.dependant,
                             appointment_payment=appointment_payment,
                             status="SCHEDULED")
 
@@ -134,11 +148,12 @@ class AppointmentsSerializer(FacilitySafeSerializerMixin, serializers.Hyperlinke
 
     class Meta:
         model = models.Appointments
-        fields = ('id', 'url',  'facility', 'dependant', 'slot',
+        fields = ('id', 'url',  'facility', 'dependant', 'appointment_payment',
                   'status', 'owner', 'created', 'updated')
 
-        read_only_fields = ('id', 'url', 'facility', 'owner', 'status',
+        read_only_fields = ('id', 'url', 'facility', 'appointment_payment', 'owner', 'status',
                             'created', 'updated')
+
 
 class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     """
@@ -148,10 +163,10 @@ class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializer
     class Meta:
         model = models.AppointmentConsultations
         fields = (
-            'id', 
-            'url',  
-            'facility', 
-            'appointment', 
+            'id',
+            'url',
+            'facility',
+            'appointment',
             'complaint_duration_length',
             'complaint_duration_unit',
             'location',
@@ -165,15 +180,26 @@ class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializer
             'is_married',
             'current_occupation',
             'allergies',
-            'owner', 
-            'created', 
+            'owner',
+            'created',
             'updated'
-            )
+        )
 
         read_only_fields = ('id', 'url', 'facility', 'owner', 'status',
                             'created', 'updated')
 
-
+    @transaction.atomic
+    def create(self, validated_data):
+        user_pk = self.context.get("user_pk")
+        user = User.objects.get(id=user_pk)
+        appointment = validated_data.pop('appointment')
+        professional = Professionals.objects.get(owner=user)
+        employee = Employees.objects.get(professional=professional)
+        if employee:
+            # Check if appointment is on the logged on doctor's schedule
+            if appointment.appointment_payment.slot_employee != employee:
+                raise serializers.ValidationError(
+                    {"response_code": "1", "response_message": f"Not your patient"})
 
 
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
@@ -190,6 +216,7 @@ class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
         )
 
     # TODO: Validate foreign key parameters
+    @transaction.atomic
     def create(self, validated_data):
         try:
             preparation_id = validated_data.pop('preparation').id
@@ -267,10 +294,11 @@ class DependantSerializer(OwnerSafeSerializerMixin, serializers.HyperlinkedModel
         allergy = Allergy.objects.filter(dependant=obj)
         return AllergySerializer(allergy, context=self.context, many=True).data
 
+
 class AllergySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Allergy
-        fields = ('id', 'url', 'title', 'description','allergy_category',
+        fields = ('id', 'url', 'title', 'description', 'allergy_category',
                   'owner', 'created', 'updated')
         read_only_fields = ('id', 'url', 'dependant',
                             'owner', 'created', 'updated')

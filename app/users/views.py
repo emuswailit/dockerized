@@ -14,16 +14,14 @@ from rest_framework_jwt.settings import api_settings
 from . import serializers
 from . import models
 from django.http import HttpResponse
-
+from core import app_permissions
 from .token_generator import account_activation_token
 from .utils import jwt_response_payload_handler
-from core.permissions import IsOwner, ClientPermission, PrescriberPermission, IsSubscribedPermission, ClinicSuperintendentPermission
 from core.views import FacilitySafeViewMixin
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 User = get_user_model()
-
 
 
 class MerchantCreate(generics.CreateAPIView):
@@ -74,7 +72,7 @@ class MerchantCreate(generics.CreateAPIView):
 #         self.check_object_permissions(self.request, obj)
 #         return obj
 
-class PharmaciesList( generics.ListAPIView):
+class PharmaciesList(generics.ListAPIView):
     """
     Prescriber
     ============================================================
@@ -91,6 +89,7 @@ class PharmaciesList( generics.ListAPIView):
     # search_fields =('title','county','town', 'description',)
     # ordering_fields =('title','id')
 
+
 class ClinicsList(generics.ListAPIView):
     """
     Prescriber
@@ -105,8 +104,9 @@ class ClinicsList(generics.ListAPIView):
     serializer_class = serializers.FacilitySerializer
     queryset = models.Facility.objects.clinics()
 
-    search_fields =('title','county','town', 'description',)
-    ordering_fields =('title','id')
+    search_fields = ('title', 'county', 'town', 'description',)
+    ordering_fields = ('title', 'id')
+
 
 class DefaultFacility(generics.ListAPIView):
     """
@@ -122,7 +122,6 @@ class DefaultFacility(generics.ListAPIView):
     serializer_class = serializers.FacilitySerializer
     queryset = models.Facility.objects.default_facility()
 
-    
 
 class FacilityDetail(generics.RetrieveAPIView):
     """
@@ -137,12 +136,12 @@ class FacilityDetail(generics.RetrieveAPIView):
     serializer_class = serializers.FacilitySerializer
     queryset = models.Facility.objects.all_facilities()
     lookup_fields = ('pk',)
+
     def get_object(self):
         # Ensure that users can only see the company that they belong to
         return self.request.user.facility
 
 
-        
 class AnyUserRegisterAPIView(generics.CreateAPIView):
     """Allow any user to register in the system"""
     name = 'user-register'
@@ -244,7 +243,7 @@ class UserList(FacilitySafeViewMixin, generics.ListCreateAPIView):
         return qs.filter(facility_id=facility_id)
 
 
-class UserDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+class UserDetail(generics.RetrieveAPIView):
     name = 'user-detail'
     permission_classes = (
         permissions.IsAuthenticated,
@@ -267,8 +266,8 @@ def activate_account(request, uidb64, token):
         print(user)
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
-    if user is not None  and account_activation_token.check_token(user, token):
-        if user.is_verified==False and user.is_active==False:
+    if user is not None and account_activation_token.check_token(user, token):
+        if user.is_verified == False and user.is_active == False:
             user.is_active = True
             user.is_verified = True
             user.save()
@@ -317,6 +316,7 @@ class UserLoginView(generics.views.APIView):
             raise exceptions.AuthenticationFailed('User not found')
         return Response({'status': 401, 'detail': 'Invalid credentials'})
 
+
 class FacilityImageAPIView(generics.CreateAPIView):
     name = 'facilityimage'
     permission_classes = (permissions.IsAuthenticated,)
@@ -328,7 +328,7 @@ class FacilityImageAPIView(generics.CreateAPIView):
 
         user = self.request.user
 
-        serializer.save(created_by=user,facility=user.facility
+        serializer.save(created_by=user, facility=user.facility
                         )
 
     def get_object(self):
@@ -340,6 +340,7 @@ class FacilityImageAPIView(generics.CreateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
 
 class FacilityImageDetail(generics.RetrieveUpdateDestroyAPIView):
     name = 'facilityimage-detail'
@@ -357,6 +358,7 @@ class FacilityImageDetail(generics.RetrieveUpdateDestroyAPIView):
 
         print("No deletes")
 
+
 class UserImageAPIView(generics.CreateAPIView):
     name = 'userimage'
     permission_classes = (permissions.IsAuthenticated,)
@@ -368,7 +370,7 @@ class UserImageAPIView(generics.CreateAPIView):
 
         user = self.request.user
 
-        serializer.save(created_by=user,owner=user
+        serializer.save(created_by=user, owner=user
                         )
 
     def get_object(self):
@@ -577,8 +579,9 @@ class AllDependantListAPIView(generics.ListAPIView):
 
     queryset = models.Dependant.objects.all()
 
-    search_fields =('first_name','middle_name','last_name', 'owner__phone')
-    ordering_fields =('first_name', 'id')
+    search_fields = ('first_name', 'middle_name', 'last_name', 'owner__phone')
+    ordering_fields = ('first_name', 'id')
+
 
 class ActiveDependantListAPIView(generics.ListAPIView):
     """
@@ -587,15 +590,16 @@ class ActiveDependantListAPIView(generics.ListAPIView):
     Active users
     """
     name = "dependant-list"
-    permission_classes = (PrescriberPermission,
+    permission_classes = (app_permissions.PrescriberPermission,
                           )
     serializer_class = serializers.DependantSerializer
 
     queryset = models.Dependant.objects.filter(is_active=True)
 
-    search_fields =('first_name','middle_name','last_name', 'owner__phone')
-    ordering_fields =('first_name', 'id')
-   
+    search_fields = ('first_name', 'middle_name', 'last_name', 'owner__phone')
+    ordering_fields = ('first_name', 'id')
+
+
 class UserDependantsList(generics.ListAPIView):
     """
     General user
@@ -611,20 +615,21 @@ class UserDependantsList(generics.ListAPIView):
 
     queryset = models.Dependant.objects.filter(is_active=True)
 
-    search_fields =('first_name','middle_name','last_name', 'owner__phone')
-    ordering_fields =('first_name', 'id')
+    search_fields = ('first_name', 'middle_name', 'last_name', 'owner__phone')
+    ordering_fields = ('first_name', 'id')
 
     def get_queryset(self):
         # Retrieve dependants for specific user
         user = self.request.user
         return super().get_queryset().filter(owner=user)
 
+
 class DependantDetailAPIView(generics.RetrieveAPIView):
     """
     Dependant details
     """
     name = "dependant-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DependantSerializer
     queryset = models.Dependant.objects.all()
@@ -646,7 +651,7 @@ class DependantUpdateAPIView(generics.RetrieveUpdateAPIView):
     Dependant update
     """
     name = "dependant-update"
-    permission_classes = (IsOwner,
+    permission_classes = (app_permissions.IsOwner,
                           )
     serializer_class = serializers.DependantSerializer
     queryset = models.Dependant.objects.all()
@@ -661,7 +666,6 @@ class DependantUpdateAPIView(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
-
 
 
 # Role views
@@ -734,5 +738,3 @@ class CadresDetail(generics.RetrieveAPIView):
     )
     serializer_class = serializers.CadresSerializer
     queryset = models.Cadres.objects.all()
-
-
