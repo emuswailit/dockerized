@@ -12,9 +12,14 @@ User = get_user_model()
 
 class Distributor(FacilityRelatedModel):
     title = models.CharField(max_length=100, unique=True)
+    physical_address = models.CharField(max_length=120, unique=True)
+    postal_address = models.CharField(max_length=120, unique=True)
     description = models.TextField(max_length=100, null=True, blank=True)
-    phone = models.CharField(max_length=30, null=True)
-    email = models.CharField(max_length=30, null=True)
+    phone1 = models.CharField(max_length=30, null=True, blank=True)
+    phone2 = models.CharField(max_length=30, null=True, blank=True)
+    phone3 = models.CharField(max_length=30, null=True, blank=True)
+    email = models.CharField(max_length=120, null=True, blank=True)
+    website = models.CharField(max_length=120, null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -23,7 +28,25 @@ class Distributor(FacilityRelatedModel):
         return self.title
 
     class Meta:
-        db_table = 'drug_distributors'
+        db_table = 'distributors'
+
+
+class Manufacturer(FacilityRelatedModel):
+
+    title = models.CharField(max_length=100, unique=True)
+    country = CountryField()
+    email = models.EmailField(null=True, blank=True)
+    website = models.CharField(max_length=120, null=True, blank=True)
+    distributors = models.ManyToManyField(Distributor, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        db_table = 'drug_manufacturers'
 
 
 class Posology(FacilityRelatedModel):
@@ -139,7 +162,7 @@ class Generic(FacilityRelatedModel):
         return self.title
 
         class Meta:
-            db_table = 'drug_generics'
+            db_table = 'generics'
         # override save
 
     # def save(self,  *args, **kwargs):
@@ -151,6 +174,137 @@ class Generic(FacilityRelatedModel):
 
     #     super(Generic, self).save(
     #         self, *args, **kwargs)  # the 'real' save
+
+
+class Indications(FacilityRelatedModel):
+
+    generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
+    indication = models.CharField(
+        max_length=240, unique=True, blank=True, null=True)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'indications'
+
+
+class Dose(FacilityRelatedModel):
+    generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
+    indication = models.ForeignKey(Indications, on_delete=models.CASCADE)
+    route = models.ForeignKey(Posology, on_delete=models.CASCADE)
+    dose = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'indications'
+
+
+class ModeOfActions(FacilityRelatedModel):
+
+    generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
+    mode_of_action = models.TextField()
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'mode_of_actions'
+
+
+class ContraIndication(FacilityRelatedModel):
+
+    generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
+    title = models.TextField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'contraindications'
+
+
+class DrugInteraction(FacilityRelatedModel):
+
+    generic = models.ForeignKey(
+        Generic, related_name="generic_drug_interactions", on_delete=models.CASCADE)
+    contra_indicated = models.ForeignKey(Generic, on_delete=models.CASCADE)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'druginteractions'
+
+
+class SideEffects(FacilityRelatedModel):
+
+    generic = models.ForeignKey(
+
+        Generic, related_name="generic_side_effects", on_delete=models.CASCADE)
+    title = models.TextField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'sideffects'
+
+
+class Precautions(FacilityRelatedModel):
+
+    generic = models.ForeignKey(
+        Generic, related_name="generic_precautions", on_delete=models.CASCADE)
+    title = models.TextField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'precautions'
+
+
+class SpecialInformation(FacilityRelatedModel):
+
+    generic = models.ForeignKey(
+
+        Generic, related_name="generic_special_info", on_delete=models.CASCADE)
+    title = models.TextField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+        class Meta:
+            db_table = 'specialinformation'
 
 
 class Formulation(FacilityRelatedModel):
@@ -190,21 +344,6 @@ class Preparation(FacilityRelatedModel):
         class Meta:
             db_table = 'drug_preparations'
             verbose_name_plural = "drug_preparations"
-
-
-class Manufacturer(FacilityRelatedModel):
-
-    title = models.CharField(max_length=100, unique=True)
-    country = CountryField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        db_table = 'drug_manufacturers'
 
 
 class ProductQuerySet(models.query.QuerySet):

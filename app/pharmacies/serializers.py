@@ -6,7 +6,6 @@ from consultations.models import PrescriptionItem, Prescription
 from inventory.models import VariationReceipt
 from core.serializers import FacilitySafeSerializerMixin
 from consultations.models import PrescriptionItem
-# from clients.serializers import ForwardPrescriptionSerializer
 from datetime import date
 from django.db import IntegrityError, transaction
 from consultations.serializers import PrescriptionItemSerializer
@@ -309,7 +308,6 @@ class ClientQuoteItemSerializer(FacilitySafeSerializerMixin, serializers.Hyperli
                                                           created=today, client_confirmed=True, owner=quote_item.prescription_quote.forward_prescription.owner)
         if obj:
             order = obj
-            # raise serializers.ValidationError("Retrieved very well")
         elif created:
             order = created
 
@@ -352,8 +350,6 @@ class ClientQuoteItemSerializer(FacilitySafeSerializerMixin, serializers.Hyperli
             else:
                 raise serializers.ValidationError(
                     f"Check your quantity and also if you have accepted the offer")
-
-            # raise serializers.ValidationError(f"Its the fucking {prescription_quote_item_pk} and {variation_item_id}")
         else:
             raise serializers.ValidationError(
                 'Imaginary preparation not allowed!')

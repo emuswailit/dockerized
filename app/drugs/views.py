@@ -16,10 +16,12 @@ from core.app_permissions import IsSubscribedPermission, SubscribedOrStaffPermis
 
 class DistributorCreateAPIView(generics.CreateAPIView):
     """
+    Admin User
+    ----------------------------------------------------
     Create new disributor
     """
     name = "distributor-create"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.DistributorSerializer
     queryset = models.Distributor.objects.all()
@@ -50,7 +52,7 @@ class DistributorListAPIView(generics.ListAPIView):
     Products list for porfolio, searchable by title or description
     """
     name = "distributor-list"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.DistributorSerializer
 

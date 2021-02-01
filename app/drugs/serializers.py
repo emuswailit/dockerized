@@ -16,7 +16,7 @@ class DistributorSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Distributor
-        fields = ('id', 'url', 'title', 'phone', 'email', 'description', 'owner',
+        fields = ('id', 'url', 'title','physical_address','postal_address', 'phone1','phone2','phone3', 'email','website', 'description', 'owner',
                   'created', 'updated', )
 
         read_only_fields = ('id', 'url', 'created',
@@ -278,7 +278,7 @@ class ManufacturerSerializer(CustomCountryMixin, serializers.HyperlinkedModelSer
 
     class Meta:
         model = models.Manufacturer
-        fields = ('id', 'url', 'title', 'country', 'owner',
+        fields = ('id', 'url', 'title', 'country', 'owner','email','website','distributors'
                   )
 
         read_only_fields = ('id', 'url',  'owner',)
@@ -364,7 +364,7 @@ class PreparationDisplaySerializer(serializers.HyperlinkedModelSerializer):
 class ManufacturerDisplaySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Manufacturer
-        fields = ('id', 'url',
+        fields = ('id', 'url','website','distributors',
                   'title', 'country',
                   )
 

@@ -38,15 +38,15 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
 # Application definition
 
 DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'mobipharma_db',
-            'USER': 'postgres',
-            'PASSWORD': '1978@Omaria@Postgres',
-            'HOST': 'localhost',
-            'PORT': '',
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mobipharma_db',
+        'USER': 'postgres',
+        'PASSWORD': '1978@Omaria@Postgres',
+        'HOST': 'localhost',
+        'PORT': '',
     }
+}
 
 # if DEBUG is False:
 #     DEBUG = int(os.environ.get("DEBUG", default=0))
@@ -78,8 +78,6 @@ DATABASES = {
 #     }
 
 
-
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -102,6 +100,7 @@ INSTALLED_APPS = [
     'entities',
     'celery',
     'drugs',
+    'diseases',
     'inventory',
     'consultations',
     'clients',
@@ -147,7 +146,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
-                
+
             ],
         },
     },
@@ -319,7 +318,7 @@ DATABASES['default'].update(prod_db)
 # Celery
 CELERY_BROKER_URL = 'amqp://localhost'
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND ='django-cache'
+CELERY_CACHE_BACKEND = 'django-cache'
 # Celery Data Format
 # CELERY_ACCEPT_CONTENT = ['application/json']
 # CELERY_TASK_SERIALIZER = 'json'

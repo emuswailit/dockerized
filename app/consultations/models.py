@@ -163,13 +163,13 @@ class AppointmentConsultations(FacilityRelatedModel):
     course = models.CharField(max_length=300)
     aggravating_factors = models.CharField(max_length=300)
     previous_treatment = models.CharField(max_length=300)
-    current_medication = models.ManyToManyField(Generic, null=True, blank=True)
+    current_medication = models.ManyToManyField(Generic)
 
     uses_alcohol = models.BooleanField(default=False)
     uses_tobbaco = models.BooleanField(default=False)
     is_married = models.BooleanField(default=False)
     current_occupation = models.TextField()
-    allergies = models.ManyToManyField(Allergy, null=True, blank=True)
+    allergies = models.ManyToManyField(Allergy)
 
     current_diagnosis = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
