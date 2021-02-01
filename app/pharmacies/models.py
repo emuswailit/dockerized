@@ -1,3 +1,4 @@
+from payments.models import PaymentMethods
 from users.models import Facility
 from rest_framework.exceptions import ValidationError
 from django.db import models
@@ -21,10 +22,14 @@ class PrescriptionQuote(FacilityRelatedModel):
         ForwardPrescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
     client_confirmed = models.BooleanField(default=False)
     pharmacist_confirmed = models.BooleanField(default=False)
+    payment_method = models.ForeignKey(
+        PaymentMethods, on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+    quoted_by = models.ForeignKey(
+        User, related_name="prescription_quote_quoted_by", on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -40,7 +45,7 @@ class PrescriptionQuote(FacilityRelatedModel):
         if QuoteItem.objects.filter(prescription_quote=self).count() > 0:
             items = QuoteItem.objects.filter(prescription_quote=self)
             for item in items:
-                total += item.item_cost
+                total += item.get_dispensed_items_cost()
 
         else:
             pass
@@ -63,10 +68,14 @@ class QuoteItem(FacilityRelatedModel):
     item_accepted = models.BooleanField(default=True)
     fully_dispensed = models.BooleanField(default=False)
     client_comment = models.TextField(blank=True, null=True)
+    client_confirmed = models.BooleanField(default=False)
+    pharmacist_confirmed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+    quoted_by = models.ForeignKey(
+        User, related_name="quote_item_quoted_by", on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         unique_together = ('prescription_quote',
@@ -90,8 +99,8 @@ class Order(FacilityRelatedModel):
         Facility, related_name="cart_facility", on_delete=models.CASCADE)
     prescription_quote = models.ForeignKey(
         PrescriptionQuote, related_name="cart_prescription_quote", on_delete=models.CASCADE)
-    # items = models.ManyToManyField(OrderItem)
-    is_confirmed = models.BooleanField(default=False)
+    client_confirmed = models.BooleanField(default=False)
+    pharmacist_confirmed = models.BooleanField(default=False)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
@@ -115,6 +124,8 @@ class OrderItem(FacilityRelatedModel):
         QuoteItem, on_delete=models.CASCADE, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
+    client_confirmed = models.BooleanField(default=False)
+    pharmacist_confirmed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -130,66 +141,41 @@ class OrderItem(FacilityRelatedModel):
         ]
 
 
-# class Payment(FacilityRelatedModel):
-#     """Model for prescriptions raised for dependants"""
+class PharmacyPayments(FacilityRelatedModel):
+    """Model payments done in pharmacy"""
 
-#     PAYMENT_STATUS_CHOICES =(
-#         ("PENDING","PENDING"),
-#         ("SUCCESS","SUCCESS"),
-#         ("FAILED","FAILED"),
-#     )
-#     facility = models.ForeignKey(
-#         Facility, related_name="payment_facility", on_delete=models.CASCADE)
-#     order = models.ForeignKey(
-#         Order, related_name="payment_order",  on_delete=models.CASCADE)
-#     reference= models.CharField(
-#         max_length=120, null=True,blank=True)
-#     status= models.CharField(
-#         max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
-#     created = models.DateField(auto_now_add=True)
-#     updated = models.DateField(auto_now=True)
-#     owner = models.ForeignKey(
-#         User, related_name="payment_owner", on_delete=models.CASCADE)
-#     class Meta:
-#         constraints = [
-#             models.UniqueConstraint(fields=['facility', 'order'], name='One payment per facility per order')
-#         ]
+    PAYMENT_STATUS_CHOICES = (
+        ("PENDING",  "PENDING"),
+        ("SUCCESS",  "SUCCESS"),
+        ("FAILED",  "FAILED"),
+    )
+    facility = models.ForeignKey(
+        Facility, related_name="payment_facility", on_delete=models.CASCADE)
+    order = models.OneToOneField(
+        Order, related_name="payment_order",  on_delete=models.CASCADE)
+    reference = models.CharField(
+        max_length=120, null=True,  blank=True)
+    status = models.CharField(
+        max_length=120, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+    payment_method = models.ForeignKey(
+        PaymentMethods, on_delete=models.CASCADE)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, related_name="pharmacy_payment_owner", on_delete=models.CASCADE)
 
-#     def get_payment_method(self):
-#         return self.order.payment_method
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
 
-#     def get_amount(self):
-#         return self.order.get_total_price()
+                fields=['facility', 'order'], name='One payment per facility per order')
+        ]
 
+    def get_payment_method(self):
+        return self.order.payment_method
 
-#  Check if prescribed drug is the one being quoted
-
-
-# def quote_item_pre_save_receiver(sender, instance, *args, **kwargs):
-
-#     instance.item_cost = instance.quoted_item.unit_selling_price * \
-#         instance.quantity_required
-#     instance.quantity_pending = instance.quantity_required - instance.quantity_dispensed
-#     if instance.quoted_item.variation.is_drug:
-#         if instance.prescription_item.preparation == instance.quoted_item.variation.product.preparation:
-#             raise exceptions.NotAcceptable(
-#                 {"detail": ["Correct item quoted!", ]})
-#         else:
-#             raise exceptions.NotAcceptable(
-#                 {"detail": ["Please quote the prescribed item", ]})
-#     else:
-#         print("Will proceed to save!")
-
-
-# pre_save.connect(quote_item_pre_save_receiver,
-#                  sender=QuoteItem)
-
-
-# @receiver(post_save, sender=QuoteItem, dispatch_uid="update_prescription_total")
-# def create_offer(sender, instance, created, **kwargs):
-#     """Calculate unit quantities and prices"""
-#     if not created:
-#         raise ValidationError("Updated")
+    def get_amount(self):
+        return self.order.get_total_price()
 
 
 class PrescriptionSale(FacilityRelatedModel):
