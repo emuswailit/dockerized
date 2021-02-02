@@ -189,6 +189,8 @@ class GenericSerializer(serializers.ModelSerializer):
             return DrugSubClassSerializer(drug_sub_class, context=self.context).data
 
 
+
+
 class FormulationSerializer(serializers.HyperlinkedModelSerializer):
     # owner_details = serializers.SerializerMethodField(read_only=True)
 
@@ -480,3 +482,97 @@ class SpecialConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class GenericReferenceSerializer(serializers.ModelSerializer):
+    indications = serializers.SerializerMethodField(read_only=True)
+    doses = serializers.SerializerMethodField(read_only=True)
+    modes_of_action = serializers.SerializerMethodField(read_only=True)
+    contra_indications = serializers.SerializerMethodField(read_only=True)
+    interactions = serializers.SerializerMethodField(read_only=True)
+    side_effects = serializers.SerializerMethodField(read_only=True)
+    precautions = serializers.SerializerMethodField(read_only=True)
+    special_considerations = serializers.SerializerMethodField(read_only=True)
+    drug_class_details = serializers.SerializerMethodField(read_only=True)
+    drug_sub_class_details = serializers.SerializerMethodField(read_only=True)
+
+    # Implement a case sensitive check for uniqueness
+    title = serializers.CharField(
+        max_length=240,
+        validators=[
+            UniqueValidator(
+                queryset=models.Generic.objects.all(), lookup='iexact'
+
+            )]
+    )
+
+    class Meta:
+        model = models.Generic
+        fields = (
+            'id',
+            'owner',
+            'url',
+            'title',
+            'description',
+            'drug_class',
+            'drug_sub_class',
+            'created',
+            'updated',
+            'drug_class_details',
+            'drug_sub_class_details',
+            'indications',
+            'doses',
+            'modes_of_action',
+            'side_effects',
+            'contra_indications',
+            'interactions',
+            'precautions',
+            'special_considerations'
+        )
+
+        read_only_fields = ('id', 'url', 'created',
+                            'updated', 'owner', )
+
+    def get_indications(self, obj):
+        indications = models.Indications.objects.filter(generic=obj)
+        return IndicationsSerializer(indications, context=self.context, many=True).data
+
+    def get_doses(self, obj):
+        doses = models.Indications.objects.filter(generic=obj)
+        return DosesSerializer(doses, context=self.context, many=True).data
+
+    def get_modes_of_action(self, obj):
+        modes_of_action = models.ModeOfActions.objects.filter(generic=obj)
+        return ModeOfActionsSerializer(modes_of_action, context=self.context, many=True).data
+
+    def get_side_effects(self, obj):
+        side_effects = models.SideEffects.objects.filter(generic=obj)
+        return SideEffectsSerializer(side_effects, context=self.context, many=True).data
+
+    def get_contra_indications(self, obj):
+        contra_indications = models.Contraindications.objects.filter(
+            generic=obj)
+        return ContraindicationsSerializer(contra_indications, context=self.context, many=True).data
+
+    def get_precautions(self, obj):
+        precautions = models.Precautions.objects.filter(generic=obj)
+        return PrecautionsSerializer(precautions, context=self.context, many=True).data
+
+    def get_interactions(self, obj):
+        interactions = models.Interactions.objects.filter(generic=obj)
+        return InteractionsSerializer(interactions, context=self.context, many=True).data
+
+    def get_special_considerations(self, obj):
+        special_considerations = models.SpecialConsiderations.objects.filter(
+            generic=obj)
+        return SpecialConsiderationsSerializer(special_considerations, context=self.context, many=True).data
+
+    def get_drug_class_details(self, obj):
+        drug_class = models.DrugClass.objects.get(id=obj.drug_class.id)
+        return DrugClassSerializer(drug_class, context=self.context).data
+
+    def get_drug_sub_class_details(self, obj):
+        if obj.drug_sub_class:
+            drug_sub_class = models.DrugSubClass.objects.get(
+                id=obj.drug_sub_class.id)
+            return DrugSubClassSerializer(drug_sub_class, context=self.context).data

@@ -750,6 +750,23 @@ class GenericListAPIView(generics.ListAPIView):
     ordering_fields = ('title', 'id')
 
 
+class GenericReferenceListAPIView(generics.ListAPIView):
+    """
+    List of generic drugs for reference
+    """
+    name = "generic-list"
+    permission_classes = (SubscribedOrStaffPermission,
+                          )
+    serializer_class = serializers.GenericReferenceSerializer
+
+    queryset = models.Generic.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('title', 'description',
+                     'drug_class__title', 'drug_sub_class__title', )
+    ordering_fields = ('title', 'id')
+
+
 class GenericDetailAPIView(generics.RetrieveAPIView):
     """
     Generic details

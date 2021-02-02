@@ -131,6 +131,8 @@ urlpatterns = [
     # Generics urls
     path('generics', views.GenericListAPIView.as_view(),
          name=views.GenericListAPIView.name),
+    path('generics/reference', views.GenericReferenceListAPIView.as_view(),
+         name=views.GenericReferenceListAPIView.name),
     path('generics/<uuid:pk>', views.GenericDetailAPIView.as_view(),
          name=views.GenericDetailAPIView.name),
     path('generics/<uuid:pk>/update', views.GenericUpdateAPIView.as_view(),
