@@ -485,6 +485,7 @@ class SpecialConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class GenericReferenceSerializer(serializers.ModelSerializer):
+    preparations = serializers.SerializerMethodField(read_only=True)
     indications = serializers.SerializerMethodField(read_only=True)
     doses = serializers.SerializerMethodField(read_only=True)
     modes_of_action = serializers.SerializerMethodField(read_only=True)
@@ -520,6 +521,7 @@ class GenericReferenceSerializer(serializers.ModelSerializer):
             'updated',
             'drug_class_details',
             'drug_sub_class_details',
+            'preparations',
             'indications',
             'doses',
             'modes_of_action',
@@ -532,6 +534,10 @@ class GenericReferenceSerializer(serializers.ModelSerializer):
 
         read_only_fields = ('id', 'url', 'created',
                             'updated', 'owner', )
+
+    def get_preparations(self, obj):
+        preparations = models.Preparation.objects.filter(generic=obj)
+        return PreparationSerializer(preparations, context=self.context, many=True).data
 
     def get_indications(self, obj):
         indications = models.Indications.objects.filter(generic=obj)
