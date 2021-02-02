@@ -138,5 +138,86 @@ urlpatterns = [
     path('generics/create', views.GenericCreateAPIView.as_view(),
          name=views.GenericCreateAPIView.name),
 
+    # Indications urls
+    path('indications', views.IndicationsListAPIView.as_view(),
+         name=views.IndicationsListAPIView.name),
+    path('indications/<uuid:pk>', views.IndicationsDetailAPIView.as_view(),
+         name=views.IndicationsDetailAPIView.name),
+    path('indications/<uuid:pk>/update', views.IndicationsUpdateAPIView.as_view(),
+         name=views.IndicationsUpdateAPIView.name),
+    path('indications/create', views.IndicationsCreateAPIView.as_view(),
+         name=views.IndicationsCreateAPIView.name),
+
+    # Doses urls
+    path('doses', views.DosesListAPIView.as_view(),
+         name=views.DosesListAPIView.name),
+    path('doses/<uuid:pk>', views.DosesDetailAPIView.as_view(),
+         name=views.DosesDetailAPIView.name),
+    path('doses/<uuid:pk>/update', views.DosesUpdateAPIView.as_view(),
+         name=views.DosesUpdateAPIView.name),
+    path('doses/create', views.DosesCreateAPIView.as_view(),
+         name=views.DosesCreateAPIView.name),
+
+    # Mode of actions urls
+    path('mode-of-actions', views.ModeOfActionsListAPIView.as_view(),
+         name=views.ModeOfActionsListAPIView.name),
+    path('mode-of-actions/<uuid:pk>', views.ModeOfActionsDetailAPIView.as_view(),
+         name=views.ModeOfActionsDetailAPIView.name),
+    path('mode-of-actions/<uuid:pk>/update', views.ModeOfActionsUpdateAPIView.as_view(),
+         name=views.ModeOfActionsUpdateAPIView.name),
+    path('mode-of-actions/create', views.ModeOfActionsCreateAPIView.as_view(),
+         name=views.ModeOfActionsCreateAPIView.name),
+
+
+    # Contraindications urls
+    path('contraindications', views.ContraindicationsListAPIView.as_view(),
+         name=views.ContraindicationsListAPIView.name),
+    path('contraindications/<uuid:pk>', views.ContraindicationsDetailAPIView.as_view(),
+         name=views.ContraindicationsDetailAPIView.name),
+    path('contraindications/<uuid:pk>/update', views.ContraindicationsUpdateAPIView.as_view(),
+         name=views.ContraindicationsUpdateAPIView.name),
+    path('contraindications/create', views.ContraindicationsCreateAPIView.as_view(),
+         name=views.ContraindicationsCreateAPIView.name),
+
+    # Drug interactions urls
+    path('interactions', views.InteractionsListAPIView.as_view(),
+         name=views.InteractionsListAPIView.name),
+    path('interactions/<uuid:pk>', views.InteractionsDetailAPIView.as_view(),
+         name=views.InteractionsDetailAPIView.name),
+    path('interactions/<uuid:pk>/update', views.InteractionsUpdateAPIView.as_view(),
+         name=views.InteractionsUpdateAPIView.name),
+    path('interactions/create', views.InteractionsCreateAPIView.as_view(),
+         name=views.InteractionsCreateAPIView.name),
+
+    # Drug interactions urls
+    path('side-effects', views.SideEffectsListAPIView.as_view(),
+         name=views.SideEffectsListAPIView.name),
+    path('side-effects/<uuid:pk>', views.SideEffectsDetailAPIView.as_view(),
+         name=views.SideEffectsDetailAPIView.name),
+    path('side-effects/<uuid:pk>/update', views.SideEffectsUpdateAPIView.as_view(),
+         name=views.SideEffectsUpdateAPIView.name),
+    path('side-effects/create', views.SideEffectsCreateAPIView.as_view(),
+         name=views.SideEffectsCreateAPIView.name),
+
+    # Drug precautions urls
+    path('precautions', views.PrecautionsListAPIView.as_view(),
+         name=views.PrecautionsListAPIView.name),
+    path('precautions/<uuid:pk>', views.PrecautionsDetailAPIView.as_view(),
+         name=views.PrecautionsDetailAPIView.name),
+    path('precautions/<uuid:pk>/update', views.PrecautionsUpdateAPIView.as_view(),
+         name=views.PrecautionsUpdateAPIView.name),
+    path('precautions/create', views.PrecautionsCreateAPIView.as_view(),
+         name=views.PrecautionsCreateAPIView.name),
+
+    # Drug special considerations urls
+    path('special-considerations', views.SpecialConsiderationsListAPIView.as_view(),
+         name=views.SpecialConsiderationsListAPIView.name),
+    path('special-considerations/<uuid:pk>', views.SpecialConsiderationsDetailAPIView.as_view(),
+         name=views.SpecialConsiderationsDetailAPIView.name),
+    path('special-considerations/<uuid:pk>/update', views.SpecialConsiderationsUpdateAPIView.as_view(),
+         name=views.SpecialConsiderationsUpdateAPIView.name),
+    path('special-considerations/create', views.SpecialConsiderationsCreateAPIView.as_view(),
+         name=views.SpecialConsiderationsCreateAPIView.name),
+
 
 ]

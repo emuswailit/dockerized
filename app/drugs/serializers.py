@@ -398,3 +398,85 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_manufacturer_details(self, obj):
         manufacturer = models.Manufacturer.objects.get(id=obj.manufacturer.id)
         return ManufacturerSerializer(manufacturer, context=self.context).data
+
+
+class IndicationsSerializer(serializers.HyperlinkedModelSerializer):
+    # owner_details = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = models.Indications
+        fields = ('id', 'url', 'facility', 'generic', 'indication', 'description', 'owner',  'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class DosesSerializer(serializers.HyperlinkedModelSerializer):
+    # owner_details = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = models.Doses
+        fields = ('id', 'url', 'facility', 'generic', 'indication', 'route', 'dose', 'owner',  'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class ModeOfActionsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.ModeOfActions
+        fields = ('id', 'url', 'facility', 'generic', 'mode_of_action',  'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class ContraindicationsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.Contraindications
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class InteractionsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.Interactions
+        fields = ('id', 'url', 'facility', 'generic', 'contra_indicated', 'description', 'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class SideEffectsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.SideEffects
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class PrecautionsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.Precautions
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)
+
+
+class SpecialConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = models.SpecialConsiderations
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+                  )
+
+        read_only_fields = ('id', 'url', 'facility',  'owner',)

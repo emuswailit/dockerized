@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import generics, permissions, status, exceptions
@@ -1233,3 +1234,825 @@ class ProductImageDetail(generics.RetrieveAPIView):
     def get_queryset(self):
         user = self.request.user
         return super().get_queryset().filter(created_by=user)
+
+
+# Indications
+class IndicationsCreateAPIView(generics.CreateAPIView):
+    """
+    Create new generic
+    """
+    name = "indications-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.IndicationsSerializer
+    queryset = models.Indications.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Indications created successfully.", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Indications not created", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class IndicationsListAPIView(generics.ListAPIView):
+    """
+    List of indication drugs
+    """
+    name = "indications-list"
+    permission_classes = (SubscribedOrStaffPermission,
+                          )
+    serializer_class = serializers.IndicationsSerializer
+
+    queryset = models.Indications.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('indication', 'description',
+                     'generic__title', )
+    ordering_fields = ('generic_title', 'id')
+
+
+class IndicationsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Indications details
+    """
+    name = "indications-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.IndicationsSerializer
+    queryset = models.Indications.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class IndicationsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Indications update
+    """
+    name = "indications-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.IndicationsSerializer
+    queryset = models.Indications.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Doses
+
+
+class DosesCreateAPIView(generics.CreateAPIView):
+    """
+    Create new generic
+    """
+    name = "doses-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.DosesSerializer
+    queryset = models.Doses.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Dose created successfully.", "dose": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Doses not created", "dose": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class DosesListAPIView(generics.ListAPIView):
+    """
+    List of indication drugs
+    """
+    name = "doses-list"
+    permission_classes = (SubscribedOrStaffPermission,
+                          )
+    serializer_class = serializers.DosesSerializer
+
+    queryset = models.Doses.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('dose', 'route__title',
+                     'generic__title', 'indication__title', )
+    ordering_fields = ('generic__title',)
+
+
+class DosesDetailAPIView(generics.RetrieveAPIView):
+    """
+    Doses details
+    """
+    name = "doses-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.DosesSerializer
+    queryset = models.Doses.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class DosesUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Indications update
+    """
+    name = "doses-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.DosesSerializer
+    queryset = models.Doses.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Mode of action views
+
+
+class ModeOfActionsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new mode of action
+    """
+    name = "modeofactions-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.ModeOfActionsSerializer
+    queryset = models.ModeOfActions.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Mode of action created successfully.", "mode-of-action": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Mode of action not created", "mode-of-action": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class ModeOfActionsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of mode of actions
+    """
+    name = "modeofactions-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.ModeOfActionsSerializer
+
+    queryset = models.ModeOfActions.objects.all()
+
+    search_fields = ('mode_of_action',
+                     'generic__title', )
+    ordering_fields = ('generic_title', 'id')
+
+
+class ModeOfActionsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Mode of actions details
+    """
+    name = "modeofactions-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.ModeOfActionsSerializer
+    queryset = models.ModeOfActions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class ModeOfActionsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update mode of action
+    """
+    name = "modeofactions-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.ModeOfActionsSerializer
+    queryset = models.ModeOfActions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+# Contraindications views
+
+
+class ContraindicationsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new contraindication
+    """
+    name = "contraindications-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.ContraindicationsSerializer
+    queryset = models.Contraindications.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Contraindication created successfully.", "contraindication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Contraindication not created", "contraindication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class ContraindicationsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of contraindications
+    """
+    name = "contraindications-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.ContraindicationsSerializer
+
+    queryset = models.Contraindications.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('title', 'description',
+                     'generic__title',)
+    ordering_fields = ('generic__title',)
+
+
+class ContraindicationsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Contraindication details
+    """
+    name = "contraindications-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.ContraindicationsSerializer
+    queryset = models.Contraindications.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class ContraindicationsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update contraindication
+    """
+    name = "contraindications-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.ContraindicationsSerializer
+    queryset = models.Contraindications.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Drug Interations views
+
+
+class InteractionsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new drug interaction
+    """
+    name = "interactions-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.InteractionsSerializer
+    queryset = models.Interactions.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"The two contraindicating drugs must be different"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Drug interaction created successfully.", "interaction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Drug interaction not created", "interaction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class InteractionsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of interactions
+    """
+    name = "interactions-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.InteractionsSerializer
+
+    queryset = models.Interactions.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('description',
+                     'contra_indicated__title', 'generic__title', )
+    ordering_fields = ('generic__title')
+
+
+class InteractionsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Contraindication details
+    """
+    name = "interactions-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.InteractionsSerializer
+    queryset = models.Interactions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class InteractionsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update contraindication
+    """
+    name = "interactions-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.InteractionsSerializer
+    queryset = models.Interactions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Drug side effects views
+
+
+class SideEffectsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new drug side effects
+    """
+    name = "sideeffects-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.SideEffectsSerializer
+    queryset = models.SideEffects.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Drug side effect created successfully.", "side-effect": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Drug side effect not created", "side-effect": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class SideEffectsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of side effects
+    """
+    name = "sideeffects-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.SideEffectsSerializer
+
+    queryset = models.SideEffects.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('description',
+                     'title', 'generic__title', )
+    ordering_fields = ('generic__title')
+
+
+class SideEffectsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Side effect details
+    """
+    name = "sideeffects-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.SideEffectsSerializer
+    queryset = models.SideEffects.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class SideEffectsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update side effect
+    """
+    name = "sideeffects-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.SideEffectsSerializer
+    queryset = models.SideEffects.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Drug precautions views
+
+
+class PrecautionsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new drug precaution
+    """
+    name = "precautions-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.PrecautionsSerializer
+    queryset = models.Precautions.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Drug precaution created successfully.", "precaution": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Drug precaution not created", "precaution": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class PrecautionsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of drug precautions
+    """
+    name = "precautions-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.PrecautionsSerializer
+
+    queryset = models.Precautions.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('description',
+                     'title', 'generic__title', )
+    ordering_fields = ('generic__title')
+
+
+class PrecautionsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Precaution details
+    """
+    name = "precautions-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.PrecautionsSerializer
+    queryset = models.Precautions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class PrecautionsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update precaution
+    """
+    name = "precautions-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.PrecautionsSerializer
+    queryset = models.Precautions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+# Special drug considerations views
+
+
+class SpecialConsiderationsCreateAPIView(generics.CreateAPIView):
+    """
+    Admin user
+    ----------------------------------------------------
+    Create new drug special consideration
+    """
+    name = "specialconsiderations-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.SpecialConsiderationsSerializer
+    queryset = models.SpecialConsiderations.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Drug special considerations created successfully.", "special-consideration": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Drug special considerations not created", "special-consideration": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class SpecialConsiderationsListAPIView(generics.ListAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------
+    List of drug special considerations
+    """
+    name = "specialconsiderations-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.SpecialConsiderationsSerializer
+
+    queryset = models.SpecialConsiderations.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('description',
+                     'title', 'generic__title', )
+    ordering_fields = ('generic__title')
+
+
+class SpecialConsiderationsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated user
+    ------------------------------------------------------
+    Special considerations details
+    """
+    name = "specialconsiderations-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.SpecialConsiderationsSerializer
+    queryset = models.SpecialConsiderations.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class SpecialConsiderationsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Admin user
+    ------------------------------------------------------------
+    Update special consideration
+    """
+    name = "specialconsiderations-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.SpecialConsiderationsSerializer
+    queryset = models.SpecialConsiderations.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj

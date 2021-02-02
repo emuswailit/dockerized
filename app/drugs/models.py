@@ -180,7 +180,7 @@ class Indications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
     indication = models.CharField(
-        max_length=240, unique=True, blank=True, null=True)
+        max_length=240, blank=True, null=True)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -191,22 +191,30 @@ class Indications(FacilityRelatedModel):
 
         class Meta:
             db_table = 'indications'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'indication'], name='Do not repeat entry for generic')
+            ]
 
 
-class Dose(FacilityRelatedModel):
+class Doses(FacilityRelatedModel):
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
     indication = models.ForeignKey(Indications, on_delete=models.CASCADE)
     route = models.ForeignKey(Posology, on_delete=models.CASCADE)
-    dose = models.TextField(null=True, blank=True)
+    dose = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.title
+        return self.indication
 
         class Meta:
-            db_table = 'indications'
+            db_table = 'doses'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'indication', 'route'], name='Do not repeat title for generic')
+            ]
 
 
 class ModeOfActions(FacilityRelatedModel):
@@ -222,9 +230,13 @@ class ModeOfActions(FacilityRelatedModel):
 
         class Meta:
             db_table = 'mode_of_actions'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'mode_of_action'], name='No repetion entries per generic')
+            ]
 
 
-class ContraIndication(FacilityRelatedModel):
+class Contraindications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
     title = models.TextField(max_length=200, null=True, blank=True)
@@ -238,9 +250,13 @@ class ContraIndication(FacilityRelatedModel):
 
         class Meta:
             db_table = 'contraindications'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'title'], name='Do not repeat title for generic')
+            ]
 
 
-class DrugInteraction(FacilityRelatedModel):
+class Interactions(FacilityRelatedModel):
 
     generic = models.ForeignKey(
         Generic, related_name="generic_drug_interactions", on_delete=models.CASCADE)
@@ -251,15 +267,18 @@ class DrugInteraction(FacilityRelatedModel):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'druginteractions'
+        db_table = 'interactions'
+        constraints = [
+            models.UniqueConstraint(fields=[
+                                    'generic', 'contra_indicated'], name='Drug cannot be contraindicated with itself')
+        ]
 
 
 class SideEffects(FacilityRelatedModel):
 
     generic = models.ForeignKey(
-
         Generic, related_name="generic_side_effects", on_delete=models.CASCADE)
-    title = models.TextField(max_length=200, null=True, blank=True)
+    title = models.TextField(max_length=200)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -270,13 +289,17 @@ class SideEffects(FacilityRelatedModel):
 
         class Meta:
             db_table = 'sideffects'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'title'], name='Do not repeat entry for generic')
+            ]
 
 
 class Precautions(FacilityRelatedModel):
 
     generic = models.ForeignKey(
         Generic, related_name="generic_precautions", on_delete=models.CASCADE)
-    title = models.TextField(max_length=200, null=True, blank=True)
+    title = models.TextField(max_length=200)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -287,14 +310,18 @@ class Precautions(FacilityRelatedModel):
 
         class Meta:
             db_table = 'precautions'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'title'], name='Do not repeat entry for generic')
+            ]
 
 
-class SpecialInformation(FacilityRelatedModel):
+class SpecialConsiderations(FacilityRelatedModel):
 
     generic = models.ForeignKey(
 
         Generic, related_name="generic_special_info", on_delete=models.CASCADE)
-    title = models.TextField(max_length=200, null=True, blank=True)
+    title = models.TextField(max_length=200)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -304,7 +331,11 @@ class SpecialInformation(FacilityRelatedModel):
         return self.title
 
         class Meta:
-            db_table = 'specialinformation'
+            db_table = 'specialconsiderations'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'title'], name='Do not repeat entry for generic')
+            ]
 
 
 class Formulation(FacilityRelatedModel):
@@ -322,7 +353,11 @@ class Formulation(FacilityRelatedModel):
         return self.title
 
         class Meta:
-            db_table = 'drug_formulations'
+            db_table = 'formulations'
+            constraints = [
+                models.UniqueConstraint(fields=[
+                    'generic', 'title'], name='Do not repeat title for generic')
+            ]
 
 
 class Preparation(FacilityRelatedModel):
