@@ -369,7 +369,7 @@ class EmployeesCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'employees-create'
     permission_classes = (
-        permissions.IsAuthenticated,
+        app_permissions.FacilityAdministratorPermission,
     )
     serializer_class = serializers.EmployeesSerializer
     queryset = models.Employees.objects.all()
@@ -392,7 +392,7 @@ class EmployeesCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": {e}})
+                {"response_code": 1, "response_message": "This user is already an employee in your facility"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

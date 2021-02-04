@@ -172,8 +172,13 @@ class EmployeesSerializer(serializers.HyperlinkedModelSerializer):
                     {"response_code": 1, "response_message": f"You cannot create employees at {employee_creator.facility.title}"})
             else:
                 professional.user.facility = employee_creator.facility
+                professional.user.save()
                 created = models.Employees.objects.create(
                     professional=professional, job=job, **validated_data)
+
+                if created:
+                    salary = models.Salary.objects.create(
+                        facility=created.facility, owner=created.owner, employee=created)
 
         else:
             raise serializers.ValidationError(

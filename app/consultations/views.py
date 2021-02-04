@@ -621,7 +621,7 @@ class PrescriptionItemCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             return Response(data={"message": "Precsription item not added", "prescription-item": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class PrescriptionItemList(FacilitySafeViewMixin, generics.ListAPIView):
+class PrescriptionItemList(generics.ListAPIView):
     """
     Superintendent Pharmacist
     ============================================================
@@ -635,9 +635,9 @@ class PrescriptionItemList(FacilitySafeViewMixin, generics.ListAPIView):
     serializer_class = serializers.PrescriptionItemSerializer
     queryset = models.PrescriptionItem.objects.all()
 
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    # def get_queryset(self):
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
 
 
 class PrescriptionItemDetail(generics.RetrieveAPIView):

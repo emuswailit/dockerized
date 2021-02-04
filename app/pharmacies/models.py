@@ -1,12 +1,14 @@
+import uuid
+from rest_framework import exceptions
+from consultations.models import Prescription
 from payments.models import PaymentMethods
 from users.models import Facility
 from rest_framework.exceptions import ValidationError
 from django.db import models
 from core.models import FacilityRelatedModel
-from clients.models import ForwardPrescription
 from django.contrib.auth import get_user_model
 from consultations.models import PrescriptionItem, Prescription
-from inventory.models import VariationReceipt
+from inventory.models import Inventory,  Variations
 from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -14,21 +16,66 @@ User = get_user_model()
 
 # Create your models here.
 
+User = get_user_model()
+
+# Create your models here.
+
+
+class Forwards(FacilityRelatedModel):
+    """Model for prescriptions raised for dependants"""
+    PRESCRIPTION_STATUS_CHOICES = (
+        ("Forwarded", "Forwarded"),
+        ("Quoted", "Quoted"),
+        ("Confirmed", "Confirmed"),
+        ("Partially Dispensed", "Partally Dispensed"),
+        ("Fully Dispensed", "Fully Dispensed"))
+
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
+    prescription = models.ForeignKey(
+        Prescription, related_name="forwarded_prescription_prescription", on_delete=models.CASCADE)
+    comment = models.CharField(max_length=120, null=True)
+    status = models.CharField(
+        max_length=100, choices=PRESCRIPTION_STATUS_CHOICES, default="Forwarded")
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE)
+
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=['facility_id', 'prescription_id'], name='forward prescription to pharmacy once')
+    #     ]
+
+    def __str__(self):
+        return f'Prescription for {self.prescription.dependant.first_name} {self.prescription.dependant.last_name} from {self.prescription.owner.first_name} {self.prescription.owner.last_name} '
+
+# def forward_prescription_pre_save_receiver(sender, instance, *args, **kwargs):
+#     if instance.facility:
+#         if instance.facility.facility_type == 'Default' or instance.facility.facility_type == 'Clinic':
+#             raise exceptions.NotAcceptable(
+#                 {"detail": ["The selected facility is not a pharmacy", ]})
+
+
+# pre_save.connect(forward_prescription_pre_save_receiver,
+#                  sender=Forwards)
+
 
 class PrescriptionQuote(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
 
-    forward_prescription = models.ForeignKey(
-        ForwardPrescription, related_name="prescription_quote_prescription", on_delete=models.CASCADE)
+    forward = models.ForeignKey(
+        Forwards, related_name="prescription_quote_forward", on_delete=models.CASCADE)
     client_confirmed = models.BooleanField(default=False)
     pharmacist_confirmed = models.BooleanField(default=False)
+    pharmacist_processing = models.BooleanField(default=False)
     payment_method = models.ForeignKey(
         PaymentMethods, on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-    quoted_by = models.ForeignKey(
+    processed_by = models.ForeignKey(
         User, related_name="prescription_quote_quoted_by", on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
@@ -52,54 +99,72 @@ class PrescriptionQuote(FacilityRelatedModel):
         return total
 
 
+class QuoteItemQuerySet(models.QuerySet):
+    def all_quote_items(self):
+        return self.all()
+
+    def partially_dispensed_quote_items(self):
+        return self.filter(fully_dispensed=False)
+
+
+class QuoteItemManager(models.Manager):
+    def get_queryset(self):
+        return QuoteItemQuerySet(self.model, using=self._db)
+
+    def all_quote_items(self):
+        return self.get_queryset().all_quote_items()
+
+    def partially_dispensed_quote_items(self):
+        return self.get_queryset().partially_dispensed_quote_items()
+
+
 class QuoteItem(FacilityRelatedModel):
     """Model for prescriptions raised for dependants"""
     prescription_quote = models.ForeignKey(
         PrescriptionQuote, on_delete=models.CASCADE, null=True, blank=True)
     prescription_item = models.ForeignKey(
         PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE, null=True, blank=True)
-    variation_item = models.ForeignKey(
-        VariationReceipt, related_name="variation_receipt", on_delete=models.CASCADE, null=True, blank=True)
+    variation = models.ForeignKey(
+        Variations, related_name="quote_item_inventory", on_delete=models.CASCADE, null=True, blank=True)
     quantity_required = models.IntegerField(default=0)
     quantity_dispensed = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
-    instructions = models.TextField(blank=True, null=True)
+    pharmacist_instructions = models.TextField(blank=True, null=True)
     dose_divisible = models.BooleanField(default=True)
     item_accepted = models.BooleanField(default=True)
     fully_dispensed = models.BooleanField(default=False)
     client_comment = models.TextField(blank=True, null=True)
     client_confirmed = models.BooleanField(default=False)
     pharmacist_confirmed = models.BooleanField(default=False)
+    pharmacist_processing = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
-    quoted_by = models.ForeignKey(
-        User, related_name="quote_item_quoted_by", on_delete=models.CASCADE, null=True, blank=True)
+    processed_by = models.ForeignKey(
+        User, related_name="quote_item_processed_by", on_delete=models.CASCADE, null=True, blank=True)
+    objects = QuoteItemManager()
 
     class Meta:
         unique_together = ('prescription_quote',
-                           'prescription_item', 'variation_item')
-
-    def get_total_items_cost(self):
-        return self.quantity_required * self.variation_item.unit_buying_price
-
-    def get_dispensed_items_cost(self):
-        return self.quantity_dispensed * self.variation_item.unit_buying_price
-
-    def get_pending_items_cost(self):
-        return self.get_total_items_cost() - self.get_dispensed_items_cost()
+                           'prescription_item', 'variation')
 
 
 class Order(FacilityRelatedModel):
+    """
+    -Model for an order created in a selected facility by a client
+    -Several orders can be made by a client for every prescription quote to allow for partial prescription filling
+    -This model ia automatically created when a client confirms a quote item, thus no view is provided for creating it
 
-    # TODO : Create payment for the order using a post save signal
-    """Model for prescriptions raised for dependants"""
+    """
+
     facility = models.ForeignKey(
         Facility, related_name="cart_facility", on_delete=models.CASCADE)
     prescription_quote = models.ForeignKey(
         PrescriptionQuote, related_name="cart_prescription_quote", on_delete=models.CASCADE)
     client_confirmed = models.BooleanField(default=False)
+    payment_method = models.ForeignKey(
+        PaymentMethods, on_delete=models.CASCADE)
     pharmacist_confirmed = models.BooleanField(default=False)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
@@ -117,7 +182,10 @@ class Order(FacilityRelatedModel):
 
 
 class OrderItem(FacilityRelatedModel):
-    """Model for prescriptions raised for dependants"""
+    """
+    -Model for order items
+    -Items are automatically created when a client conforms a quote item
+    """
     facility = models.ForeignKey(
         Facility,  on_delete=models.CASCADE)
     quote_item = models.ForeignKey(
@@ -132,17 +200,20 @@ class OrderItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     def get_total_item_price(self):
-        return self.quantity * self.quote_item.variation_item.unit_selling_price
+        return self.quantity * self.quote_item.inventory.unit_selling_price
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['facility', 'quote_item'], name='One quote item in order')
+                fields=['facility', 'quote_item', 'order'], name='One quote item in order')
         ]
 
 
 class PharmacyPayments(FacilityRelatedModel):
-    """Model payments done in pharmacy"""
+    """
+    -Model order payment
+    -Its automatically created when a user confirms an order
+    """
 
     PAYMENT_STATUS_CHOICES = (
         ("PENDING",  "PENDING"),
@@ -171,11 +242,11 @@ class PharmacyPayments(FacilityRelatedModel):
                 fields=['facility', 'order'], name='One payment per facility per order')
         ]
 
-    def get_payment_method(self):
-        return self.order.payment_method
+    # def get_payment_method(self):
+    #     return self.order.payment_method
 
-    def get_amount(self):
-        return self.order.get_total_price()
+    # def get_amount(self):
+    #     return self.order.get_total_price()
 
 
 class PrescriptionSale(FacilityRelatedModel):
@@ -259,7 +330,7 @@ class CounterSaleItem(FacilityRelatedModel):
     """Model for counter, non prescription sale item"""
     client_phone = models.CharField(max_length=30, null=True, blank=True)
     item = models.ForeignKey(
-        VariationReceipt, related_name="sale_item", on_delete=models.CASCADE)
+        Inventory, related_name="sale_item", on_delete=models.CASCADE)
     cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     quantity = models.IntegerField(default=0)

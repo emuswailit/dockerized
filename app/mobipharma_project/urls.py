@@ -29,7 +29,6 @@ urlpatterns = [
     path('api/v1/entities/', include('entities.urls')),
     path('api/v1/inventory/', include('inventory.urls')),
     path('api/v1/consultations/', include('consultations.urls')),
-    path('api/v1/clients/', include('clients.urls')),
     path('api/v1/pharmacies/', include('pharmacies.urls')),
     path('api/v1/payments/', include('payments.urls')),
     path('admin/', admin.site.urls),

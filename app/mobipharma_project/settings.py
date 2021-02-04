@@ -103,7 +103,6 @@ INSTALLED_APPS = [
     'diseases',
     'inventory',
     'consultations',
-    'clients',
     'pharmacies',
     'notifications',
     'django_countries',

@@ -15,12 +15,23 @@ class VariationCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     ============================================================
     1. Create new product variation
     """
-    name = 'variation-create'
+    name = 'variations-create'
     permission_classes = (
         FacilitySuperintendentPermission,
     )
-    serializer_class = serializers.VariationSerializer
-    queryset = models.Variation.objects.all()
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(VariationCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
 
@@ -30,7 +41,7 @@ class VariationCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             serializer.save(owner=user, facility=facility)
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": ["Variation must be to be unique. Similar item is already added!", ]})
+                {"detail": ["Variations must be to be unique. Similar item is already added!", ]})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -53,30 +64,30 @@ class VariationList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Superintendent Pharmacist
     ============================================================
-    1. List of product variations
+    1. List of items in inventory
     """
-    name = 'variation-list'
+    name = 'variations-list'
     permission_classes = (
-        PharmacistPermission,
+        permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationSerializer
-    queryset = models.Variation.objects.all()
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
     search_fields = ('title', 'description', 'product__title',
                      'product__manufacturer__title')
     ordering_fields = ('title', 'id')
 
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
+    # def get_queryset(self):
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
 
 
 class VariationDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'variation-detail'
+    name = 'variations-detail'
     permission_classes = (
         permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationSerializer
-    queryset = models.Variation.objects.all()
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
@@ -87,19 +98,23 @@ class VariationUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIVi
     """
     Superintendent Pharmacist
     ============================================================
-    1. Set pharmacist as superintendent or not
-    2. Activate or deactivate pharmacist
+    Update inventory item
     """
-    name = 'variation-detail'
+    name = 'variations-update'
     permission_classes = (
         FacilitySuperintendentPermission,
     )
-    serializer_class = serializers.VariationSerializer
-    queryset = models.Variation.objects.all()
+    serializer_class = serializers.VariationsUpdateSerializer
+    queryset = models.Variations.objects.all()
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
+
+    def delete(self, request, *args, **kwargs):
+        raise exceptions.NotAcceptable(
+            {"response_code": 1, "response_message": "This item cannot be deleted!"})
+
 
 
 class VariationPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
@@ -113,8 +128,8 @@ class VariationPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
     permission_classes = (
         permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationPhotoSerializer
-    queryset = models.VariationPhoto.objects.all()
+    serializer_class = serializers.VariationPhotosSerializer
+    queryset = models.VariationPhotos.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -154,8 +169,8 @@ class VariationPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
     permission_classes = (
         permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationPhotoSerializer
-    queryset = models.VariationPhoto.objects.all()
+    serializer_class = serializers.VariationPhotosSerializer
+    queryset = models.VariationPhotos.objects.all()
 
     def get_queryset(self):
         user = self.request.user
@@ -164,31 +179,27 @@ class VariationPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
 
 # Variation receipt
 
-class VariationReceiptCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+class InventoryCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     Superintendent Pharmacist
     ============================================================
     1. Create new product variation
     """
-    name = 'variationreceipt-create'
+    name = 'inventory-create'
     permission_classes = (
         FacilitySuperintendentPermission,
     )
-    serializer_class = serializers.VariationReceiptSerializer
-    queryset = models.VariationReceipt.objects.all()
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
 
     def perform_create(self, serializer):
 
-        try:
-            user = self.request.user
-            facility = self.request.user.facility
-            variation_pk = self.kwargs.get("pk")
-            serializer.save(owner=user, facility=facility,
-                            variation_id=variation_pk)
-        except IntegrityError as e:
-            raise exceptions.NotAcceptable(
-                {"detail": ["Variation receipt must be to be unique. Similar item is already added!", ]})
 
+        user = self.request.user
+        facility = self.request.user.facility
+        serializer.save(owner=user, facility=facility,
+                        )
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -206,18 +217,18 @@ class VariationReceiptCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             return Response(data={"message": "Variation stock not created", "variation-receipt": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class VariationReceiptList(FacilitySafeViewMixin, generics.ListAPIView):
+class InventoryList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Pharmacistst
     ============================================================
     1. List of product variations receipts
     """
-    name = 'variationreceipt-list'
+    name = 'inventory-list'
     permission_classes = (
-        PharmacistPermission,
+       permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationReceiptSerializer
-    queryset = models.VariationReceipt.objects.all()
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
 
     search_fields = ('distributor__title', 'description', 'variation__title',
                      'variation__product__manufacturer__title', 'variation__product__title')
@@ -228,32 +239,130 @@ class VariationReceiptList(FacilitySafeViewMixin, generics.ListAPIView):
         return super().get_queryset().filter(facility_id=facility_id)
 
 
-class VariationReceiptDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'variationreceipt-detail'
+class InventoryDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'inventory-detail'
     permission_classes = (
         permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationReceiptSerializer
-    queryset = models.VariationReceipt.objects.all()
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
 
 
-class VariationReceiptUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+class InventoryUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     Superintendent Pharmacist
     ============================================================
     1. Update stock item
     """
-    name = 'variationreceipt-detail'
+    name = 'inventory-update'
     permission_classes = (
         permissions.IsAuthenticated,
     )
-    serializer_class = serializers.VariationReceiptSerializer
-    queryset = models.VariationReceipt.objects.all()
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
         return super().get_queryset().filter(facility_id=facility_id)
+
+# Categories
+
+
+class CategoriesCreateAPIView(generics.CreateAPIView):
+    """
+    Create new generic
+    """
+    name = "categories-create"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.CategoriesSerializer
+    queryset = models.Categories.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Category created successfully.", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Category not created", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class CategoriesListAPIView(generics.ListAPIView):
+    """
+    List of indication drugs
+    """
+    name = "categories-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.CategoriesSerializer
+
+    queryset = models.Categories.objects.all()
+    # TODO : Reuse this for filtering by q.
+
+    search_fields = ('indication', 'description',
+                     'generic__title', )
+    ordering_fields = ('generic_title', 'id')
+
+
+class CategoriesDetailAPIView(generics.RetrieveAPIView):
+    """
+    Categories details
+    """
+    name = "categories-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.CategoriesSerializer
+    queryset = models.Categories.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class CategoriesUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Categories update
+    """
+    name = "categories-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.CategoriesSerializer
+    queryset = models.Categories.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj

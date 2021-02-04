@@ -360,8 +360,8 @@ class Salary(FacilityRelatedModel):
 # Create a salary immediately an employee is created
 
 
-@receiver(post_save, sender=Employees)
-def create_employee_salary(sender, instance, created, **kwargs):
-    if created:
-        Salary.objects.create(facility=instance.facility,
-                              employee=instance, owner=instance.owner)
+# @receiver(post_save, sender=Employees)
+# def create_employee_salary(sender, instance, created, **kwargs):
+#     if created:
+#         Salary.objects.create(facility=instance.facility,
+#                               employee=instance, owner=instance.owner)
