@@ -1,13 +1,9 @@
 from django.urls import path
 from . import views
 from django.conf.urls import url
-from users.views import AllDependantListAPIView
-
+from users.views import FacilityDetail
 
 urlpatterns = [
-
-
-
 
     path('forwards/create', views.ForwardsCreate.as_view(),
          name=views.ForwardsCreate.name),
@@ -90,5 +86,28 @@ urlpatterns = [
          name=views.AllOrderItemsList.name),
     path('order-items/<uuid:pk>', views.OrderItemDetailAPIView.as_view(),
          name=views.OrderItemDetailAPIView.name),
+
+    path('variations/create', views.VariationCreate.as_view(),
+         name=views.VariationCreate.name),
+    path('variations/', views.VariationList.as_view(),
+         name=views.VariationList.name),
+    path('variations/<uuid:pk>', views.VariationDetail.as_view(),
+         name=views.VariationDetail.name),
+    path('variations/<uuid:pk>/update', views.VariationUpdate.as_view(),
+         name=views.VariationUpdate.name),
+
+    path('variations/<uuid:pk>/photos', views.VariationPhotoList.as_view(),
+         name=views.VariationPhotoList.name),
+    path('variation-photos/<uuid:pk>', views.VariationPhotoDetail.as_view(),
+         name=views.VariationPhotoDetail.name),
+
+    path('inventory/create', views.InventoryCreate.as_view(),
+         name=views.InventoryCreate.name),
+    path('inventory/', views.InventoryList.as_view(),
+         name=views.InventoryList.name),
+    path('inventory/<uuid:pk>', views.InventoryDetail.as_view(),
+         name=views.InventoryDetail.name),
+    path('inventory/<uuid:pk>/update', views.InventoryUpdate.as_view(),
+         name=views.InventoryUpdate.name),
 
 ]

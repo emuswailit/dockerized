@@ -135,11 +135,11 @@ class FacilityDetail(generics.RetrieveAPIView):
     )
     serializer_class = serializers.FacilitySerializer
     queryset = models.Facility.objects.all_facilities()
-    lookup_fields = ('pk',)
+    # lookup_fields = ('pk',)
 
-    def get_object(self):
-        # Ensure that users can only see the company that they belong to
-        return self.request.user.facility
+    # def get_object(self):
+    #     # Ensure that users can only see the company that they belong to
+    #     return self.request.user.facility
 
 
 class AnyUserRegisterAPIView(generics.CreateAPIView):

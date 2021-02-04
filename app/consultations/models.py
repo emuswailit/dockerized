@@ -1,7 +1,7 @@
 from django.db import models
 from core.models import FacilityRelatedModel
 from users.models import Dependant
-from drugs.models import Preparation, Product, Posology, Frequency
+from drugs.models import Preparation,  Posology, Frequency
 from django.contrib.auth import get_user_model
 from drugs.models import Generic
 from entities.models import Employees, Department
@@ -275,8 +275,8 @@ class PrescriptionItem(FacilityRelatedModel):
         Prescription, related_name="prescription_item_prescription", on_delete=models.CASCADE)
     preparation = models.ForeignKey(
         Preparation, related_name="prescription_item_preparation", on_delete=models.CASCADE)
-    product = models.ForeignKey(
-        Product, related_name="prescription_item_product", on_delete=models.CASCADE)
+    # product = models.ForeignKey(
+    #     Products, related_name="prescription_item_product", on_delete=models.CASCADE)
     frequency = models.ForeignKey(
         Frequency, related_name="prescription_item_frequency", on_delete=models.CASCADE)
     posology = models.ForeignKey(
@@ -288,8 +288,8 @@ class PrescriptionItem(FacilityRelatedModel):
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
-    class Meta:
-        unique_together = ('prescription', 'preparation', 'product')
+    # class Meta:
+    #     unique_together = ('prescription', 'preparation', 'product')
 
     objects = PrescriptionItemManager()
 

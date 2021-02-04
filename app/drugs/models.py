@@ -7,6 +7,7 @@ from django.db.models import signals
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
+from utilities.models import Categories, SubCategories
 User = get_user_model()
 
 
@@ -381,7 +382,7 @@ class Preparation(FacilityRelatedModel):
             verbose_name_plural = "drug_preparations"
 
 
-class ProductQuerySet(models.query.QuerySet):
+class ProductsQuerySet(models.query.QuerySet):
     def active(self):
         return self.filter(active=True)
 
@@ -398,25 +399,25 @@ class ProductQuerySet(models.query.QuerySet):
         return self.filter(lookups).distinct()
 
 
-class ProductManager(models.Manager):
+class ProductsManager(models.Manager):
     def get_queryset(self):
-        return ProductQuerySet(self.model, using=self._db)
+        return ProductsQuerySet(self.model, using=self._db)
 
     def all(self):
         return self.get_queryset().filter(active=True)
 
-    def featured(self):  # Product.objects.featured()
+    def featured(self):  # Products.objects.featured()
         return self.get_queryset().featured()
 
     def get_by_id(self, id):
-        # Product.objects == self.get_queryset()
+        # Products.objects == self.get_queryset()
         qs = self.get_queryset().filter(id=id, active=True)
         if qs.count() == 1:
             return qs.first()
         return None
 
     def get_by_category(self, category_id):
-        # Product.objects == self.get_queryset()
+        # Products.objects == self.get_queryset()
         qs = self.get_queryset().filter(category_id=category_id)
         if qs.count() > 0:
             return qs
@@ -426,29 +427,43 @@ class ProductManager(models.Manager):
         return self.get_queryset().active().search(query)
 
 
-class Product(FacilityRelatedModel):
+class Products(FacilityRelatedModel):
+    """
+    -Model for all products in the system
+    -If preparation parameter is provided then the product is a drug
+    -Creation of this instances must be controlled to to ensure no duplication
+    -Should be done at admin level though it may pose onboarding challenges
 
-    title = models.CharField(max_length=100, null=True,
-                             blank=True, default="Non-proprietary Name")
+    """
+    category = models.ForeignKey(
+        Categories, related_name="product_category", on_delete=models.CASCADE,)
+    sub_category = models.ForeignKey(
+        SubCategories, related_name="product_sub_category", on_delete=models.CASCADE, null=True, blank=True)
     preparation = models.ForeignKey(
-        Preparation, related_name="preparation", on_delete=models.CASCADE)
-    manufacturer = models.ForeignKey(
-        Manufacturer, on_delete=models.CASCADE)
-    packaging = models.CharField(max_length=100)
-    units_per_pack = models.CharField(max_length=100)
+        Preparation, related_name="product_preparation", on_delete=models.CASCADE, null=True, blank=True)
+    title = models.CharField(max_length=100, null=True,
+                             blank=True,)
     description = models.TextField(null=True, blank=True)
+    is_drug = models.BooleanField(default=False)
+    manufacturer = models.ForeignKey(
+        Manufacturer, on_delete=models.CASCADE, null=True, blank=True)
+    packaging = models.CharField(max_length=100)
+    units_per_pack = models.IntegerField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ('facility', 'title')
+
     def __str__(self):
-        return f"{self.preparation.title} - {self.title}"
+        if self.preparation:
+            return f"{self.preparation.title} - {self.title}"
+        else:
+            return self.title
 
-        class Meta:
-            db_table = 'drug_products'
-
-    objects = ProductManager()
+    objects = ProductsManager()
 
 
 def product_image_upload_to(instance, filename):
@@ -459,10 +474,10 @@ def product_image_upload_to(instance, filename):
     return new_filename
 
 
-class ProductImage(FacilityRelatedModel):
+class ProductImages(FacilityRelatedModel):
     """Model for uploading profile product image"""
     product = models.OneToOneField(
-        Product, related_name="product_images", on_delete=models.CASCADE)
+        Products, related_name="product_images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to=product_image_upload_to)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)

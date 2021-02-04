@@ -1,7 +1,17 @@
-from pharmacies.serializers import PrescriptionQuoteSerializer
-from pharmacies.models import PrescriptionQuote, QuoteItem
+from django.db import IntegrityError
+from django.shortcuts import render
+from core.views import FacilitySafeViewMixin
+from core.app_permissions import FacilitySuperintendentPermission, PharmacistPermission
+from rest_framework import generics, permissions, response, status, exceptions
+from . import serializers
+from rest_framework.response import Response
+from . import models
+# Variation Views
+
+from retailers.serializers import PrescriptionQuoteSerializer
+from retailers.models import PrescriptionQuote, QuoteItem
 from django.db import transaction
-from pharmacies.models import PrescriptionQuote
+from retailers.models import PrescriptionQuote
 from users.models import Facility, Dependant
 from rest_framework.validators import UniqueTogetherValidator
 from consultations.serializers import PrescriptionItemSerializer, PrescriptionSerializer
@@ -14,74 +24,8 @@ from . import serializers, models
 from rest_framework.response import Response
 from core.app_permissions import PharmacistPermission, FacilitySuperintendentPermission, IsOwner
 from consultations.models import Prescription
-from inventory.models import Inventory
+from retailers.models import Inventory
 from django.urls import resolve
-
-# Create your views here.
-
-
-# Create your views here.
-
-
-# class PrescriptionListAPIView(generics.ListAPIView):
-#     """
-#     Client
-#     =============================================
-#     Retrieve all prescriptions for the logged in user's dependants
-"""
-#     name = "prescription-list"
-#     permission_classes = (PrescriberPermission,
-#                           )
-#     serializer_class = PrescriptionSerializer
-
-#     queryset = Prescription.objects.all()
-#     # TODO : Reuse this for filtering by q.
-
-#     # def get_queryset(self):
-#     #     # Ensure that the users belong to the company of the user that is making the request
-#     #     dependant = Dependant.objects.get(owner=self.request.user)
-#     #     return super().get_queryset().filter(dependant=dependant)
-
-
-# class UserPrescriptionListAPIView(generics.ListAPIView):
-#     """
-#     Client
-#     =============================================
-#     Retrieve all prescriptions for the logged in user's dependants
-#     """
-#     name = "prescription-list"
-#     permission_classes = (permissions.IsAuthenticated,
-#                           )
-#     serializer_class = PrescriptionSerializer
-
-#     queryset = Prescription.objects.all()
-#     # TODO : Reuse this for filtering by q.
-
-#     def get_queryset(self):
-#         # Ensure that the users belong to the company of the user that is making the request
-#         dependant = Dependant.objects.get(owner=self.request.user)
-#         return super().get_queryset().filter(dependant=dependant)
-
-# class PrescriptionDetailAPIView(generics.RetrieveAPIView):
-#     """
-#     Prescription details
-#     """
-#     name = "prescription-detail"
-#     permission_classes = (permissions.IsAuthenticated,
-#                           )
-#     serializer_class = PrescriptionSerializer
-#     queryset = Prescription.objects.all()
-#     lookup_fields = ('pk',)
-
-#     def get_object(self):
-#         queryset = self.get_queryset()
-#         filter = {}
-#         for field in self.lookup_fields:
-#             filter[field] = self.kwargs[field]
-
-#         obj = get_object_or_404(queryset, **filter)
-#         self.check_object_permissions(self.request, obj)
-#         return obj
 
 
 class ForwardsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
@@ -216,7 +160,7 @@ class PharmacyListAPIView(generics.ListAPIView):
     """
     Client
     =============================================
-    Retrieve all pharmacies or those close to user
+    Retrieve all retailers or those close to user
     """
     name = "pharmacy-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -225,36 +169,6 @@ class PharmacyListAPIView(generics.ListAPIView):
     search_fields = ('town', 'county')
     ordering_fields = ('created',)
     queryset = models.Facility.objects.filter(facility_type="Pharmacy")
-    # TODO : Reuse this for filtering by q.
-
-    # def get_context_data(self, *args, **kwargs):
-    #     context = super(PharmacyListAPIView, self).get_context_data(
-    #         *args, **kwargs)
-    #     # context["now"] = timezone.now()
-    #     context["query"] = self.request.GET.get("q")  # None
-    #     return context
-
-    # def get_queryset(self):
-    #     # Ensure that the users belong to the company of the user that is making the request
-
-    #     return super().get_queryset().filter(facility_type='Pharmacy')
-    # def get_queryset(self, *args, **kwargs):
-    #     qs = super(PharmacyListAPIView, self).get_queryset(*args, **kwargs)
-    #     query = self.request.GET.get("q")
-    #     if query:
-    #         qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-    #             Q(town__icontains=query) |
-    #             Q(county__icontains=query) |
-    #             Q(road__icontains=query)
-    #         )
-    #         try:
-    #             qs2 = self.queryset.filter(
-    #                 Q(price=query)
-    #             )
-    #             qs = (qs | qs2).distinct()
-    #         except:
-    #             pass
-    #     return qs
 
 
 class PharmacyDetailAPIView(generics.RetrieveAPIView):
@@ -283,7 +197,7 @@ class ClinicListAPIView(generics.ListAPIView):
     """
     Client
     =============================================
-    Retrieve all pharmacies or those close to user
+    Retrieve all retailers or those close to user
     """
     name = "clinic-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -819,3 +733,262 @@ class PharmacyPaymentsDetailAPIView(generics.RetrieveAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class VariationCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. Create new product variation
+    """
+    name = 'variations-create'
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(VariationCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
+    def perform_create(self, serializer):
+
+        try:
+            user = self.request.user
+            facility = self.request.user.facility
+            serializer.save(owner=user, facility=facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"detail": ["Variations must be to be unique. Similar item is already added!", ]})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Facility pharmacist created successfully.", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Facility pharmacist not created", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class VariationList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. List of items in inventory
+    """
+    name = 'variations-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
+    search_fields = ('title', 'description', 'product__title',
+                     'product__manufacturer__title')
+    ordering_fields = ('title', 'id')
+
+    # def get_queryset(self):
+    #     facility_id = self.request.user.facility_id
+    #     return super().get_queryset().filter(facility_id=facility_id)
+
+
+class VariationDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'variations-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.VariationsSerializer
+    queryset = models.Variations.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+class VariationUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    Update inventory item
+    """
+    name = 'variations-update'
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.VariationsUpdateSerializer
+    queryset = models.Variations.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+    def delete(self, request, *args, **kwargs):
+        raise exceptions.NotAcceptable(
+            {"response_code": 1, "response_message": "This item cannot be deleted!"})
+
+
+class VariationPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
+    """
+    Logged In User
+    =================================================================
+    1. Add pharmacist photo
+    2. View own courier instance
+    """
+    name = 'variationphoto-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.VariationPhotosSerializer
+    queryset = models.VariationPhotos.objects.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        variation_pk = self.kwargs.get("pk")
+        facility_id = self.request.user.facility_id
+        serializer.save(facility_id=facility_id, owner=user,
+                        variation_id=variation_pk)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Variation photo created successfully.", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Variation photo not created", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+    def get_queryset(self):
+        user = self.request.user
+        return super().get_queryset().filter(owner=user)
+
+
+class VariationPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    """
+    Logged in Facility Superintendent
+    ================================================================
+    1. View details of variation photo instance
+    """
+    name = 'variationphoto-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.VariationPhotosSerializer
+    queryset = models.VariationPhotos.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        return super().get_queryset().filter(owner=user)
+
+
+# Variation receipt
+
+class InventoryCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. Create new product variation
+    """
+    name = 'inventory-create'
+    permission_classes = (
+        FacilitySuperintendentPermission,
+    )
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        facility = self.request.user.facility
+        serializer.save(owner=user, facility=facility,
+                        )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Variation stock successfully.", "variation-receipt": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Variation stock not created", "variation-receipt": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class InventoryList(FacilitySafeViewMixin, generics.ListAPIView):
+    """
+    Pharmacistst
+    ============================================================
+    1. List of product variations receipts
+    """
+    name = 'inventory-list'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
+
+    search_fields = ('distributor__title', 'description', 'variation__title',
+                     'variation__product__manufacturer__title', 'variation__product__title')
+    ordering_fields = ('title', 'id')
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+class InventoryDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+    name = 'inventory-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+
+class InventoryUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+    """
+    Superintendent Pharmacist
+    ============================================================
+    1. Update stock item
+    """
+    name = 'inventory-update'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.InventorySerializer
+    queryset = models.Inventory.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)

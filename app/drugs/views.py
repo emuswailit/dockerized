@@ -1099,21 +1099,25 @@ class ManufacturerUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-# Product
+# Products
 
 class ProductCreateAPIView(generics.CreateAPIView):
     """
     Create new product
     """
-    name = "product-create"
-    permission_classes = (permissions.IsAuthenticated,
+    name = "products-create"
+    permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.ProductSerializer
-    queryset = models.Product.objects.all()
+    serializer_class = serializers.ProductsSerializer
+    queryset = models.Products.objects.all()
 
     def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(owner=user, facility=user.facility)
+        try:
+            user = self.request.user
+            serializer.save(owner=user, facility=user.facility)
+        except IntegrityError as e:
+            raise exceptions.NotAcceptable(
+                {"response_code": "1", "response_message": f"No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1136,12 +1140,12 @@ class ProductListAPIView(generics.ListAPIView):
     """
    Products listing
     """
-    name = "product-list"
-    permission_classes = (permissions.AllowAny,
+    name = "products-list"
+    permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.ProductSerializer
+    serializer_class = serializers.ProductsSerializer
 
-    queryset = models.Product.objects.all()
+    queryset = models.Products.objects.all()
 
     # Searching and filtering
     search_fields = ('title', 'description',
@@ -1153,11 +1157,11 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
     """
     Product details
     """
-    name = "product-detail"
-    permission_classes = (permissions.AllowAny,
+    name = "products-detail"
+    permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.ProductSerializer
-    queryset = models.Product.objects.all()
+    serializer_class = serializers.ProductsSerializer
+    queryset = models.Products.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -1175,11 +1179,11 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
     Product update
     """
-    name = "product-update"
+    name = "products-update"
     permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.ProductSerializer
-    queryset = models.Product.objects.all()
+    serializer_class = serializers.ProductsSerializer
+    queryset = models.Products.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -1205,7 +1209,7 @@ class ProductImageList(generics.ListCreateAPIView):
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.ProductImageSerializer
-    queryset = models.ProductImage.objects.all()
+    queryset = models.ProductImages.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1246,7 +1250,7 @@ class ProductImageDetail(generics.RetrieveAPIView):
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.ProductImageSerializer
-    queryset = models.ProductImage.objects.all()
+    queryset = models.ProductImages.objects.all()
 
     def get_queryset(self):
         user = self.request.user

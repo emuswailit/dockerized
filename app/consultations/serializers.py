@@ -3,7 +3,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from rest_framework import serializers
 from . import models
 from users.models import Dependant
-from drugs.models import Preparation, Product
+from drugs.models import Preparation, Products
 from drugs.serializers import PreparationSerializer
 from core.serializers import FacilitySafeSerializerMixin, OwnerSafeSerializerMixin
 from datetime import *
@@ -209,6 +209,8 @@ class AppointmentConsultationsSerializer(FacilitySafeSerializerMixin, serializer
             created.current_medication.set(current_medication)
             created.allergies.set(allergies)
             return created
+
+
 class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
     preparation_details = serializers.SerializerMethodField(
         read_only=True)
@@ -236,7 +238,7 @@ class PrescriptionItemSerializer(serializers.HyperlinkedModelSerializer):
             product_id = validated_data.pop('product').id
 
             preparation = Preparation.objects.get(id=preparation_id)
-            product = Product.objects.get(id=product_id)
+            product = Products.objects.get(id=product_id)
 
             if product and preparation:
                 if preparation.id != product.preparation_id:

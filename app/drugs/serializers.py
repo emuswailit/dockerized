@@ -1,3 +1,4 @@
+from utilities.models import Categories
 from django_countries.fields import CountryField as ModelCountryField
 from django_countries.serializer_fields import CountryField
 from django_countries.serializers import CountryFieldMixin
@@ -16,7 +17,7 @@ class DistributorSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Distributor
-        fields = ('id', 'url', 'title','physical_address','postal_address', 'phone1','phone2','phone3', 'email','website', 'description', 'owner',
+        fields = ('id', 'url', 'title', 'physical_address', 'postal_address', 'phone1', 'phone2', 'phone3', 'email', 'website', 'description', 'owner',
                   'created', 'updated', )
 
         read_only_fields = ('id', 'url', 'created',
@@ -83,13 +84,15 @@ class PosologySerializer(serializers.HyperlinkedModelSerializer):
     #     owner = User.objects.get(id=obj.owner.id)
     #     return UserSerializer(owner, context=self.context).data
 
+
 class ProductImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = models.ProductImage
+        model = models.ProductImages
         fields = "__all__"
         read_only_fields = (
             'product', 'created_by'
         )
+
 
 class FrequencySerializer(serializers.HyperlinkedModelSerializer):
     # owner_details = serializers.SerializerMethodField(read_only=True)
@@ -164,7 +167,6 @@ class GenericSerializer(serializers.ModelSerializer):
             )]
     )
 
-    
     class Meta:
         model = models.Generic
         extra_kwargs = {'response_message': "Request successful"}
@@ -187,8 +189,6 @@ class GenericSerializer(serializers.ModelSerializer):
             drug_sub_class = models.DrugSubClass.objects.get(
                 id=obj.drug_sub_class.id)
             return DrugSubClassSerializer(drug_sub_class, context=self.context).data
-
-
 
 
 class FormulationSerializer(serializers.HyperlinkedModelSerializer):
@@ -280,7 +280,7 @@ class ManufacturerSerializer(CustomCountryMixin, serializers.HyperlinkedModelSer
 
     class Meta:
         model = models.Manufacturer
-        fields = ('id', 'url', 'title', 'country', 'owner','email','website','distributors'
+        fields = ('id', 'url', 'title', 'country', 'owner', 'email', 'website', 'distributors'
                   )
 
         read_only_fields = ('id', 'url',  'owner',)
@@ -366,21 +366,21 @@ class PreparationDisplaySerializer(serializers.HyperlinkedModelSerializer):
 class ManufacturerDisplaySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Manufacturer
-        fields = ('id', 'url','website','distributors',
+        fields = ('id', 'url', 'website', 'distributors',
                   'title', 'country',
                   )
 
 
-class ProductSerializer(serializers.ModelSerializer):
+class ProductsSerializer(serializers.ModelSerializer):
 
     # owner_details = serializers.SerializerMethodField(read_only=True)
     preparation_details = serializers.SerializerMethodField(read_only=True)
     manufacturer_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = models.Product
-        fields = ('id', 'url', 'title', 'preparation', 'manufacturer',
-                  'description', 'owner', 'units_per_pack', 'preparation_details', 'manufacturer_details', 'active', 'created', 'updated')
+        model = models.Products
+        fields = ('id', 'url', 'title', 'preparation', 'category', 'sub_category', 'manufacturer',
+                  'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack', 'manufacturer_details', 'preparation_details', 'active', 'created', 'updated')
 
         read_only_fields = ('id', 'url',
                             'owner',
@@ -394,12 +394,39 @@ class ProductSerializer(serializers.ModelSerializer):
     #     return UserSerializer(owner, context=self.context).data
 
     def get_preparation_details(self, obj):
-        preparation = models.Preparation.objects.get(id=obj.preparation.id)
-        return PreparationSerializer(preparation, context=self.context).data
+        if obj.preparation:
+            preparation = models.Preparation.objects.get(id=obj.preparation.id)
+            return PreparationSerializer(preparation, context=self.context).data
+        else:
+            return None
 
     def get_manufacturer_details(self, obj):
-        manufacturer = models.Manufacturer.objects.get(id=obj.manufacturer.id)
-        return ManufacturerSerializer(manufacturer, context=self.context).data
+        if obj.manufacturer:
+            if models.Manufacturer.objects.filter(id=obj.manufacturer.id).exists():
+                manufacturer = models.Manufacturer.objects.get(
+                    id=obj.manufacturer.id)
+                return ManufacturerSerializer(manufacturer, context=self.context).data
+
+        else:
+            return None
+
+    def create(self, validated_data):
+        preparation = validated_data.pop('preparation')
+        category = validated_data.pop('category')
+        manufacturer = validated_data.pop('manufacturer')
+
+        if preparation:
+
+            if not manufacturer:
+                raise serializers.ValidationError(
+                    f"Manufacturer is required  {category.title}")
+            else:
+                category = Categories.objects.drug_category()
+
+        product = models.Products.objects.create(
+            preparation=preparation, category=category, manufacturer=manufacturer, **validated_data)
+
+        return product
 
 
 class IndicationsSerializer(serializers.HyperlinkedModelSerializer):
