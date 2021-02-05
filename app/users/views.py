@@ -84,7 +84,7 @@ class PharmaciesList(generics.ListAPIView):
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.pharmacies()
+    queryset = models.Facility.objects.retail_pharmacies()
 
     # search_fields =('title','county','town', 'description',)
     # ordering_fields =('title','id')

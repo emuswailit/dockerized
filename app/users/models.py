@@ -41,10 +41,6 @@ def facility_image_upload_to(instance, filename):
     return new_filename
 
 
-
-
-
-
 class FacilityQuerySet(models.QuerySet):
     def all_facilities(self):
         return self.all()
@@ -52,8 +48,11 @@ class FacilityQuerySet(models.QuerySet):
     def default_facility(self):
         return self.get(facility_type="Default", title="Mobipharma")
 
-    def pharmacies(self):
-        return self.filter(facility_type="Pharmacy",)
+    def retail_pharmacies(self):
+        return self.filter(facility_type="RetailPharmacy",)
+
+    def bulk_pharmacies(self):
+        return self.filter(facility_type="BulkPharmacy",)
 
     def clinics(self):
         return self.filter(facility_type="Clinic", )
@@ -68,8 +67,11 @@ class FacilityManager(models.Manager):
     def all_facilities(self):
         return self.get_queryset().all_facilities()
 
-    def pharmacies(self):
-        return self.get_queryset().pharmacies()
+    def retail_pharmacies(self):
+        return self.get_queryset().retail_pharmacies()
+
+    def bulk_pharmacies(self):
+        return self.get_queryset().bulk_pharmacies()
 
     def clinics(self):
         return self.get_queryset().clinics()
@@ -119,7 +121,7 @@ class FacilityManager(models.Manager):
             password=password,
             is_administrator=True,
             is_superintendent=True  # Set the owner as superintendent of facility
-           
+
 
         )
 
@@ -136,7 +138,8 @@ class Facility(models.Model):
     )
     FACILITY_TYPES = (
         ('Default', 'Default'),
-        ('Pharmacy', 'Pharmacy'),
+        ('RetailPharmacy', 'RetailPharmacy'),
+        ('BulkPharmacy', 'BulkPharmacy'),
         ('Clinic', 'Clinic'),
 
     )
@@ -184,7 +187,7 @@ class Facility(models.Model):
         current_date=datetime.date.today()
     ):
         if self.paid_until is None:
-            self.is_subscribed=False
+            self.is_subscribed = False
             return False
 
         return current_date < self.paid_until
@@ -207,20 +210,22 @@ class FacilityImage(models.Model):
     def __str__(self):
         return self.facility.title
 
+
 class Cadres(models.Model):
     CADRE_CLUSTERS = (
-        ("ADMIN","ADMIN"),
-        ("CLERICAL","CLERICAL"),
-        ("CONSULTATION","CONSULTATION"),
-        ("NURSING","NURSING"),
-        ("OTHERS","OTHERS"),
-        ("PHARMACY","PHARMACY"),
+        ("ADMIN", "ADMIN"),
+        ("CLERICAL", "CLERICAL"),
+        ("CONSULTATION", "CONSULTATION"),
+        ("NURSING", "NURSING"),
+        ("OTHERS", "OTHERS"),
+        ("PHARMACY", "PHARMACY"),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
     title = models.CharField(max_length=120, unique=True)
     code = models.CharField(max_length=20)
-    cluster = models.CharField(max_length=20, choices=CADRE_CLUSTERS, default="OTHERS")
+    cluster = models.CharField(
+        max_length=20, choices=CADRE_CLUSTERS, default="OTHERS")
     description = models.TextField()
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
@@ -229,6 +234,7 @@ class Cadres(models.Model):
 
     def __str__(self):
         return self.title
+
 
 class CustomUserManager(BaseUserManager):
     """
@@ -315,7 +321,8 @@ class User(AbstractUser):
     is_superintendent = models.BooleanField(default=False)
     is_facility_admin = models.BooleanField(default=False)
     is_administrator = models.BooleanField(default=False)
-    cadre = models.ForeignKey(Cadres, on_delete=models.CASCADE, null=True,blank=True)
+    cadre = models.ForeignKey(
+        Cadres, on_delete=models.CASCADE, null=True, blank=True)
     gender = models.CharField(
         max_length=120, choices=GENDER_CHOICES)
     date_of_birth = models.DateField(null=True)
@@ -389,7 +396,6 @@ class User(AbstractUser):
         return None
 
 
-
 class UserImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     """Model for uploading profile user image"""
@@ -418,7 +424,6 @@ class Account(models.Model):
 
     def __str__(self):
         return self.owner.email
-
 
 
 class Dependant(models.Model):
