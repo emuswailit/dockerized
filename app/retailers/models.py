@@ -16,21 +16,22 @@ from django.urls import reverse
 from django.db.models.signals import post_save, pre_save
 from .utils import unique_slug_generator
 from django.utils.text import slugify
+from wholesales.models import WholesaleProducts
 import decimal
 # from drugs.models import Categories
 
 User = get_user_model()
 
 
-def variation_image_upload_to(instance, filename):
-    title = instance.variation.title
+def retail_product_image_upload_to(instance, filename):
+    title = instance.retail_product.title
     slug = slugify(title)
     basename, file_extension = filename.split(".")
     new_filename = "%s.%s" % (slug, file_extension)
     return new_filename
 
 
-class VariationsQuerySet(models.query.QuerySet):
+class RetailProductsQuerySet(models.query.QuerySet):
     def active(self):
         return self.filter(active=True)
 
@@ -47,18 +48,18 @@ class VariationsQuerySet(models.query.QuerySet):
         return self.filter(lookups).distinct()
 
 
-class VariationsManager(models.Manager):
+class RetailProductsManager(models.Manager):
     def get_queryset(self):
-        return VariationsQuerySet(self.model, using=self._db)
+        return RetailProductsQuerySet(self.model, using=self._db)
 
     def all(self):
         return self.get_queryset().all()
 
-    def featured(self):  # Variations.objects.featured()
+    def featured(self):  # RetailProducts.objects.featured()
         return self.get_queryset().featured()
 
     def get_by_id(self, id):
-        # Variations.objects == self.get_queryset()
+        # RetailProducts.objects == self.get_queryset()
         qs = self.get_queryset().filter(id=id)
         if qs.count() == 1:
             return qs.first()
@@ -68,14 +69,14 @@ class VariationsManager(models.Manager):
         return self.get_queryset().active().search(query)
 
 
-class Variations(FacilityRelatedModel):
+class RetailProducts(FacilityRelatedModel):
     """
-    -Model for retail product variation, unique to each facility
+    -Model for retail product retail product, unique to each facility
     -Inherits most of its parameters from Products
 
     """
     product = models.ForeignKey(
-        Products, related_name="variations_product", on_delete=models.CASCADE, null=True, blank=True)
+        Products, related_name="retail_products_product", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     featured = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
@@ -83,10 +84,16 @@ class Variations(FacilityRelatedModel):
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
-    objects = VariationsManager()
+    objects = RetailProductsManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'product'], name='one product per facility')
+        ]
 
     def __str__(self):
-        return f"{self.title}"
+        return f"{self.product.title}"
 
     def get_price(self):
         if self.sale_price is not None:
@@ -99,8 +106,8 @@ class Variations(FacilityRelatedModel):
 
     def get_available_units(self):
         available_units = 0
-        if Inventory.objects.filter(variation=self).count() > 0:
-            items = Inventory.objects.filter(variation=self)
+        if RetailVariations.objects.filter(retail_product=self).count() > 0:
+            items = RetailVariations.objects.filter(retail_product=self)
 
             for item in items:
                 available_units += item.unit_quantity
@@ -108,8 +115,8 @@ class Variations(FacilityRelatedModel):
 
     def get_available_packs(self):
         available_packs = 0
-        if Inventory.objects.filter(variation=self).count() > 0:
-            items = Inventory.objects.filter(variation=self)
+        if RetailVariations.objects.filter(retail_product=self).count() > 0:
+            items = RetailVariations.objects.filter(retail_product=self)
 
             for item in items:
                 available_packs += item.pack_quantity
@@ -117,32 +124,35 @@ class Variations(FacilityRelatedModel):
         return available_packs
 
 
-# TODO : When a product is deactivated all variations should be deactivated too
-# A product variation with inventory greater than one cannot be activated
+# TODO : When a product is deactivated all retail product should be deactivated too
+# A product retail product with retail variation greater than one cannot be activated
 
-# TODO update variation inventory upon release to outlets
+# TODO update retail product retail variation upon release to outlets
 
 
-class VariationPhotos(FacilityRelatedModel):
+class RetailProductPhotos(FacilityRelatedModel):
     """Model for uploading profile product image"""
-    variation = models.ForeignKey(
-        Variations, related_name="variation_images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=variation_image_upload_to)
+    retail_product = models.ForeignKey(
+        RetailProducts, related_name="retail_product_images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=retail_product_image_upload_to)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.variation.title
+        return self.retail_product.title
 
 
-class Inventory(FacilityRelatedModel):
+class RetailVariations(FacilityRelatedModel):
     distributor = models.ForeignKey(
         Distributor, on_delete=models.CASCADE, null=True, blank=True)
     batch = models.CharField(max_length=50, null=True,
                              blank=True, editable=True)
-    variation = models.ForeignKey(Variations, on_delete=models.CASCADE)
+    retail_product = models.ForeignKey(
+        RetailProducts, on_delete=models.CASCADE)
+    wholesale_product = models.ForeignKey(
+        WholesaleProducts, related_name="retail_product_images", on_delete=models.CASCADE, null=True, blank=True)
     units_per_pack = models.IntegerField(default=0)
     pack_quantity = models.IntegerField(default=0)
     pack_buying_price = models.DecimalField(
@@ -155,8 +165,8 @@ class Inventory(FacilityRelatedModel):
     unit_selling_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     description = models.CharField(max_length=120, blank=True, null=True)
-    manufacture_date = models.DateField()
-    expiry_date = models.DateField()
+    manufacture_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -164,7 +174,7 @@ class Inventory(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"{self.variation.title}"
+        return f"{self.retail_product.title}"
 
 
 class Forwards(FacilityRelatedModel):
@@ -270,8 +280,8 @@ class QuoteItem(FacilityRelatedModel):
         PrescriptionQuote, on_delete=models.CASCADE, null=True, blank=True)
     prescription_item = models.ForeignKey(
         PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE, null=True, blank=True)
-    variation = models.ForeignKey(
-        Variations, related_name="quote_item_inventory", on_delete=models.CASCADE, null=True, blank=True)
+    retail_product = models.ForeignKey(
+        RetailProducts, related_name="quote_item_retail_variation", on_delete=models.CASCADE, null=True, blank=True)
     quantity_required = models.IntegerField(default=0)
     quantity_dispensed = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
@@ -293,7 +303,7 @@ class QuoteItem(FacilityRelatedModel):
 
     class Meta:
         unique_together = ('prescription_quote',
-                           'prescription_item', 'variation')
+                           'prescription_item', 'retail_product')
 
 
 class Order(FacilityRelatedModel):
@@ -346,7 +356,7 @@ class OrderItem(FacilityRelatedModel):
         User, on_delete=models.CASCADE)
 
     def get_total_item_price(self):
-        return self.quantity * self.quote_item.inventory.unit_selling_price
+        return self.quantity * self.quote_item.retail_variation.unit_selling_price
 
     class Meta:
         constraints = [
@@ -439,7 +449,7 @@ def counter_sale_pre_save_receiver(sender, instance, *args, **kwargs):
 pre_save.connect(counter_sale_pre_save_receiver,
                  sender=PrescriptionSaleItem)
 
-# Deduct inventory
+# Deduct retail_variation
 
 
 @receiver(post_save, sender=PrescriptionSaleItem, dispatch_uid="update_prescription_total")
@@ -449,9 +459,9 @@ def create_offer(sender, instance, created, **kwargs):
         try:
             instance.item.quoted_item.unit_quantity = instance.quoted_item.item.unit_quantity - instance.quantity
             instance.item.quoted_item.save()
-            instance.item.quoted_item.variation.quantity = instance.item.quoted_item.variation.quantity - \
+            instance.item.quoted_item.retail_product.quantity = instance.item.quoted_item.retail_product.quantity - \
                 instance.quantity
-            instance.item.variation.save()
+            instance.item.retail_product.save()
         except:
             pass
 
@@ -475,8 +485,8 @@ class CounterSale(FacilityRelatedModel):
 class CounterSaleItem(FacilityRelatedModel):
     """Model for counter, non prescription sale item"""
     client_phone = models.CharField(max_length=30, null=True, blank=True)
-    item = models.ForeignKey(
-        Inventory, related_name="sale_item", on_delete=models.CASCADE)
+    # item = models.ForeignKey(
+    #     RetailVariations, related_name="sale_item", on_delete=models.CASCADE)
     cost = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     quantity = models.IntegerField(default=0)
@@ -496,7 +506,7 @@ def counter_sale_pre_save_receiver(sender, instance, *args, **kwargs):
 pre_save.connect(counter_sale_pre_save_receiver,
                  sender=CounterSaleItem)
 
-# Deduct inventory
+# Deduct retail variation
 
 
 @receiver(post_save, sender=CounterSaleItem, dispatch_uid="update_prescription_total")
@@ -506,8 +516,9 @@ def create_offer(sender, instance, created, **kwargs):
         try:
             instance.item.unit_quantity = instance.item.unit_quantity - instance.quantity
             instance.item.save()
-            instance.item.variation.quantity = instance.item.variation.quantity - instance.quantity
-            instance.item.variation.save()
+            instance.item.retail_product.quantity = instance.item.retail_product.quantity - \
+                instance.quantity
+            instance.item.retail_product.save()
         except:
             pass
 

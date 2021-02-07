@@ -2,7 +2,7 @@ from consultations.serializers import PrescriptionItemSerializer
 from django.db import IntegrityError, transaction
 from datetime import date
 from consultations.models import PrescriptionItem
-from retailers.models import Inventory, Variations
+# from retailers.models import RetailVariations, RetailProducts
 from consultations.models import PrescriptionItem, Prescription
 from consultations.serializers import PrescriptionSerializer
 from rest_framework import serializers, exceptions
@@ -183,7 +183,7 @@ class QuoteItemSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedMo
                 raise serializers.ValidationError(
                     {"response_code": 1, "response_message": f"Prescription is already confirmed thus cannot be ammended"})
 
-            variation = Variations.objects.get(id=variation_id)
+            variation = RetailProducts.objects.get(id=variation_id)
             if prescription_quote_item and variation:
                 if prescription_quote_item.prescription_item.preparation != variation.variation.product.preparation:
                     raise serializers.ValidationError(
@@ -286,7 +286,7 @@ class PharmacistUpdateQuoteItemSerializer(FacilitySafeSerializerMixin, serialize
                 raise serializers.ValidationError(
                     {"response_code": 1, "response_message": f"Prescription is already confirmed thus cannot be ammended"})
 
-            variation = Variations.objects.get(id=variation_id)
+            variation = RetailProducts.objects.get(id=variation_id)
             if prescription_quote_item and variation.product:
                 if prescription_quote_item.prescription_item.preparation != variation.product.preparation:
                     raise serializers.ValidationError(
@@ -674,20 +674,21 @@ class PharmacyPaymentsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
         return self.order.get_total_price()
 
 
-class VariationPhotosSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+class RetailProductPhotosSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = models.VariationPhotos
+        model = models.RetailProductPhotos
         fields = "__all__"
         read_only_fields = (
             'variation', 'owner'
         )
 
 
-class InventoryDisplaySerializer(serializers.HyperlinkedModelSerializer):
+class RetailVariationsDisplaySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = models.Inventory
+        model = models.RetailVariations
         fields = (
-            ('id', 'url')
+            ('id', 'url', 'unit_quantity', 'pack_buying_price',
+             'pack_selling_price', 'manufacture_date', 'expiry_date')
         )
         read_only_fields = (
             'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'variations', 'facility'
@@ -696,19 +697,19 @@ class InventoryDisplaySerializer(serializers.HyperlinkedModelSerializer):
 # Not using FacilitySafeSerializerMixin to allow global view of products
 
 
-class VariationsSerializer(serializers.HyperlinkedModelSerializer):
-    variation_images = VariationPhotosSerializer(many=True, read_only=True)
+class RetailProductsSerializer(serializers.HyperlinkedModelSerializer):
+    # variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
     product_details = serializers.SerializerMethodField(read_only=True)
-    inventory = serializers.SerializerMethodField(read_only=True)
+    variations = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = models.Variations
+        model = models.RetailProducts
         fields = (
-            'id',  'facility', 'url', 'category',  'title', 'description', 'get_available_units', 'get_available_packs',
-            'created', 'updated', 'owner', 'product', 'slug', 'is_drug', 'is_active', 'variation_images', 'product_details', 'inventory'
+            'id',  'facility', 'url', 'product', 'get_available_units', 'get_available_packs', 'product_details', 'variations',
+            'created', 'updated', 'owner', 'is_active',
         )
         read_only_fields = (
-            'created', 'updated', 'owner', 'quantity', 'slug', 'is_active', 'is_drug', 'facility'
+            'created', 'updated', 'owner', 'facility', 'is_active'
         )
 
     def get_product_details(self, obj):
@@ -716,72 +717,59 @@ class VariationsSerializer(serializers.HyperlinkedModelSerializer):
             product = Products.objects.get_by_id(id=obj.product.id)
             return ProductsSerializer(product, context=self.context).data
 
-    def get_inventory(self, obj):
+    def get_variations(self, obj):
 
-        items = models.Inventory.objects.filter(variation=obj)
-        return InventoryDisplaySerializer(items, context=self.context, many=True).data
+        items = models.RetailVariations.objects.filter(retail_product=obj)
+        return RetailVariationsDisplaySerializer(items, context=self.context, many=True).data
 
     @transaction.atomic
     def create(self, validated_data):
+
         user_pk = self.context.get("user_pk")
+
         user = User.objects.get(id=user_pk)
-        title = validated_data.pop('title')
+        # title = validated_data.pop('title')
         product = validated_data.pop('product')
-        category = validated_data.pop('category')
+        # category = validated_data.pop('category')
 
         if user.facility == Facility.objects.default_facility():
             raise serializers.ValidationError(
                 f"You are not allowed to create inventory in this facility")
-        final_title = None
         if product:
-            if models.Variations.objects.filter(product=product, facility=user.facility).count() > 0:
+            if models.RetailProducts.objects.filter(product=product, facility=user.facility).count() > 0:
                 raise serializers.ValidationError(
-                    {"response_code": 1, "response_message": f" A variation for {product.title} already exists for your facility"})
+                    {"response_code": 1, "response_message": f"{product.title} already added to facility"})
 
             else:
-                final_title = f"{product.preparation.title } -{product.title}"
-        else:
-            final_title = title
-        created = models.Variations.objects.create(
-            product=product, title=final_title, category=category, **validated_data)
+                created = models.RetailProducts.objects.create(
+                    product=product, **validated_data)
 
         return created
 
 
-class InventorySerializer(serializers.HyperlinkedModelSerializer):
+class RetailVariationsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = models.Inventory
+        model = models.RetailVariations
         fields = (
             "__all__"
         )
         read_only_fields = (
-            'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'facility'
+            'created', 'updated', 'owner', 'is_active', 'unit_quantity', 'unit_buying_price', 'unit_selling_price', 'facility', 'wholesale_product',
         )
 
 
-# class CategoriesSerializer(serializers.HyperlinkedModelSerializer):
-#     class Meta:
-#         model = models.Categories
-#         fields = (
-#             "__all__"
-#         )
-#         read_only_fields = (
-#             'created', 'updated', 'owner', 'is_active', 'facility',
-#         )
-
-
-class VariationsUpdateSerializer(serializers.HyperlinkedModelSerializer):
-    variation_images = VariationPhotosSerializer(many=True, read_only=True)
+class RetailProductsUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
     product_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = models.Variations
+        model = models.RetailProducts
         fields = (
-            'id',  'facility', 'url', 'category',  'title', 'description', 'get_available_units', 'get_available_packs',
-            'created', 'updated', 'owner', 'product', 'slug', 'is_drug', 'is_active', 'variation_images', 'product_details',
+            'id',  'facility', 'url',
+            'created', 'updated', 'owner', 'product', 'is_active', 'variation_images', 'product_details',
         )
         read_only_fields = (
-            'created', 'updated', 'owner', 'quantity', 'slug', 'is_active', 'is_drug', 'facility', 'product', 'category'
+            'created', 'updated', 'owner',  'is_active', 'facility', 'product',
         )
 
     def get_product_details(self, obj):

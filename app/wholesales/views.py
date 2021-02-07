@@ -4,12 +4,133 @@ from rest_framework import generics, permissions, status, exceptions
 from rest_framework.response import Response
 from core import app_permissions
 from django.shortcuts import get_object_or_404
-# Create your views here.
+
+
+# Retail Accout Views
+class RetailerAccountsCreateAPIView(generics.CreateAPIView):
+    """
+    Wholesale Superintendent
+    ------------------------------------------------------
+    Create a new retailer account
+
+    """
+    name = "retaileraccounts-create"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
+    serializer_class = serializers.RetailerAccountsSerializer
+    queryset = models.RetailerAccounts.objects.all()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Retailer account created successfully.", "retailer-account": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Retailer account not created", "retailer-account": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+
+class RetailerAccountsListAPIView(generics.ListAPIView):
+    """
+   Authenticated user
+   ----------------------------------------------
+   Wholesale product listing
+    """
+    name = "retaileraccounts-list"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
+    serializer_class = serializers.RetailerAccountsSerializer
+
+    queryset = models.RetailerAccounts.objects.all()
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(RetailerAccountsListAPIView, self).get_context_data(
+            *args, **kwargs)
+        # context["now"] = timezone.now()
+        context["query"] = self.request.GET.get("q")  # None
+        return context
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super(RetailerAccountsListAPIView,
+                   self).get_queryset(*args, **kwargs)
+        query = self.request.GET.get("q")
+        if query:
+            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
+                Q(title__icontains=query) |
+                Q(description__icontains=query)
+            )
+
+        return qs
+
+
+class RetailerAccountsDetailAPIView(generics.RetrieveAPIView):
+    """
+    Authenticated  User
+    ---------------------------------------------------------
+    View retailer account details
+    """
+    name = "retaileraccounts-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.RetailerAccountsSerializer
+    queryset = models.RetailerAccounts.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class RetailerAccountsUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Wholesale Superintendent
+    ------------------------------------------------------------
+    Update a retailer account
+    """
+    name = "retaileraccounts-update"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
+    serializer_class = serializers.RetailerAccountsSerializer
+    queryset = models.RetailerAccounts.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+# Wholesale products views
 
 
 class WholesaleProductsCreateAPIView(generics.CreateAPIView):
     """
-    Post new wholesaleproducts for dependant
+    Wholesale Superintendent
+    ------------------------------------------------------
+    Create a new wholesale product
+
     """
     name = "wholesaleproducts-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -40,7 +161,9 @@ class WholesaleProductsCreateAPIView(generics.CreateAPIView):
 
 class WholesaleProductsListAPIView(generics.ListAPIView):
     """
-    Allergies list
+   Authenticated user
+   ----------------------------------------------
+   Wholesale product listing
     """
     name = "wholesaleproducts-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -72,7 +195,9 @@ class WholesaleProductsListAPIView(generics.ListAPIView):
 
 class WholesaleProductsDetailAPIView(generics.RetrieveAPIView):
     """
-    WholesaleProducts details
+    Authenticated  User
+    ---------------------------------------------------------
+    View wholesale product details
     """
     name = "wholesaleproducts-detail"
     permission_classes = (permissions.IsAuthenticated,
@@ -94,7 +219,9 @@ class WholesaleProductsDetailAPIView(generics.RetrieveAPIView):
 
 class WholesaleProductsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    WholesaleProducts update
+    Wholesale Superintendent
+    ------------------------------------------------------------
+    Update a wholesale product entry
     """
     name = "wholesaleproducts-update"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -118,7 +245,9 @@ class WholesaleProductsUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class WholesaleVariationsCreateAPIView(generics.CreateAPIView):
     """
-    Post new wholesaleproducts for dependant
+    Wholesale Superintendent
+    ------------------------------------------------------
+    Create a product variation when receiving new inventory
     """
     name = "wholesalevariations-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -149,15 +278,18 @@ class WholesaleVariationsCreateAPIView(generics.CreateAPIView):
 
 class WholesaleVariationsListAPIView(generics.ListAPIView):
     """
-    Allergies list
+    Authenticated users
+    ------------------------------------------------------
+    Listing of all wholesale variations
     """
     name = "wholesalevariationss-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.WholesaleVariationsSerializer
-
     queryset = models.WholesaleVariations.objects.all()
-    # TODO : Reuse this for filtering by q.
+    search_fields = ('wholesale_product__product__title',
+                     'wholesale_product__product__description', 'wholesale_product__product__manufacturer__title', 'comment')
+    ordering_fields = ('wholesale_product__product__title', 'id')
 
     def get_context_data(self, *args, **kwargs):
         context = super(WholesaleVariationsListAPIView, self).get_context_data(
@@ -166,22 +298,12 @@ class WholesaleVariationsListAPIView(generics.ListAPIView):
         context["query"] = self.request.GET.get("q")  # None
         return context
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(WholesaleVariationsListAPIView,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs
-
 
 class WholesaleVariationsDetailAPIView(generics.RetrieveAPIView):
     """
-    WholesaleVariations details
+    Authenticated user
+    -----------------------------------------------------------
+    Wholesale product variations listing
     """
     name = "wholesalevariations-detail"
     permission_classes = (permissions.IsAuthenticated,
@@ -203,7 +325,9 @@ class WholesaleVariationsDetailAPIView(generics.RetrieveAPIView):
 
 class WholesaleVariationsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    WholesaleVariations update
+    Wholesale Superintendent
+    -------------------------------------------------------------------
+    Update wholesale product variation
     """
     name = "wholesalevariations-update"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -227,7 +351,9 @@ class WholesaleVariationsUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class BonusesCreateAPIView(generics.CreateAPIView):
     """
-    Post new wholesaleproducts for dependant
+   Wholesale superintendent
+   ------------------------------------------------
+   Create a new bonus offer
     """
     name = "bonuses-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -258,7 +384,9 @@ class BonusesCreateAPIView(generics.CreateAPIView):
 
 class BonusesListAPIView(generics.ListAPIView):
     """
-    Allergies list
+    Authenticated user
+    -----------------------------------------
+    List of all active bonuses
     """
     name = "bonuses-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -290,7 +418,9 @@ class BonusesListAPIView(generics.ListAPIView):
 
 class BonusesDetailAPIView(generics.RetrieveAPIView):
     """
-    Bonuses details
+   Authenticated user
+   --------------------------------------------------
+   Bonus details
     """
     name = "bonuses-detail"
     permission_classes = (permissions.IsAuthenticated,
@@ -312,7 +442,9 @@ class BonusesDetailAPIView(generics.RetrieveAPIView):
 
 class BonusesUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    Bonuses update
+    Facility supenrintendent
+    ---------------------------------------------------
+    Update bonus
     """
     name = "bonuses-update"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -334,7 +466,9 @@ class BonusesUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class DiscountsCreateAPIView(generics.CreateAPIView):
     """
-    Post new wholesaleproducts for dependant
+    Facility Superintendent
+    ----------------------------------------------
+    Create a new discount for a  wholesale product variation 
     """
     name = "discounts-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
@@ -365,7 +499,9 @@ class DiscountsCreateAPIView(generics.CreateAPIView):
 
 class DiscountsListAPIView(generics.ListAPIView):
     """
-    Allergies list
+    Authenticated user
+    --------------------------------------------
+    Discounts list
     """
     name = "discounts-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -397,6 +533,8 @@ class DiscountsListAPIView(generics.ListAPIView):
 
 class DiscountsDetailAPIView(generics.RetrieveAPIView):
     """
+    Authenticated user
+    --------------------------------------------------
     Discounts details
     """
     name = "discounts-detail"
@@ -419,7 +557,9 @@ class DiscountsDetailAPIView(generics.RetrieveAPIView):
 
 class DiscountsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    Discounts update
+    Wholesale Superintendent
+    -----------------------------------------------------------
+    Update discount
     """
     name = "discounts-update"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,

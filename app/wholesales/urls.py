@@ -22,7 +22,7 @@ urlpatterns = [
          name=views.WholesaleVariationsListAPIView.name),
     path('wholesale-variations/<uuid:pk>', views.WholesaleVariationsDetailAPIView.as_view(),
          name=views.WholesaleVariationsDetailAPIView.name),
-    path('wholesale-variations/<uuid:pk>/', views.WholesaleVariationsUpdateAPIView.as_view(),
+    path('wholesale-variations/<uuid:pk>/update', views.WholesaleVariationsUpdateAPIView.as_view(),
          name=views.WholesaleVariationsUpdateAPIView.name),
 
     path('bonuses/create', views.BonusesCreateAPIView.as_view(),
@@ -40,7 +40,7 @@ urlpatterns = [
          name=views.DiscountsListAPIView.name),
     path('discounts/<uuid:pk>', views.DiscountsDetailAPIView.as_view(),
          name=views.DiscountsDetailAPIView.name),
-    path('discounts/<uuid:pk>/', views.DiscountsUpdateAPIView.as_view(),
+    path('discounts/<uuid:pk>/update', views.DiscountsUpdateAPIView.as_view(),
          name=views.DiscountsUpdateAPIView.name),
 
 
@@ -69,7 +69,7 @@ urlpatterns = [
          name=views.DespatchesListAPIView.name),
     path('despatches/<uuid:pk>', views.DespatchesDetailAPIView.as_view(),
          name=views.DespatchesDetailAPIView.name),
-    path('despatches/<uuid:pk>/', views.DespatchesUpdateAPIView.as_view(),
+    path('despatches/<uuid:pk>/update', views.DespatchesUpdateAPIView.as_view(),
          name=views.DespatchesUpdateAPIView.name),
 
     path('despatch-items/create', views.DespatchItemsCreateAPIView.as_view(),
@@ -78,6 +78,16 @@ urlpatterns = [
          name=views.DespatchItemsListAPIView.name),
     path('despatch-items/<uuid:pk>', views.DespatchItemsDetailAPIView.as_view(),
          name=views.DespatchItemsDetailAPIView.name),
-    path('despatch-items/<uuid:pk>/', views.DespatchItemsUpdateAPIView.as_view(),
+    path('despatch-items/<uuid:pk>/update', views.DespatchItemsUpdateAPIView.as_view(),
          name=views.DespatchItemsUpdateAPIView.name),
+
+
+    path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),
+         name=views.RetailerAccountsCreateAPIView.name),
+    path('retailer-accounts', views.RetailerAccountsListAPIView.as_view(),
+         name=views.RetailerAccountsListAPIView.name),
+    path('retailer-accounts/<uuid:pk>', views.RetailerAccountsDetailAPIView.as_view(),
+         name=views.RetailerAccountsDetailAPIView.name),
+    path('retailer-accounts/<uuid:pk>/update', views.RetailerAccountsUpdateAPIView.as_view(),
+         name=views.RetailerAccountsUpdateAPIView.name),
 ]

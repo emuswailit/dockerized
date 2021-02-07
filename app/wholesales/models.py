@@ -10,6 +10,29 @@ from payments.models import PaymentMethods
 User = get_user_model()
 
 
+class RetailerAccounts(FacilityRelatedModel):
+    """
+    -Model for retailer accounts
+    -Will be required for retailers who will buy on credit or with placement arrangements
+
+    """
+    retailer = models.ForeignKey(
+        Facility, related_name="account_retail_facility", on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    credit_limit = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    credit_allowed = models.BooleanField(default=False)
+    placement_allowed = models.BooleanField(default=False)
+    account_manager = models.OneToOneField(
+        Employees, on_delete=models.CASCADE, null=True, blank=True)
+    account_contact = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    owner = models.ForeignKey(
+        User, related_name="facility_account_owner", on_delete=models.CASCADE)
+
+
 class WholesaleProducts(FacilityRelatedModel):
     """Model for product variation, unique to each facility"""
     product = models.ForeignKey(
@@ -48,6 +71,38 @@ class WholesaleProducts(FacilityRelatedModel):
         return total_discounts
 
 
+class WholesaleVariations(FacilityRelatedModel):
+    """
+    -Model for product variation, unique to each facility
+    -This represents a consignment or batch of a particular product received in the wholesale pharmacy
+    -A wholesale can thus have two or more batches of a particular item in stock, difering by date received, price, discounts, expiry dates, etc,
+
+    """
+    wholesale_product = models.ForeignKey(
+        WholesaleProducts, related_name="wholesale_variation_product", on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    pack_quantity = models.IntegerField()
+    pack_buying_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    pack_selling_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    source = models.ForeignKey(
+        Distributor, related_name="listing_purchases", on_delete=models.CASCADE, null=True, blank=True)
+    comment = models.CharField(max_length=140, null=True, blank=True)
+    manufacture_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    owner = models.ForeignKey(
+        User, related_name="inventory_owner", on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    source = models.ForeignKey(Distributor, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.wholesale_product.product.title
+
+
 class Discounts(FacilityRelatedModel):
     """
     Model for product discount expressed as a percentage
@@ -55,15 +110,14 @@ class Discounts(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a discount based on start and end date
 
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="wholesale_product_discount", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="discount_variation", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
-
     description = models.TextField(null=True, blank=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_date = models.DateField()
+    end_date = models.DateField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     percentage = models.DecimalField(
@@ -82,14 +136,14 @@ class Bonuses(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a bonus based on start and end date
 
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="wholesale_product_bonus", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="bonus_variation", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
     description = models.TextField(null=True, blank=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    start_date = models.DateField()
+    end_date = models.DateField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     for_every = models.IntegerField()
@@ -101,30 +155,10 @@ class Bonuses(FacilityRelatedModel):
         return self.title
 
 
-class WholesaleVariations(FacilityRelatedModel):
-    """Model for product variation, unique to each facility"""
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="wholesale_variation_product", on_delete=models.CASCADE, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    pack_quantity = models.IntegerField()
-    pack_buying_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
-    pack_selling_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
-    source = models.ForeignKey(
-        Distributor, related_name="listing_purchases", on_delete=models.CASCADE, null=True, blank=True)
-    owner = models.ForeignKey(
-        User, related_name="inventory_owner", on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.wholesale_product.title
-
-
 class Requisitions(FacilityRelatedModel):
     """
-    Model a retail requisition
+    -Model a retailer requisition
+    -Order made by a retailer superintendent in a selected wholesaler
 
     """
     # TODO: Implement scheduled task to turn on and off a discount based on start and end date
@@ -150,6 +184,8 @@ class Requisitions(FacilityRelatedModel):
     )
     wholesale = models.ForeignKey(
         Facility, related_name="wholesale_facility", on_delete=models.CASCADE)
+    retailer_account = models.ForeignKey(
+        RetailerAccounts, related_name="requisitioning_account", on_delete=models.CASCADE, null=True, blank=True)
     retailer_confirmed = models.BooleanField(default=True)
     wholesaler_confirmed = models.BooleanField(default=True)
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
