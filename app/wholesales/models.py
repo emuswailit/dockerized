@@ -16,7 +16,7 @@ class RetailerAccounts(FacilityRelatedModel):
     -Will be required for retailers who will buy on credit or with placement arrangements
 
     """
-    retailer = models.ForeignKey(
+    retailer = models.OneToOneField(
         Facility, related_name="account_retail_facility", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     credit_limit = models.DecimalField(
@@ -58,17 +58,6 @@ class WholesaleProducts(FacilityRelatedModel):
         else:
             available_quantity = 0
         return available_quantity
-
-    def total_discounts(self):
-        total_discounts = 0.00
-        if Discounts.objects.filter(wholesale_product=self).count() > 0:
-            discounts = Discounts.objects.filter(
-                wholesale_product=self)
-            for item in discounts:
-                total_discounts += item.percentage
-        else:
-            total_discounts = 0.00
-        return total_discounts
 
 
 class WholesaleVariations(FacilityRelatedModel):
@@ -186,9 +175,11 @@ class Requisitions(FacilityRelatedModel):
         Facility, related_name="wholesale_facility", on_delete=models.CASCADE)
     retailer_account = models.ForeignKey(
         RetailerAccounts, related_name="requisitioning_account", on_delete=models.CASCADE, null=True, blank=True)
-    retailer_confirmed = models.BooleanField(default=True)
-    wholesaler_confirmed = models.BooleanField(default=True)
+    retailer_confirmed = models.BooleanField(default=False)
+    wholesaler_confirmed = models.BooleanField(default=False)
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
+    status = models.CharField(
+        max_length=100, choices=STATUS_CHOICES, default="PENDING")
     payment_terms = models.CharField(
         max_length=100, choices=PAYMENT_TERMS_CHOICES)
     created = models.DateTimeField(auto_now_add=True)
@@ -196,8 +187,8 @@ class Requisitions(FacilityRelatedModel):
     owner = models.ForeignKey(
         User, related_name="requisition_owner", on_delete=models.CASCADE)
 
-    # def __str__(self):
-    #     return self.title
+    def __str__(self):
+        return f"Requisition : {self.wholesale.title} - {self.status}"
 
 
 class RequisitionItems(FacilityRelatedModel):
@@ -210,16 +201,16 @@ class RequisitionItems(FacilityRelatedModel):
     wholesale_product = models.ForeignKey(
         WholesaleProducts, related_name="requisition_wholesale", on_delete=models.CASCADE, null=True, blank=True)
     quantity_required = models.IntegerField()
-    quantity_issued = models.IntegerField()
-    quantity_pending = models.IntegerField()
-    quantity_paid = models.IntegerField()
-    quantity_unpaid = models.IntegerField()
+    quantity_issued = models.IntegerField(default=0)
+    quantity_pending = models.IntegerField(default=0)
+    quantity_paid = models.IntegerField(default=0)
+    quantity_unpaid = models.IntegerField(default=0)
     retailer_confirmed = models.BooleanField(default=True)
     wholesaler_confirmed = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    wholesale_authority = models.ForeignKey(
-        User, related_name="wholesale_authority", on_delete=models.CASCADE)
+    wholesaler_confirmed_by = models.ForeignKey(
+        User, related_name="wholesale_authority", on_delete=models.CASCADE, null=True, blank=True)
     owner = models.ForeignKey(
         User, related_name="requisition_item_owner", on_delete=models.CASCADE)
 
@@ -254,18 +245,19 @@ class Despatches(FacilityRelatedModel):
     despatch_confirmed = models.BooleanField(default=True)
     receipt_confirmed = models.BooleanField(default=True)
     courier_confirmed = models.BooleanField(default=True)
-    status = models.CharField(max_length=100, choices=DESPATCH_STATUS_CHOICES)
+    status = models.CharField(
+        max_length=100, choices=DESPATCH_STATUS_CHOICES, default="PENDING")
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
     despatch_confirmed_by = models.ForeignKey(
-        User, related_name="despatch_confirmed_by", on_delete=models.CASCADE)
+        User, related_name="despatch_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
     receipt_confirmed_by = models.ForeignKey(
-        User, related_name="receipt_confirmed_by", on_delete=models.CASCADE)
+        User, related_name="receipt_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
     courier_confirmed_by = models.ForeignKey(
-        User, related_name="courier_confirmed_by", on_delete=models.CASCADE)
+        User, related_name="courier_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     courier = models.ForeignKey(
-        Employees, related_name="despatch_courier", on_delete=models.CASCADE)
+        Employees, related_name="despatch_courier", on_delete=models.CASCADE, null=True, blank=True)
     owner = models.ForeignKey(
         User, related_name="despatch_owner", on_delete=models.CASCADE)
 
@@ -281,8 +273,10 @@ class DespatchItems(FacilityRelatedModel):
     despatch = models.ForeignKey(
         Despatches, related_name="item_despatch", on_delete=models.CASCADE)
     requisition_item = models.ForeignKey(
-        Requisitions, related_name="item_despatch", on_delete=models.CASCADE)
-    quantity_issued = models.IntegerField()
+        RequisitionItems, related_name="despatch_item_requisition", on_delete=models.CASCADE)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="despatch_item_variation", on_delete=models.CASCADE)
+    quantity_issued = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -290,6 +284,13 @@ class DespatchItems(FacilityRelatedModel):
 
     # def __str__(self):
     #     return self.title
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'despatch', 'requisition_item', 'wholesale_variation'], name='One variation item in despatch')
+        ]
+
+    def get_total_quantity_issued(self):
 
 
 class DespatchPayments(FacilityRelatedModel):

@@ -237,11 +237,11 @@ class PrescriptionQuote(FacilityRelatedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['facility', 'prescription'], name='One quote per prescription')
+                fields=['facility', 'forward'], name='One quote per prescription')
         ]
 
     def __str__(self):
-        return self.forward_prescription.prescription.dependant.first_name
+        return self.forward.prescription.dependant.first_name
 
     def get_total_quote_cost(self):
         total = 0
@@ -344,9 +344,11 @@ class OrderItem(FacilityRelatedModel):
     """
     facility = models.ForeignKey(
         Facility,  on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
     quote_item = models.ForeignKey(
         QuoteItem, on_delete=models.CASCADE, null=True, blank=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    retail_variation = models.ForeignKey(
+        RetailVariations, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=0)
     client_confirmed = models.BooleanField(default=False)
     pharmacist_confirmed = models.BooleanField(default=False)
@@ -361,7 +363,7 @@ class OrderItem(FacilityRelatedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['facility', 'quote_item', 'order'], name='One quote item in order')
+                fields=['facility', 'quote_item', 'order', 'retail_variation'], name='One quote item in order')
         ]
 
 
@@ -521,21 +523,3 @@ def create_offer(sender, instance, created, **kwargs):
             instance.item.retail_product.save()
         except:
             pass
-
-
-# @receiver(post_save, sender=PrescriptionQuote, dispatch_uid="create_prescription_items")
-# def create_offer(sender, instance, created, **kwargs):
-#     """Deduct from inventoty"""
-#     if created:
-#         prescription_id = instance.forward_prescription.prescription.id
-
-#         if PrescriptionItem.objects.filter(prescription_id=prescription_id).count()>0:
-#             prescription_items = PrescriptionItem.objects.filter(prescription_id=prescription_id)
-
-#             for item in prescription_items:
-#                 QuoteItem.objects.create(facility=instance.facility,owner=instance.owner,prescription_quote=instance,prescription_item=item)
-
-#                 raise ValidationError(f"Ziko {prescription_items.count()}")
-
-#         else:
-#             raise ValidationError(f"Hakuna kitu ya {prescription_id}")

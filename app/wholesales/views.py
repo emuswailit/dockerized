@@ -581,13 +581,26 @@ class DiscountsUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class RequisitionsCreateAPIView(generics.CreateAPIView):
     """
-    Post new wholesaleproducts for dependant
+    Retail Superintendent
+    --------------------------------------------------
+    Create a new requisition in a selected wholesale pharmacy
     """
     name = "requisitions-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionsSerializer
     queryset = models.Requisitions.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(RequisitionsCreateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -598,7 +611,7 @@ class RequisitionsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Bonus created successfully.", "bonus": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Requisition created successfully.", "requisition": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -607,12 +620,14 @@ class RequisitionsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Bonus not created", "bonus": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Requisition not created", "requisition": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class RequisitionsListAPIView(generics.ListAPIView):
+class RetailerRequisitionsListAPIView(generics.ListAPIView):
     """
-    Allergies list
+   Retail Superintendent
+   ------------------------------------------------
+   View list of requisitions a retail pharmacy has created on different wholesales
     """
     name = "requisitions-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -620,31 +635,35 @@ class RequisitionsListAPIView(generics.ListAPIView):
     serializer_class = serializers.RequisitionsSerializer
 
     queryset = models.Requisitions.objects.all()
-    # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(RequisitionsListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    def get_queryset(self):
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(RequisitionsListAPIView,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
+        return super().get_queryset().filter(facility=self.request.user.facility)
 
-        return qs
+
+class WholesalerRequisitionsListAPIView(generics.ListAPIView):
+    """
+   Wholesale Superintendent
+   ------------------------------------------------
+   View list of requisitions created on a wholesale
+    """
+    name = "requisitions-list"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.RequisitionsSerializer
+
+    queryset = models.Requisitions.objects.all()
+
+    def get_queryset(self):
+
+        return super().get_queryset().filter(wholesale=self.request.user.facility)
 
 
 class RequisitionsDetailAPIView(generics.RetrieveAPIView):
     """
-    Requisitions details
+    Retail and Wholesale Superintendents
+    -----------------------------------------------------
+    View details of a wholesale requisition
     """
     name = "requisitions-detail"
     permission_classes = (permissions.IsAuthenticated,
@@ -666,10 +685,10 @@ class RequisitionsDetailAPIView(generics.RetrieveAPIView):
 
 class RequisitionsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    Requisitions update
+    Retail/Wholesale Superintendent
     """
     name = "requisitions-update"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionsSerializer
     queryset = models.Requisitions.objects.all()
@@ -688,7 +707,7 @@ class RequisitionsUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class RequisitionItemsCreateAPIView(generics.CreateAPIView):
     """
-    Retailer: Superintendent
+    Retail Superintendent
     ---------------------------------------------------------
     Create a wholesale requisition item
     """
@@ -697,6 +716,17 @@ class RequisitionItemsCreateAPIView(generics.CreateAPIView):
                           )
     serializer_class = serializers.RequisitionItemsSerializer
     queryset = models.RequisitionItems.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(RequisitionItemsCreateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -721,7 +751,7 @@ class RequisitionItemsCreateAPIView(generics.CreateAPIView):
 
 class RequisitionItemsListAPIView(generics.ListAPIView):
     """
-    Authenticated user
+    Retail/Wholesale Superintendent
     ---------------------------------------------------
     View list of requisition items
     """
@@ -777,7 +807,7 @@ class RequisitionItemsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class RequisitionItemsUpdateAPIView(generics.RetrieveUpdateAPIView):
+class RequisitionItemsUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
     Owner
     ---------------------------------------------------------------

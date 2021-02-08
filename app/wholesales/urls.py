@@ -46,11 +46,13 @@ urlpatterns = [
 
     path('requisitions/create', views.RequisitionsCreateAPIView.as_view(),
          name=views.RequisitionsCreateAPIView.name),
-    path('requisitions', views.RequisitionsListAPIView.as_view(),
-         name=views.RequisitionsListAPIView.name),
+    path('requisitions/retailer', views.RetailerRequisitionsListAPIView.as_view(),
+         name=views.RetailerRequisitionsListAPIView.name),
+    path('requisitions/wholesaler', views.WholesalerRequisitionsListAPIView.as_view(),
+         name=views.WholesalerRequisitionsListAPIView.name),
     path('requisitions/<uuid:pk>', views.RequisitionsDetailAPIView.as_view(),
          name=views.RequisitionsDetailAPIView.name),
-    path('requisitions/<uuid:pk>/', views.RequisitionsUpdateAPIView.as_view(),
+    path('requisitions/<uuid:pk>/update', views.RequisitionsUpdateAPIView.as_view(),
          name=views.RequisitionsUpdateAPIView.name),
 
     path('requisition-items/create', views.RequisitionItemsCreateAPIView.as_view(),
@@ -59,7 +61,7 @@ urlpatterns = [
          name=views.RequisitionItemsListAPIView.name),
     path('requisition-items/<uuid:pk>', views.RequisitionItemsDetailAPIView.as_view(),
          name=views.RequisitionItemsDetailAPIView.name),
-    path('requisition-items/<uuid:pk>/', views.RequisitionItemsUpdateAPIView.as_view(),
+    path('requisition-items/<uuid:pk>/update', views.RequisitionItemsUpdateAPIView.as_view(),
          name=views.RequisitionItemsUpdateAPIView.name),
 
 
