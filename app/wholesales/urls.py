@@ -11,7 +11,7 @@ urlpatterns = [
          name=views.WholesaleProductsListAPIView.name),
     path('wholesale-products/<uuid:pk>', views.WholesaleProductsDetailAPIView.as_view(),
          name=views.WholesaleProductsDetailAPIView.name),
-    path('wholesale-products/<uuid:pk>/', views.WholesaleProductsUpdateAPIView.as_view(),
+    path('wholesale-products/<uuid:pk>/update', views.WholesaleProductsUpdateAPIView.as_view(),
          name=views.WholesaleProductsUpdateAPIView.name),
 
 
@@ -54,6 +54,8 @@ urlpatterns = [
          name=views.RequisitionsDetailAPIView.name),
     path('requisitions/<uuid:pk>/update', views.RequisitionsUpdateAPIView.as_view(),
          name=views.RequisitionsUpdateAPIView.name),
+    path('requisitions/<uuid:pk>/retailer-confirm', views.RetailerConfirmRequisitionAPIView.as_view(),
+         name=views.RetailerConfirmRequisitionAPIView.name),
 
     path('requisition-items/create', views.RequisitionItemsCreateAPIView.as_view(),
          name=views.RequisitionItemsCreateAPIView.name),

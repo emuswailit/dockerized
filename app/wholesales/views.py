@@ -230,6 +230,17 @@ class WholesaleProductsUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = models.WholesaleProducts.objects.all()
     lookup_fields = ('pk',)
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(WholesaleProductsUpdateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def get_object(self):
         queryset = self.get_queryset()
         filter = {}
@@ -715,6 +726,37 @@ class RequisitionsUpdateAPIView(generics.RetrieveUpdateAPIView):
     serializer_class = serializers.RequisitionsSerializer
     queryset = models.Requisitions.objects.all()
     lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class RetailerConfirmRequisitionAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Retail/Wholesale Superintendent
+    """
+    name = "requisitions-update"
+    permission_classes = (app_permissions.IsOwner,
+                          )
+    serializer_class = serializers.RequisitionsRetailerConfirmSerializer
+    queryset = models.Requisitions.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(RetailerConfirmRequisitionAPIView,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk, "requisition_pk": requisition_pk})
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()

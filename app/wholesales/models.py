@@ -90,8 +90,8 @@ class Discounts(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a discount based on start and end date
 
-    wholesale_variation = models.ForeignKey(
-        WholesaleVariations, related_name="discount_variation", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_product = models.ForeignKey(
+        WholesaleProducts, related_name="discount_product", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
@@ -116,8 +116,8 @@ class Bonuses(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a bonus based on start and end date
 
-    wholesale_variation = models.ForeignKey(
-        WholesaleVariations, related_name="bonus_variation", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_product = models.ForeignKey(
+        WholesaleProducts, related_name="bonus_product", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
@@ -150,6 +150,7 @@ class Requisitions(FacilityRelatedModel):
 
     STATUS_CHOICES = (
         ("PENDING", "PENDING"),
+        ("RETAILER_CONFIRMED", "RETAILER CONFIRMED"),
         ("PROCESSING", "PROCESSING"),
         ("PARTIALLY_DISPATCHED", "PARTIALLY DISPATCHED"),
         ("FULLY_DISPATCHED", "FULLY DISPATCHED"),
@@ -204,6 +205,12 @@ class RequisitionItems(FacilityRelatedModel):
         User, related_name="wholesale_authority", on_delete=models.CASCADE, null=True, blank=True)
     owner = models.ForeignKey(
         User, related_name="requisition_item_owner", on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'requisition', 'wholesale_product', ], name='Unique item per requisition')
+        ]
 
     # def __str__(self):
     #     return self.title
@@ -265,8 +272,8 @@ class DespatchItems(FacilityRelatedModel):
         Despatches, related_name="item_despatch", on_delete=models.CASCADE)
     requisition_item = models.ForeignKey(
         RequisitionItems, related_name="despatch_item_requisition", on_delete=models.CASCADE)
-    wholesale_variation = models.ForeignKey(
-        WholesaleVariations, related_name="despatch_item_variation", on_delete=models.CASCADE)
+    wholesale_product = models.ForeignKey(
+        WholesaleProducts, related_name="despatch_item_product", on_delete=models.CASCADE)
     quantity_issued = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
