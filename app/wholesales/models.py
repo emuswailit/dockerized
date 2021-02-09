@@ -38,6 +38,7 @@ class WholesaleProducts(FacilityRelatedModel):
     product = models.ForeignKey(
         Products, related_name="listing_products", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
+    total_quantity = models.IntegerField(default=0)
     trade_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     created = models.DateTimeField(auto_now_add=True)
@@ -47,17 +48,6 @@ class WholesaleProducts(FacilityRelatedModel):
 
     def __str__(self):
         return self.product.title
-
-    def available_packs_quantity(self):
-        available_quantity = 0
-        if WholesaleVariations.objects.filter(wholesale_product=self).count() > 0:
-            variations = WholesaleVariations.objects.filter(
-                wholesale_product=self)
-            for item in variations:
-                available_quantity += item.pack_quantity
-        else:
-            available_quantity = 0
-        return available_quantity
 
 
 class WholesaleVariations(FacilityRelatedModel):
@@ -72,14 +62,15 @@ class WholesaleVariations(FacilityRelatedModel):
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    pack_quantity = models.IntegerField()
-    pack_buying_price = models.DecimalField(
+    quantity = models.IntegerField()
+    buying_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
-    pack_selling_price = models.DecimalField(
+    selling_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     source = models.ForeignKey(
         Distributor, related_name="listing_purchases", on_delete=models.CASCADE, null=True, blank=True)
     comment = models.CharField(max_length=140, null=True, blank=True)
+    batch = models.CharField(max_length=140, null=True, blank=True)
     manufacture_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
     owner = models.ForeignKey(
@@ -289,8 +280,6 @@ class DespatchItems(FacilityRelatedModel):
             models.UniqueConstraint(
                 fields=['facility', 'despatch', 'requisition_item', 'wholesale_variation'], name='One variation item in despatch')
         ]
-
-    def get_total_quantity_issued(self):
 
 
 class DespatchPayments(FacilityRelatedModel):

@@ -255,6 +255,17 @@ class WholesaleVariationsCreateAPIView(generics.CreateAPIView):
     serializer_class = serializers.WholesaleVariationsSerializer
     queryset = models.WholesaleVariations.objects.all()
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(WholesaleVariationsCreateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(owner=user, facility=user.facility)
@@ -335,6 +346,17 @@ class WholesaleVariationsUpdateAPIView(generics.RetrieveUpdateAPIView):
     serializer_class = serializers.WholesaleVariationsSerializer
     queryset = models.WholesaleVariations.objects.all()
     lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(WholesaleVariationsUpdateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()

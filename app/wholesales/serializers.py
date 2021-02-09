@@ -38,7 +38,7 @@ class WholesaleProductsSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.WholesaleProducts
-        fields = ('id', 'url', 'facility',  'product', 'available_packs_quantity',   'is_active',
+        fields = ('id', 'url', 'facility',  'product', 'total_quantity', 'trade_price',  'is_active',
                   'owner', 'created', 'updated', 'product_details')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -57,10 +57,11 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'wholesale_product',
+            'batch',
             'is_active',
-            'pack_quantity',
-            'pack_buying_price',
-            'pack_selling_price',
+            'quantity',
+            'buying_price',
+            'selling_price',
             'manufacture_date',
             'expiry_date',
             'source',
@@ -71,6 +72,65 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
         )
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        selected_payment_terms = None
+        retailer_account = None
+        user_pk = self.context.get("user_pk")
+        user = Users.objects.get(id=user_pk)
+
+        quantity = int(validated_data.pop('quantity'))
+        wholesale_product = validated_data.pop('wholesale_product')
+        selling_price = validated_data.pop('selling_price')
+
+        if selling_price <= 0:
+            raise serializers.ValidationError("Selling price cannot be zero")
+
+        if quantity <= 0:
+            raise serializers.ValidationError("Quantity cannot be zero")
+
+        created = models.WholesaleVariations.objects.create(
+            is_active=True,
+            wholesale_product=wholesale_product,
+            quantity=quantity, **validated_data)
+
+        if created:
+            # Update quantity
+            wholesale_product.total_quantity += quantity
+            wholesale_product.save()
+
+            # Update trade price
+            if selling_price > wholesale_product.trade_price:
+                wholesale_product.trade_price = selling_price
+                wholesale_product.save()
+
+        return created
+
+    @transaction.atomic
+    def update(self, wholesale_variation, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        # Retrieve quote item ID from context as it was passed in url
+        user_pk = self.context.get(
+            "user_pk")
+        if user_pk:
+            user = Users.objects.get(id=user_pk)
+
+        # Update price
+        selling_price = float(validated_data.pop('selling_price'))
+        if selling_price == 0.00:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": "Price cannot be zero"})
+        else:
+            wholesale_variation.wholesale_product.trade_price = selling_price
+            wholesale_variation.wholesale_product.save()
+            wholesale_variation.selling_price = selling_price
+            wholesale_variation.save()
+
+        return wholesale_variation
 
 
 class BonusesSerializer(serializers.HyperlinkedModelSerializer):
@@ -192,103 +252,25 @@ class RequisitionItemsSerializer(serializers.HyperlinkedModelSerializer):
             id=obj.wholesale_product.id)
         return WholesaleProductsSerializer(product, context=self.context, many=True).data
 
-    @transaction.atomic
-    def create(self, validated_data):
-        """
-        Adding a wholesale product and variation to requisition and subsequently to despatch
-        """
-        selected_payment_terms = None
-        despatch = None
-        variations = None
-        new_requisition_item = None
-        retailer_account = None
-        despatch_item = None
-        user_pk = self.context.get("user_pk")
-        user = Users.objects.get(id=user_pk)
+    # @transaction.atomic
+    # def create(self, validated_data):
+    #     """
+    #     Adding a wholesale product and variation to requisition and subsequently to despatch
+    #     """
+    #     selected_payment_terms = None
+    #     despatch = None
+    #     variations = None
+    #     new_requisition_item = None
+    #     retailer_account = None
+    #     despatch_item = None
+    #     user_pk = self.context.get("user_pk")
+    #     user = Users.objects.get(id=user_pk)
 
-        quantity_required = int(validated_data.pop('quantity_required'))
-        wholesale_product = validated_data.pop('wholesale_product')
-        requisition = validated_data.pop('requisition')
+    #     quantity_required = int(validated_data.pop('quantity_required'))
+    #     wholesale_product = validated_data.pop('wholesale_product')
+    #     requisition = validated_data.pop('requisition')
 
-        # Is item in stock
-        if wholesale_product.available_packs_quantity() <= 0:
-            raise serializers.ValidationError(
-                f"Item is not in stock")
-        else:
-            limit = 0
-            if models.WholesaleVariations.objects.filter(wholesale_product=wholesale_product, pack_quantity__gte=0).count() > 0:
-                variations = models.WholesaleVariations.objects.filter(
-                    wholesale_product=wholesale_product).order_by('-created')
-            else:
-                raise serializers.ValidationError(
-                    f"{wholesale_product.product.title}: {wholesale_product.id} has no variations")
-
-        # Quantity must be equal or less than available
-        if quantity_required > wholesale_product.available_packs_quantity():
-            raise serializers.ValidationError(
-                f"Only {wholesale_product.available_packs_quantity()} available")
-
-        # Quantity must be 1 or more
-        if quantity_required <= 0:
-            raise serializers.ValidationError(
-                f"Please enter quantity")
-
-        # Requisition must be open for editing
-        if requisition.status != "PENDING":
-            raise serializers.ValidationError(
-                f"Requistion is closed and cannot be edited further")
-
-        # Requisition item should be unique
-        if models.RequisitionItems.objects.filter(facility=user.facility, requisition=requisition, wholesale_product=wholesale_product).count() > 0:
-            new_requisition_item = models.RequisitionItems.objects.get(
-                facility=user.facility, requisition=requisition, wholesale_product=wholesale_product)
-        else:
-            # Create requisition item if all is well
-            new_requisition_item = models.RequisitionItems.objects.create(
-                requisition=requisition, wholesale_product=wholesale_product, quantity_required=quantity_required, **validated_data)
-        if new_requisition_item:
-            if models.Despatches.objects.filter(requisition=requisition, status="PENDING", facility=user.facility,).count() > 0:
-                despatch = models.Despatches.objects.get(
-                    requisition=requisition, status="PENDING", facility=user.facility)
-
-            else:
-                despatch = models.Despatches.objects.create(
-                    requisition=requisition, facility=user.facility, owner=user)
-
-            # # Retrieve all wholesale variations for this product ordered by expiry date
-            # # Check quantity for each variation against required quantity
-            # # If variation quantity for earliest expiring product is greater than quantity required then sell it
-            # # If  quantity of earliest expiring variation is less than quantity required then sell whole balance and then top balance up with next expiring variation
-
-            for item in variations:
-                if models.DespatchItems.objects.filter(wholesale_variation=item, requisition_item=new_requisition_item).count() > 0:
-                    # Item is in the despatch and will be retrieved
-                    despatch_item = models.DespatchItems.objects.filter(
-                        wholesale_variation=item, requisition_item=new_requisition_item)
-                    source = "Retrieved"
-
-                else:
-                    # Item is not in the despatch and shall be created afresh
-                    despatch_item = models.DespatchItems.objects.create(
-                        facility=user.facility, owner=user, wholesale_variation=item, despatch=despatch, requisition_item=new_requisition_item)
-                    source = "Created"
-
-                if despatch_item:
-                    if item.pack_quantity >= quantity_required:
-                        despatch_item.quantity_issued = quantity_required
-                        despatch_item.save()
-                        item.pack_quantity -= quantity_required
-                        item.save()
-                        break
-                    else:
-                        despatch_item.quantity_issued = item.pack_quantity
-                        despatch_item.save()
-                        quantity_required -= despatch_item.quantity_issued
-                        item.pack_quantity -= despatch_item.quantity_issued
-                        item.save()
-
-                    # raise serializers.ValidationError(f"{despatch_item.id}")
-        return new_requisition_item
+    #     return new_requisition_item
 
 
 class DespatchesSerializer(serializers.HyperlinkedModelSerializer):
@@ -305,6 +287,7 @@ class DespatchesSerializer(serializers.HyperlinkedModelSerializer):
             'despatch_confirmed_by',
             'receipt_confirmed_by',
             'courier_confirmed_by',
+            'get_total_quantity_issued',
             'courier',
             'priority',
             'owner',
@@ -322,6 +305,7 @@ class DespatchesSerializer(serializers.HyperlinkedModelSerializer):
             'despatch_confirmed_by',
             'receipt_confirmed_by',
             'courier_confirmed_by',
+            'get_total_quantity_issued',
             'courier',
             'priority',
             'owner',
