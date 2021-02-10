@@ -11,12 +11,13 @@ from . import models
 
 User = get_user_model()
 
+
 class FacilityImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.FacilityImage
         fields = "__all__"
         read_only_fields = (
-             'created_by','facility',
+            'created_by', 'facility',
         )
 
 
@@ -35,9 +36,9 @@ class FacilitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Facility
-        fields = ('id','url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed','trial_done', 'created', 'updated',)
-        read_only_fields = ('is_verified','trial_done','is_subscribed')
+        fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'trial_done', 'created', 'updated',)
+        read_only_fields = ('is_verified', 'trial_done', 'is_subscribed')
     title = serializers.CharField(
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
@@ -111,14 +112,14 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'subscription_details',
             'facility_details',
             'account_details',
-            
+
 
 
             # 'portfolio_details',
         )
 
         read_only_fields = ('is_staff', 'is_active',  'is_pharmacist',
-                            'is_prescriber', 'is_superintendent','is_administrator','cadre',
+                            'is_prescriber', 'is_superintendent', 'is_administrator', 'cadre',
                             'is_client', 'is_courier',)
         # Make sure that the password field is never sent back to the client.
         # Make sure that the password field is never sent back to the client.
@@ -179,8 +180,6 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         account = models.Account.objects.get(owner=obj)
         return AccountSerializer(account, context=self.context).data
 
-
-    
     def get_user_image(self, obj):
         user_image = UserImage.objects.filter(owner=obj)
         return UserImageSerializer(user_image, context=self.context, many=True).data
@@ -276,15 +275,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
-
-
 class DependantSerializer(serializers.HyperlinkedModelSerializer):
     # allergy_details = serializers.SerializerMethodField(
     #     read_only=True)
 
     class Meta:
         model = models.Dependant
-        fields = ('id', 'url','is_active', 'account', 'owner', 'first_name', 'middle_name',
+        fields = ('id', 'url', 'is_active', 'account', 'owner', 'first_name', 'middle_name',
                   'last_name', 'gender', 'date_of_birth',  'created', 'updated')
 
         read_only_fields = ('id', 'url', 'account', 'owner',
@@ -294,11 +291,12 @@ class DependantSerializer(serializers.HyperlinkedModelSerializer):
     #     allergy = models.Allergy.objects.filter(dependant=obj)
     #     return AllergySerializer(allergy, context=self.context, many=True).data
 
+
 class CadresSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Cadres
-        fields = ('id', 'url','title','code','description', 'owner', 'created','updated')
+        fields = ('id', 'url', 'title', 'code', 'description',
+                  'owner', 'created', 'updated')
         read_only_fields = (
-            'owner', 'created','updated'
+            'owner', 'created', 'updated'
         )
-

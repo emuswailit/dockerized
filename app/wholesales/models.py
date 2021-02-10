@@ -169,11 +169,14 @@ class Requisitions(FacilityRelatedModel):
         RetailerAccounts, related_name="requisitioning_account", on_delete=models.CASCADE, null=True, blank=True)
     retailer_confirmed = models.BooleanField(default=False)
     wholesaler_confirmed = models.BooleanField(default=False)
+    is_closed = models.BooleanField(default=False)
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
     status = models.CharField(
         max_length=100, choices=STATUS_CHOICES, default="PENDING")
     payment_terms = models.CharField(
         max_length=100, choices=PAYMENT_TERMS_CHOICES)
+    payment_method = models.ForeignKey(
+        PaymentMethods, on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -272,8 +275,6 @@ class DespatchItems(FacilityRelatedModel):
         Despatches, related_name="item_despatch", on_delete=models.CASCADE)
     requisition_item = models.ForeignKey(
         RequisitionItems, related_name="despatch_item_requisition", on_delete=models.CASCADE)
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="despatch_item_product", on_delete=models.CASCADE)
     quantity_issued = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -289,7 +290,7 @@ class DespatchItems(FacilityRelatedModel):
         ]
 
 
-class DespatchPayments(FacilityRelatedModel):
+class RequisitionPayments(FacilityRelatedModel):
     """
     -Model for despatch payment
     -Created alongside a despatch in a 1:1 relationship
@@ -307,14 +308,16 @@ class DespatchPayments(FacilityRelatedModel):
         ("CREDIT", "CREDIT"),
         ("PLACEMENT", "PLACEMENT"),
     )
-    despatch = models.ForeignKey(
-        Despatches, related_name="payment_for_despatch", on_delete=models.CASCADE)
+    requisition = models.OneToOneField(
+        Requisitions, related_name="payment_requisition", on_delete=models.CASCADE)
     payment_method = models.ForeignKey(
         PaymentMethods, related_name="requisition_payment_method", on_delete=models.CASCADE)
     payment_terms = models.CharField(
         max_length=100, choices=PAYMENT_TERMS_CHOICES)
     status = models.CharField(
         max_length=100, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(

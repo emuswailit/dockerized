@@ -203,6 +203,36 @@ class FacilitySuperintendentPermission(permissions.BasePermission):
             raise NotAcceptable("Please log in")
 
 
+class RetailSuperintendentPermission(permissions.BasePermission):
+    """Retail Facility Superintendent permissions"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            if request.user.is_superintendent and request.user.facility.facility_type == 'RetailPharmacy':
+                return True
+
+            else:
+                raise NotAcceptable(
+                    "Facility superintendent only!")
+        else:
+            raise NotAcceptable("Please log in")
+
+
+class WholesaleSuperintendentPermission(permissions.BasePermission):
+    """Wholesale Facility Superintendent permissions"""
+
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            if request.user.is_superintendent and request.user.facility.facility_type == 'BulkPharmacy':
+                return True
+
+            else:
+                raise NotAcceptable(
+                    "Wholesale superintendents only!")
+        else:
+            raise NotAcceptable("Please log in")
+
+
 class ClinicSuperintendentPermission(permissions.BasePermission):
     """Facility Superintendent permissions"""
 

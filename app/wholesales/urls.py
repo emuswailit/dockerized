@@ -73,8 +73,10 @@ urlpatterns = [
          name=views.DespatchesListAPIView.name),
     path('despatches/<uuid:pk>', views.DespatchesDetailAPIView.as_view(),
          name=views.DespatchesDetailAPIView.name),
-    path('despatches/<uuid:pk>/update', views.DespatchesUpdateAPIView.as_view(),
-         name=views.DespatchesUpdateAPIView.name),
+    path('despatches/<uuid:pk>/retail-update', views.DespatchesRetailUpdateAPIView.as_view(),
+         name=views.DespatchesRetailUpdateAPIView.name),
+    path('despatches/<uuid:pk>/wholesale-update', views.DespatchesWholesaleUpdateAPIView.as_view(),
+         name=views.DespatchesWholesaleUpdateAPIView.name),
 
     path('despatch-items/create', views.DespatchItemsCreateAPIView.as_view(),
          name=views.DespatchItemsCreateAPIView.name),
@@ -94,4 +96,12 @@ urlpatterns = [
          name=views.RetailerAccountsDetailAPIView.name),
     path('retailer-accounts/<uuid:pk>/update', views.RetailerAccountsUpdateAPIView.as_view(),
          name=views.RetailerAccountsUpdateAPIView.name),
+
+
+    path('requisition-payments', views.RequisitionPaymentsListAPIView.as_view(),
+         name=views.RequisitionPaymentsListAPIView.name),
+    path('requisition-payments/<uuid:pk>', views.RequisitionPaymentsDetailAPIView.as_view(),
+         name=views.RequisitionPaymentsDetailAPIView.name),
+    path('requisition-payments/<uuid:pk>/update', views.RequisitionPaymentsUpdateAPIView.as_view(),
+         name=views.RequisitionPaymentsUpdateAPIView.name),
 ]

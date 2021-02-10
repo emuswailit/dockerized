@@ -335,7 +335,7 @@ class Employees(FacilityRelatedModel):
         ]
 
     def __str__(self):
-        return f"{self.professional.user.first_name}  {self.professional.user.last_name} - {self.professional.user.facility.title}"
+        return f"{self.professional.user.first_name}  {self.professional.user.last_name} - {self.professional.cadre.title} - {self.professional.user.facility.title}"
 
 
 class Salary(FacilityRelatedModel):

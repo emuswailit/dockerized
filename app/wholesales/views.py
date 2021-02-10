@@ -716,7 +716,7 @@ class RequisitionsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class RequisitionsUpdateAPIView(generics.RetrieveUpdateAPIView):
+class RequisitionsUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
     Retail/Wholesale Superintendent
     """
@@ -1002,6 +1002,50 @@ class DespatchesUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
+class DespatchesWholesaleUpdateAPIView(generics.UpdateAPIView):
+    """
+    Despatches update
+    """
+    name = "despatches-update"
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
+                          )
+    serializer_class = serializers.DespatchesWholesaleUpdateSerializer
+    queryset = models.Despatches.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class DespatchesRetailUpdateAPIView(generics.UpdateAPIView):
+    """
+    Despatches update
+    """
+    name = "despatches-update"
+    permission_classes = (app_permissions.RetailSuperintendentPermission,
+                          )
+    serializer_class = serializers.DespatchesRetailUpdateSerializer
+    queryset = models.Despatches.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
 class DespatchItemsCreateAPIView(generics.CreateAPIView):
     """
     Retailer: Superintendent
@@ -1117,17 +1161,17 @@ class DespatchItemsUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class DespatchPaymentsCreateAPIView(generics.CreateAPIView):
+class RequisitionPaymentsCreateAPIView(generics.CreateAPIView):
     """
     Retailer: Superintendent
     ---------------------------------------------------------
     Create a despatch payment
     """
-    name = "despatchpayments-create"
+    name = "requisitionpayments-create"
     permission_classes = (app_permissions.FacilitySuperintendentPermission,
                           )
-    serializer_class = serializers.DespatchPaymentsSerializer
-    queryset = models.DespatchPayments.objects.all()
+    serializer_class = serializers.RequisitionPaymentsSerializer
+    queryset = models.RequisitionPayments.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -1150,29 +1194,29 @@ class DespatchPaymentsCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Despatch payment not created", "despatch-payment": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class DespatchPaymentsListAPIView(generics.ListAPIView):
+class RequisitionPaymentsListAPIView(generics.ListAPIView):
     """
     Authenticated user
     ---------------------------------------------------
     View list of despatch payments
     """
-    name = "despatchpayments-list"
+    name = "requisitionpayments-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.DespatchPaymentsSerializer
+    serializer_class = serializers.RequisitionPaymentsSerializer
 
-    queryset = models.DespatchPayments.objects.all()
+    queryset = models.RequisitionPayments.objects.all()
     # TODO : Reuse this for filtering by q.
 
     def get_context_data(self, *args, **kwargs):
-        context = super(DespatchPaymentsListAPIView, self).get_context_data(
+        context = super(RequisitionPaymentsListAPIView, self).get_context_data(
             *args, **kwargs)
         # context["now"] = timezone.now()
         context["query"] = self.request.GET.get("q")  # None
         return context
 
     def get_queryset(self, *args, **kwargs):
-        qs = super(DespatchPaymentsListAPIView,
+        qs = super(RequisitionPaymentsListAPIView,
                    self).get_queryset(*args, **kwargs)
         query = self.request.GET.get("q")
         if query:
@@ -1184,17 +1228,17 @@ class DespatchPaymentsListAPIView(generics.ListAPIView):
         return qs
 
 
-class DespatchPaymentsDetailAPIView(generics.RetrieveAPIView):
+class RequisitionPaymentsDetailAPIView(generics.RetrieveAPIView):
     """
    Authenticated user
    -------------------------------------------------------
    View details of a despatch payment
     """
-    name = "despatchpayments-detail"
+    name = "requisitionpayments-detail"
     permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.DespatchPaymentsSerializer
-    queryset = models.DespatchPayments.objects.all()
+    serializer_class = serializers.RequisitionPaymentsSerializer
+    queryset = models.RequisitionPayments.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -1208,18 +1252,29 @@ class DespatchPaymentsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class DespatchPaymentsUpdateAPIView(generics.RetrieveUpdateAPIView):
+class RequisitionPaymentsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
     Owner
     ---------------------------------------------------------------
-    Update despatch payment
+    -Update requisition payment
+    -Done after succesfull outsourced payment processing e.g mpesa, visa
+    -Part of checkout process
     """
-    name = "despatchpayments-update"
+    name = "requisitionpayments-update"
     permission_classes = (app_permissions.IsOwner,
                           )
-    serializer_class = serializers.DespatchPaymentsSerializer
-    queryset = models.DespatchPayments.objects.all()
+    serializer_class = serializers.RequisitionPaymentsSerializer
+    queryset = models.RequisitionPayments.objects.all()
     lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(RequisitionPaymentsUpdateAPIView,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()
