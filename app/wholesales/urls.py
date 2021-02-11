@@ -67,27 +67,6 @@ urlpatterns = [
          name=views.RequisitionItemsUpdateAPIView.name),
 
 
-    path('despatches/create', views.DespatchesCreateAPIView.as_view(),
-         name=views.DespatchesCreateAPIView.name),
-    path('despatches', views.DespatchesListAPIView.as_view(),
-         name=views.DespatchesListAPIView.name),
-    path('despatches/<uuid:pk>', views.DespatchesDetailAPIView.as_view(),
-         name=views.DespatchesDetailAPIView.name),
-    path('despatches/<uuid:pk>/retail-update', views.DespatchesRetailUpdateAPIView.as_view(),
-         name=views.DespatchesRetailUpdateAPIView.name),
-    path('despatches/<uuid:pk>/wholesale-update', views.DespatchesWholesaleUpdateAPIView.as_view(),
-         name=views.DespatchesWholesaleUpdateAPIView.name),
-
-    path('despatch-items/create', views.DespatchItemsCreateAPIView.as_view(),
-         name=views.DespatchItemsCreateAPIView.name),
-    path('despatch-items', views.DespatchItemsListAPIView.as_view(),
-         name=views.DespatchItemsListAPIView.name),
-    path('despatch-items/<uuid:pk>', views.DespatchItemsDetailAPIView.as_view(),
-         name=views.DespatchItemsDetailAPIView.name),
-    path('despatch-items/<uuid:pk>/update', views.DespatchItemsUpdateAPIView.as_view(),
-         name=views.DespatchItemsUpdateAPIView.name),
-
-
     path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),
          name=views.RetailerAccountsCreateAPIView.name),
     path('retailer-accounts', views.RetailerAccountsListAPIView.as_view(),

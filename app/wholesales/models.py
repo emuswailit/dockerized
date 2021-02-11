@@ -39,7 +39,7 @@ class WholesaleProducts(FacilityRelatedModel):
     product = models.ForeignKey(
         Products, related_name="listing_products", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
-    total_quantity = models.IntegerField(default=0)
+    available_quantity = models.IntegerField(default=0)
     trade_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     created = models.DateTimeField(auto_now_add=True)
@@ -49,25 +49,6 @@ class WholesaleProducts(FacilityRelatedModel):
 
     def __str__(self):
         return self.product.title
-
-    def get_discounted_price(self):
-        discounted_price = Decimal(0.00)
-        if Discounts.objects.filter(wholesale_product=self).count() > 0:
-            discount = Discounts.objects.get(wholesale_product=self)
-            discounted_price = (self.trade_price) - \
-                (self.trade_price * discount.percentage/100)
-
-        return discounted_price
-
-    def get_bonus_quantity(self, quantity_issued):
-        bonus_quantity = 0
-        if Bonuses.objects.filter(wholesale_product=self).count() > 0:
-            bonuses = Bonuses.objects.filter(wholesale_product=self)
-            for bonus in bonuses:
-                if quantity_issued >= bonus.lowest_limit and quantity_issued < highest_limit:
-                    bonus_quantity += bonus.bonus_quantity
-
-        return bonus_quantity+quantity_issued
 
 
 class WholesaleVariations(FacilityRelatedModel):
@@ -82,7 +63,8 @@ class WholesaleVariations(FacilityRelatedModel):
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    quantity = models.IntegerField()
+    received_quantity = models.IntegerField()
+    available_quantity = models.IntegerField()
     buying_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     selling_price = models.DecimalField(
@@ -100,7 +82,27 @@ class WholesaleVariations(FacilityRelatedModel):
     source = models.ForeignKey(Distributor, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.wholesale_product.product.title
+        if self.wholesale_product.product.preparation:
+            return f"{self.wholesale_product.product.preparation.title} ({self.wholesale_product.product.title}) - Available: {self.available_quantity} -Expiry:  {self.expiry_date}"
+        return f"{self.wholesale_product.product.title} - Available qty: {self.available_quantity} -Expiry: {self.expiry_date}"
+
+    def get_discounted_price(self):
+        discounted_price = Decimal(0.00)
+        if Discounts.objects.filter(wholesale_variation=self).count() > 0:
+            discount = Discounts.objects.get(wholesale_variation=self)
+            discounted_price = (self.trade_price) - \
+                (self.trade_price * discount.percentage/100)
+
+        return discounted_price
+
+    def get_bonus_quantity(self):
+        discounted_price = Decimal(0.00)
+        if Discounts.objects.filter(wholesale_variation=self).count() > 0:
+            discount = Discounts.objects.get(wholesale_variation=self)
+            discounted_price = (self.trade_price) - \
+                (self.trade_price * discount.percentage/100)
+
+        return discounted_price
 
 
 class Discounts(FacilityRelatedModel):
@@ -110,8 +112,8 @@ class Discounts(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a discount based on start and end date
 
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="discount_product", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="wholesale_variation_discount", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
@@ -136,8 +138,8 @@ class Bonuses(FacilityRelatedModel):
     """
     # TODO: Implement scheduled task to turn on and off a bonus based on start and end date
 
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="bonus_product", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="wholesale_variation_bonus", on_delete=models.CASCADE, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     title = models.CharField(max_length=100, null=True,
                              blank=True,)
@@ -214,8 +216,8 @@ class RequisitionItems(FacilityRelatedModel):
     """
     requisition = models.ForeignKey(
         Requisitions, related_name="requisition", on_delete=models.CASCADE)
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="requisition_wholesale", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_variation = models.ForeignKey(
+        WholesaleVariations, related_name="requisition_item", on_delete=models.CASCADE)
     quantity_required = models.IntegerField()
     quantity_issued = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
@@ -233,90 +235,11 @@ class RequisitionItems(FacilityRelatedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['facility', 'requisition', 'wholesale_product', ], name='Unique item per requisition')
+                fields=['facility', 'requisition', 'wholesale_variation', ], name='Unique item per requisition')
         ]
 
     # def __str__(self):
     #     return self.title
-
-
-class Despatches(FacilityRelatedModel):
-    """
-    -Model for a requisition despatch, created by a wholesale superintendent
-    -Created when  first requisition item is confirmed by the wholesale superintendent
-    -A requisition can have several despatches to support part filling of requisitions incase of stock outs, etc
-    -A despatch will form a basis for a retailer variation receipt
-
-    """
-
-    DESPATCH_STATUS_CHOICES = (
-        ("PENDING", "PENDING"),
-        ("DESPATCHED", "DESPATCHED"),
-        ("RECEIVED", "RECEIVED"),
-        ("CANCELLED", "CANCELLED"),
-    )
-    PRIORITY_CHOICES = (
-        ("HIGH", "HIGH PRIORITY"),
-        ("NORMAL", "NORMAL PRIORITY"),
-        ("LOW", "LOW PRIORITY"),
-    )
-
-    requisition = models.ForeignKey(
-        Requisitions, related_name="requisition_despatch", on_delete=models.CASCADE)
-
-    wholesaler_despatch_confirmed = models.BooleanField(default=False)
-    retailer_receipt_confirmed = models.BooleanField(default=False)
-    courier_confirmed = models.BooleanField(default=False)
-    status = models.CharField(
-        max_length=100, choices=DESPATCH_STATUS_CHOICES, default="PENDING")
-    priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
-    wholesaler_despatch_confirmed_by = models.ForeignKey(
-        User, related_name="despatch_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
-    retailer_receipt_confirmed_by = models.ForeignKey(
-        User, related_name="receipt_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
-    courier_confirmed_by = models.ForeignKey(
-        User, related_name="courier_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    courier = models.ForeignKey(
-        Employees, related_name="despatch_courier", on_delete=models.CASCADE, null=True, blank=True)
-    owner = models.ForeignKey(
-        User, related_name="despatch_owner", on_delete=models.CASCADE)
-
-    # def __str__(self):
-    #     return self.title
-
-
-class DespatchItems(FacilityRelatedModel):
-    """
-    Model for requisition item
-
-    """
-    despatch = models.ForeignKey(
-        Despatches, related_name="item_despatch", on_delete=models.CASCADE)
-    requisition_item = models.ForeignKey(
-        RequisitionItems, related_name="despatch_item_requisition", on_delete=models.CASCADE)
-    quantity_issued = models.IntegerField(default=0)
-    pack_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
-    batch = models.CharField(max_length=140, null=True, blank=True)
-    wholesaler_despatch_confirmed = models.BooleanField(default=False)
-    retailer_receipt_confirmed = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(
-        User, related_name="despatch_item_owner", on_delete=models.CASCADE)
-    wholesaler_despatch_confirmed_by = models.ForeignKey(
-        User, related_name="item_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
-
-    # def __str__(self):
-    #     return self.title
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['facility', 'despatch', 'requisition_item', 'wholesale_variation'], name='One variation item in despatch')
-        ]
 
 
 class RequisitionPayments(FacilityRelatedModel):
