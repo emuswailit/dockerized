@@ -8,12 +8,13 @@ from drugs.models import Products
 from drugs.serializers import ProductsSerializer
 from users.serializers import FacilitySerializer
 from retailers.models import RetailVariations, RetailProducts
+from core.serializers import FacilitySafeSerializerMixin
 
 
 Users = get_user_model()
 
 
-class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
+class RetailerAccountsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.RetailerAccounts
         fields = (
@@ -41,7 +42,7 @@ class WholesaleProductsSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.WholesaleProducts
-        fields = ('id', 'url', 'facility',  'product', 'available_quantity',  'trade_price',  'is_active',
+        fields = ('id', 'url', 'facility',  'product', 'available_quantity',  'is_active',
                   'owner', 'created', 'updated', 'product_details')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -167,6 +168,8 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
         available_quantity = float(validated_data.pop('available_quantity'))
         batch = validated_data.pop('batch')
         comment = validated_data.pop('comment')
+        manufacture_date = validated_data.pop('manufacture_date')
+        expiry_date = validated_data.pop('expiry_date')
         if selling_price == 0.00:
             raise serializers.ValidationError(
                 {"response_code": 1, "response_message": "Price cannot be zero"})
@@ -175,6 +178,8 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
             wholesale_variation.available_quantity = available_quantity
             wholesale_variation.batch = batch
             wholesale_variation.comment = comment
+            wholesale_variation.expiry_date = expiry_date
+            wholesale_variation.manufacture_date = manufacture_date
             wholesale_variation.wholesale_product.save()
             wholesale_variation.selling_price = selling_price
             wholesale_variation.save()
@@ -393,7 +398,7 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
             amount = 0.00
             for item in requisition_items:
                 amount += float(item.quantity_issued) * \
-                    float(item.wholesale_product.trade_price)
+                    float(item.wholesale_variation.selling_price)
             if amount > 0.00:
                 if models.RequisitionPayments.objects.filter(requisition=requisition).count() > 0:
                     requisition_payment = models.RequisitionPayments.objects.get(
@@ -404,7 +409,7 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
         return requisition
 
 
-class RequisitionItemsSerializer(serializers.HyperlinkedModelSerializer):
+class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     product = serializers.SerializerMethodField(
         read_only=True)
 
@@ -472,6 +477,10 @@ class RequisitionItemsSerializer(serializers.HyperlinkedModelSerializer):
         wholesale_variation = validated_data.pop('wholesale_variation')
         requisition = validated_data.pop('requisition')
 
+        if requisition.owner != user:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": "You can only add items to a requisition you created"})
+
         # Check if requisition is still open for editing
         if requisition.is_closed:
             raise serializers.ValidationError(
@@ -533,7 +542,7 @@ class RequisitionItemsSerializer(serializers.HyperlinkedModelSerializer):
                 {"response_code": 1, "response_message": f"Item is closed for editing. You can only delete it"})
 
 
-class RequisitionPaymentsSerializer(serializers.HyperlinkedModelSerializer):
+class RequisitionPaymentsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.RequisitionPayments
         fields = (
@@ -583,40 +592,17 @@ class RequisitionPaymentsSerializer(serializers.HyperlinkedModelSerializer):
             requisition_payment.requisition.is_closed = True
             requisition_payment.requisition.save()
 
-            # Create a despatch for the requisition
-            despatch = models.Despatches.objects.create(
-                facility=user.facility, owner=user, requisition=requisition_payment.requisition)
-
             # Update inventory
             if models.RequisitionPayments.objects.filter(requisition=requisition_payment.requisition).count() > 0:
                 requisition_items = models.RequisitionItems.objects.filter(
                     requisition=requisition_payment.requisition)
                 for item in requisition_items:
-                    if item.wholesale_product.available_quantity >= item.quantity_issued:
+                    if item.wholesale_variation.available_quantity >= item.quantity_issued:
                         # Deduct sold available_quantity from inventory if available_quantity is still sufficient
-                        item.wholesale_product.available_quantity -= item.quantity_issued
-                        item.wholesale_product.save()
+                        item.wholesale_variation.available_quantity -= item.quantity_issued
+                        item.wholesale_variation.save()
 
                         # Check if item has discount
-
-                        if item.wholesale_product.get_discounted_price() == 0.00:
-                            final_price = item.trade_price
-                        else:
-                            final_price = item.wholesale_product.get_discounted_price()
-
-                        # Add item to despatch
-                        despatch_item = models.DespatchItems.objects.create(
-                            facility=user.facility,
-                            owner=user,
-                            requisition_item=item,
-                            despatch=despatch,
-                            pack_price=item.wholesale_product.trade_price,
-                            quantity_issued=item.wholesale_product.get_bonus_quantity(
-                                item.quantity_issued)
-                        )
-                        raise serializers.ValidationError(
-                            {"response_code": 1,
-                             "response_message": f"Bonus  {item.wholesale_product.get_bonus_quantity(10)}"})
 
                     else:
                         raise serializers.ValidationError(

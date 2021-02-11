@@ -1,3 +1,4 @@
+from core.views import FacilitySafeViewMixin
 from django.shortcuts import render
 from . import serializers, models
 from rest_framework import generics, permissions, status, exceptions
@@ -612,14 +613,14 @@ class DiscountsUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class RequisitionsCreateAPIView(generics.CreateAPIView):
+class RequisitionsCreateAPIView(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     Retail Superintendent
     --------------------------------------------------
     Create a new requisition in a selected wholesale pharmacy
     """
     name = "requisitions-create"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.RetailSuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionsSerializer
     queryset = models.Requisitions.objects.all()
@@ -656,14 +657,14 @@ class RequisitionsCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Requisition not created", "requisition": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class RetailerRequisitionsListAPIView(generics.ListAPIView):
+class RetailerRequisitionsListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
     """
    Retail Superintendent
    ------------------------------------------------
    View list of requisitions a retail pharmacy has created on different wholesales
     """
     name = "requisitions-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionsSerializer
 
@@ -671,7 +672,7 @@ class RetailerRequisitionsListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
 
-        return super().get_queryset().filter(facility=self.request.user.facility)
+        return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
 
 
 class WholesalerRequisitionsListAPIView(generics.ListAPIView):
@@ -721,7 +722,7 @@ class RequisitionsUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
     Retail/Wholesale Superintendent
     """
     name = "requisitions-update"
-    permission_classes = (app_permissions.IsOwner,
+    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionsSerializer
     queryset = models.Requisitions.objects.all()
@@ -738,12 +739,16 @@ class RequisitionsUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
         return obj
 
 
-class RetailerConfirmRequisitionAPIView(generics.RetrieveUpdateAPIView):
+class RetailerConfirmRequisitionAPIView(generics.UpdateAPIView):
     """
-    Retail/Wholesale Superintendent
+    Retail Superintendent
+    ------------------------------------------------------------------
+    -Confirm that requisition ia sll set 
+    -Wholesale superintendent will only be able to view requisitions after retail superntendent confirms
+    -Confirmation also creates foundation for payment
     """
     name = "requisitions-update"
-    permission_classes = (app_permissions.IsOwner,
+    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionsRetailerConfirmSerializer
     queryset = models.Requisitions.objects.all()
@@ -769,14 +774,14 @@ class RetailerConfirmRequisitionAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class RequisitionItemsCreateAPIView(generics.CreateAPIView):
+class RequisitionItemsCreateAPIView(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     Retail Superintendent
     ---------------------------------------------------------
     Create a wholesale requisition item
     """
     name = "requisitionitems-create"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+    permission_classes = (app_permissions.RetailSuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionItemsSerializer
     queryset = models.RequisitionItems.objects.all()
@@ -813,18 +818,42 @@ class RequisitionItemsCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Requisition item not created", "requisition-item": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class RequisitionItemsListAPIView(generics.ListAPIView):
+class RetailerRequisitionItemsListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
     """
-    Retail/Wholesale Superintendent
+    Retail Superintendent
     ---------------------------------------------------
-    View list of requisition items
+    View list of own requisition items
     """
     name = "requisitionitems-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (app_permissions.RetailSuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionItemsSerializer
 
-    queryset = models.RequisitionItems.objects.all()
+    queryset = models.RequisitionItems.objects.draft_requisition_items()
+    # TODO : Reuse this for filtering by q.
+
+    def get_queryset(self):
+
+        return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
+
+    search_fields = ('wholesale_variation__wholesale_product__product__title',
+                     'wholesale_variation__wholesale_product__product__description', 'wholesale_variation__wholesale_product__product__manufacturer__title',)
+    ordering_fields = (
+        'wholesale_variation__wholesale_product__product__title', 'id')
+
+
+class WholesaleRequisitionItemsListAPIView(generics.ListAPIView):
+    """
+    Wholesale Superintendent
+    ---------------------------------------------------
+    View list of retailer confirmed items
+    """
+    name = "requisitionitems-list"
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
+                          )
+    serializer_class = serializers.RequisitionItemsSerializer
+
+    queryset = models.RequisitionItems.objects.retailer_confirmed_items()
     # TODO : Reuse this for filtering by q.
 
     search_fields = ('wholesale_variation__wholesale_product__product__title',
@@ -864,7 +893,7 @@ class RequisitionItemsUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
     Update requisition item
     """
     name = "requisitionitems-update"
-    permission_classes = (app_permissions.IsOwner,
+    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionItemsSerializer
     queryset = models.RequisitionItems.objects.all()
@@ -981,7 +1010,7 @@ class RequisitionPaymentsUpdateAPIView(generics.RetrieveUpdateAPIView):
     -Part of checkout process
     """
     name = "requisitionpayments-update"
-    permission_classes = (app_permissions.IsOwner,
+    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
                           )
     serializer_class = serializers.RequisitionPaymentsSerializer
     queryset = models.RequisitionPayments.objects.all()

@@ -163,7 +163,11 @@ class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # Read permissions are allowed to any request,
 
-        return obj.owner == request.user
+        if request.user.is_authenticated:
+
+            return obj.owner == request.user
+        else:
+            raise NotAcceptable("Please log in")
 
 
 class ClientPermission(permissions.BasePermission):
@@ -206,14 +210,14 @@ class FacilitySuperintendentPermission(permissions.BasePermission):
 class RetailSuperintendentPermission(permissions.BasePermission):
     """Retail Facility Superintendent permissions"""
 
-    def has_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
-            if request.user.is_superintendent and request.user.facility.facility_type == 'RetailPharmacy':
+            if request.user.is_superintendent and request.user.facility.facility_type == 'RetailPharmacy' and obj.owner == re:
                 return True
 
             else:
                 raise NotAcceptable(
-                    "Facility superintendent only!")
+                    "Retail superintendents only!")
         else:
             raise NotAcceptable("Please log in")
 

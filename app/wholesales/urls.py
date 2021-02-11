@@ -4,6 +4,15 @@ from django.conf.urls import url
 from users.views import FacilityDetail
 
 urlpatterns = [
+    path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),
+         name=views.RetailerAccountsCreateAPIView.name),
+    path('retailer-accounts', views.RetailerAccountsListAPIView.as_view(),
+         name=views.RetailerAccountsListAPIView.name),
+    path('retailer-accounts/<uuid:pk>', views.RetailerAccountsDetailAPIView.as_view(),
+         name=views.RetailerAccountsDetailAPIView.name),
+    path('retailer-accounts/<uuid:pk>/update', views.RetailerAccountsUpdateAPIView.as_view(),
+         name=views.RetailerAccountsUpdateAPIView.name),
+
 
     path('wholesale-products/create', views.WholesaleProductsCreateAPIView.as_view(),
          name=views.WholesaleProductsCreateAPIView.name),
@@ -59,22 +68,14 @@ urlpatterns = [
 
     path('requisition-items/create', views.RequisitionItemsCreateAPIView.as_view(),
          name=views.RequisitionItemsCreateAPIView.name),
-    path('requisition-items', views.RequisitionItemsListAPIView.as_view(),
-         name=views.RequisitionItemsListAPIView.name),
+    path('requisition-items/retailer', views.RetailerRequisitionItemsListAPIView.as_view(),
+         name=views.RetailerRequisitionItemsListAPIView.name),
+    path('requisition-items/wholesaler', views.WholesaleRequisitionItemsListAPIView.as_view(),
+         name=views.WholesaleRequisitionItemsListAPIView.name),
     path('requisition-items/<uuid:pk>', views.RequisitionItemsDetailAPIView.as_view(),
          name=views.RequisitionItemsDetailAPIView.name),
     path('requisition-items/<uuid:pk>/update', views.RequisitionItemsUpdateAPIView.as_view(),
          name=views.RequisitionItemsUpdateAPIView.name),
-
-
-    path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),
-         name=views.RetailerAccountsCreateAPIView.name),
-    path('retailer-accounts', views.RetailerAccountsListAPIView.as_view(),
-         name=views.RetailerAccountsListAPIView.name),
-    path('retailer-accounts/<uuid:pk>', views.RetailerAccountsDetailAPIView.as_view(),
-         name=views.RetailerAccountsDetailAPIView.name),
-    path('retailer-accounts/<uuid:pk>/update', views.RetailerAccountsUpdateAPIView.as_view(),
-         name=views.RetailerAccountsUpdateAPIView.name),
 
 
     path('requisition-payments', views.RequisitionPaymentsListAPIView.as_view(),

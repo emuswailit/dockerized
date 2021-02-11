@@ -40,8 +40,6 @@ class WholesaleProducts(FacilityRelatedModel):
         Products, related_name="listing_products", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     available_quantity = models.IntegerField(default=0)
-    trade_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
@@ -209,6 +207,31 @@ class Requisitions(FacilityRelatedModel):
         return f"Requisition : {self.wholesale.title} - {self.status}"
 
 
+class RequisitionItemsQuerySet(models.QuerySet):
+    def all_requisition_items(self):
+        return self.all()
+
+    def retailer_confirmed_items(self):
+        return self.filter(retailer_confirmed=True)
+
+    def draft_requisition_items(self):
+        return self.filter(retailer_confirmed=False)
+
+
+class RequisitionItemsManager(models.Manager):
+    def get_queryset(self):
+        return RequisitionItemsQuerySet(self.model, using=self._db)
+
+    def all_requisition_items(self):
+        return self.get_queryset().all_requisition_items()
+
+    def retailer_confirmed_items(self):
+        return self.get_queryset().retailer_confirmed_items()
+
+    def draft_requisition_items(self):
+        return self.get_queryset().draft_requisition_items()
+
+
 class RequisitionItems(FacilityRelatedModel):
     """
     Model for requisition item
@@ -223,14 +246,16 @@ class RequisitionItems(FacilityRelatedModel):
     quantity_pending = models.IntegerField(default=0)
     quantity_paid = models.IntegerField(default=0)
     quantity_unpaid = models.IntegerField(default=0)
-    retailer_confirmed = models.BooleanField(default=True)
-    wholesaler_confirmed = models.BooleanField(default=True)
+    retailer_confirmed = models.BooleanField(default=False)
+    wholesaler_confirmed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     wholesaler_confirmed_by = models.ForeignKey(
         User, related_name="wholesale_authority", on_delete=models.CASCADE, null=True, blank=True)
     owner = models.ForeignKey(
         User, related_name="requisition_item_owner", on_delete=models.CASCADE)
+
+    objects = RequisitionItemsManager()
 
     class Meta:
         constraints = [

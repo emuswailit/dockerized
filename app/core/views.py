@@ -13,11 +13,12 @@ class FacilitySafeViewMixin:
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        if not self.request.user.is_authenticated:
-            raise exceptions.NotAuthenticated()
+        if self.request.user.is_authenticated:
 
-        facility_id = self.request.user.facility_id
-        return queryset.filter(facility_id=facility_id,)
+            facility_id = self.request.user.facility_id
+            return queryset.filter(facility_id=facility_id,)
+        else:
+            raise NotFound("Please log in")
 
     def perform_create(self, serializer):
         facility_id = self.request.user.facility_id
