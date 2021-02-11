@@ -1,3 +1,4 @@
+from decimal import *
 from django.db import models
 from core.models import FacilityRelatedModel
 from drugs.models import Products, Distributor
@@ -48,6 +49,25 @@ class WholesaleProducts(FacilityRelatedModel):
 
     def __str__(self):
         return self.product.title
+
+    def get_discounted_price(self):
+        discounted_price = Decimal(0.00)
+        if Discounts.objects.filter(wholesale_product=self).count() > 0:
+            discount = Discounts.objects.get(wholesale_product=self)
+            discounted_price = (self.trade_price) - \
+                (self.trade_price * discount.percentage/100)
+
+        return discounted_price
+
+    def get_bonus_quantity(self, quantity_issued):
+        bonus_quantity = 0
+        if Bonuses.objects.filter(wholesale_product=self).count() > 0:
+            bonuses = Bonuses.objects.filter(wholesale_product=self)
+            for bonus in bonuses:
+                if quantity_issued >= bonus.lowest_limit and quantity_issued < highest_limit:
+                    bonus_quantity += bonus.bonus_quantity
+
+        return bonus_quantity+quantity_issued
 
 
 class WholesaleVariations(FacilityRelatedModel):
@@ -126,8 +146,9 @@ class Bonuses(FacilityRelatedModel):
     end_date = models.DateField()
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    for_every = models.IntegerField()
-    get_free = models.IntegerField()
+    lowest_limit = models.IntegerField()
+    highest_limit = models.IntegerField()
+    bonus_quantity = models.IntegerField()
     owner = models.ForeignKey(
         User, related_name="bonus_owner", on_delete=models.CASCADE)
 
@@ -243,15 +264,15 @@ class Despatches(FacilityRelatedModel):
     requisition = models.ForeignKey(
         Requisitions, related_name="requisition_despatch", on_delete=models.CASCADE)
 
-    despatch_confirmed = models.BooleanField(default=True)
-    receipt_confirmed = models.BooleanField(default=True)
-    courier_confirmed = models.BooleanField(default=True)
+    wholesaler_despatch_confirmed = models.BooleanField(default=False)
+    retailer_receipt_confirmed = models.BooleanField(default=False)
+    courier_confirmed = models.BooleanField(default=False)
     status = models.CharField(
         max_length=100, choices=DESPATCH_STATUS_CHOICES, default="PENDING")
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
-    despatch_confirmed_by = models.ForeignKey(
+    wholesaler_despatch_confirmed_by = models.ForeignKey(
         User, related_name="despatch_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
-    receipt_confirmed_by = models.ForeignKey(
+    retailer_receipt_confirmed_by = models.ForeignKey(
         User, related_name="receipt_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
     courier_confirmed_by = models.ForeignKey(
         User, related_name="courier_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
@@ -276,13 +297,21 @@ class DespatchItems(FacilityRelatedModel):
     requisition_item = models.ForeignKey(
         RequisitionItems, related_name="despatch_item_requisition", on_delete=models.CASCADE)
     quantity_issued = models.IntegerField(default=0)
+    pack_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    batch = models.CharField(max_length=140, null=True, blank=True)
+    wholesaler_despatch_confirmed = models.BooleanField(default=False)
+    retailer_receipt_confirmed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, related_name="despatch_item_owner", on_delete=models.CASCADE)
+    wholesaler_despatch_confirmed_by = models.ForeignKey(
+        User, related_name="item_confirmed_by", on_delete=models.CASCADE, null=True, blank=True)
 
     # def __str__(self):
     #     return self.title
+
     class Meta:
         constraints = [
             models.UniqueConstraint(

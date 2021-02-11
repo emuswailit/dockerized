@@ -57,7 +57,7 @@ urlpatterns = [
     path('accounts/<uuid:pk>/dependant', views.DependantCreateAPIView.as_view(),
          name=views.DependantCreateAPIView.name),
 
-    
+
 
     path('accounts', views.AccountListAPIView.as_view(),
          name=views.AccountListAPIView.name),
@@ -65,12 +65,12 @@ urlpatterns = [
     path('accounts/<uuid:pk>', views.AccountDetailAPIView.as_view(),
          name=views.AccountDetailAPIView.name),
 
-   # Cadres urls
-    path('roles/create', views.CadresCreate.as_view(),
+    # Cadres urls
+    path('cadres/create', views.CadresCreate.as_view(),
          name=views.CadresCreate.name),
-    path('roles/<uuid:pk>', views.CadresDetail.as_view(),
+    path('cadres/<uuid:pk>', views.CadresDetail.as_view(),
          name=views.CadresDetail.name),
-    path('roles', views.CadresList.as_view(),
+    path('cadres', views.CadresList.as_view(),
          name=views.CadresList.name),
 
 

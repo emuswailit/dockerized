@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from drugs.models import Products
 from drugs.serializers import ProductsSerializer
 from users.serializers import FacilitySerializer
+from retailers.models import RetailVariations, RetailProducts
 
 
 Users = get_user_model()
@@ -40,7 +41,7 @@ class WholesaleProductsSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.WholesaleProducts
-        fields = ('id', 'url', 'facility',  'product', 'total_quantity', 'trade_price',  'is_active',
+        fields = ('id', 'url', 'facility',  'product', 'total_quantity', 'get_discounted_price', 'trade_price',  'is_active',
                   'owner', 'created', 'updated', 'product_details')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -163,7 +164,7 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
 class BonusesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Bonuses
-        fields = ('id', 'url', 'facility',  'wholesale_variation', 'title', 'description', 'start_date', 'end_date', 'for_every', 'get_free',  'is_active',
+        fields = ('id', 'url', 'facility',  'wholesale_product', 'title', 'description', 'start_date', 'end_date', 'lowest_limit', 'highest_limit', 'bonus_quantity',  'is_active',
                   'owner', 'created', 'updated')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -172,7 +173,7 @@ class BonusesSerializer(serializers.HyperlinkedModelSerializer):
 class DiscountsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Discounts
-        fields = ('id', 'url', 'facility',  'wholesale_variation', 'title', 'description', 'start_date', 'end_date', 'percentage',   'is_active',
+        fields = ('id', 'url', 'facility',  'wholesale_product', 'title', 'description', 'start_date', 'end_date', 'percentage',   'is_active',
                   'owner', 'created', 'updated')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -518,11 +519,11 @@ class DespatchesSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'requisition',
-            'despatch_confirmed',
-            'receipt_confirmed',
+            'wholesaler_despatch_confirmed',
+            'retailer_receipt_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'courier',
             'priority',
@@ -536,11 +537,11 @@ class DespatchesSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'requisition',
-            'despatch_confirmed',
-            'receipt_confirmed',
+            'wholesaler_despatch_confirmed',
+            'retailer_receipt_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'courier',
             'priority',
@@ -566,11 +567,11 @@ class DespatchesWholesaleUpdateSerializer(serializers.HyperlinkedModelSerializer
             'url',
             'facility',
             'requisition',
-            'despatch_confirmed',
-            'receipt_confirmed',
+            'wholesaler_despatch_confirmed',
+            'retailer_receipt_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'courier',
             'priority',
@@ -584,10 +585,10 @@ class DespatchesWholesaleUpdateSerializer(serializers.HyperlinkedModelSerializer
             'url',
             'facility',
             'requisition',
-            'receipt_confirmed',
+            'retailer_receipt_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'priority',
             'owner',
@@ -600,6 +601,42 @@ class DespatchesWholesaleUpdateSerializer(serializers.HyperlinkedModelSerializer
         items = models.DespatchItems.objects.filter(
             despatch=obj)
         return DespatchItemsSerializer(items, context=self.context, many=True).data
+
+    @transaction.atomic
+    def update(self, despatch, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        # Retrieve quote item ID from context as it was passed in url
+        user_pk = self.context.get(
+            "user_pk")
+        user = Users.objects.get(id=user_pk)
+
+        courier = validated_data.pop('courier')
+        wholesaler_despatch_confirmed = validated_data.pop(
+            'wholesaler_despatch_confirmed')
+
+        # Ensure selected user is a courier
+        if courier.professional.cadre.title != "Couriers":
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"Selected employee is not a courier"})
+        else:
+
+            if models.DespatchItems.objects.filter(despatch=despatch).count() > 0:
+                items = models.DespatchItems.objects.filter(despatch=despatch)
+
+                for item in items:
+                    if item.wholesaler_confirmed == False:
+                        raise serializers.ValidationError(
+                            {"response_code": 1, "response_message": f"Please confirm selected item"})
+        # Eventually
+        despatch.courier = courier
+        despatch.wholesaler_despatch_confirmed = True
+        despatch.wholesaler_despatch_confirmed_by = user
+        despatch.save()
+
+        return despatch
 
 
 class DespatchesRetailUpdateSerializer(serializers.HyperlinkedModelSerializer):
@@ -612,11 +649,11 @@ class DespatchesRetailUpdateSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'requisition',
-            'despatch_confirmed',
-            'receipt_confirmed',
+            'wholesaler_despatch_confirmed',
+            'retailer_receipt_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'courier',
             'priority',
@@ -630,10 +667,10 @@ class DespatchesRetailUpdateSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'requisition',
-            'despatch_confirmed',
+            'wholesaler_despatch_confirmed',
             'courier_confirmed',
-            'despatch_confirmed_by',
-            'receipt_confirmed_by',
+            'wholesaler_despatch_confirmed_by',
+            'retailer_receipt_confirmed_by',
             'courier_confirmed_by',
             'courier',
             'priority',
@@ -647,6 +684,65 @@ class DespatchesRetailUpdateSerializer(serializers.HyperlinkedModelSerializer):
         items = models.DespatchItems.objects.filter(
             despatch=obj)
         return DespatchItemsSerializer(items, context=self.context, many=True).data
+
+    @transaction.atomic
+    def update(self, despatch, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        # Retrieve quote item ID from context as it was passed in url
+        user_pk = self.context.get(
+            "user_pk")
+        user = Users.objects.get(id=user_pk)
+
+        retailer_receipt_confirmed = validated_data.pop(
+            'retailer_receipt_confirmed')
+
+        # if despatch.retailer_receipt_confirmed:
+        #     raise serializers.ValidationError(
+        #         {"response_code": 1, "response_message": f"Requisition despatch has already been received"})
+        # else:
+        #     despatch.retailer_receipt_confirmed = True
+        #     despatch.save()
+
+        if despatch.requisition.owner.facility != user.facility:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"Not your requisition"})
+
+        if models.DespatchItems.objects.filter(despatch=despatch, facility=user.facility).count() > 0:
+            """
+            Retrieve only items in a despatch belonging to a selected despatch and for the users facility
+            """
+            despatch_items = models.DespatchItems.objects.filter(
+                despatch=despatch, facility=user.facility)
+
+            # Receive these items to retail inventory
+            for item in despatch_items:
+
+                if RetailProducts.objects.filter(product=item.requisition_item.wholesale_product.product, facility=user.facility).count() > 0:
+                    retail_product = RetailProducts.objects.get(
+                        product=item.requisition_item.wholesale_product.product, facility=user.facility)
+                    retail_variation = RetailVariations.objects.create(
+                        facility=user.facility, owner=user,
+                        distributor=item.requisition_item.requisition.wholesale,
+                        pack_quantity=item.quantity_issued,
+                        units_per_pack=item.requisition_item.wholesale_product.product.units_per_pack,
+                        retail_product=retail_product,
+                    )
+                else:
+
+                    retail_product = RetailProducts.objects.create(
+                        facility=user.facility, owner=user, product=item.requisition_item.wholesale_product.product)
+
+                # retailer_variation = RetailVariations.objects.create(
+                #     retail_product=
+                #     facility=user.facility, wholesale_product=item.requisition_item.wholesaler_product, retail_product=)
+        else:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"How did this get here without items in it?"})
+
+        return despatch
 
 
 class DespatchItemsSerializer(serializers.HyperlinkedModelSerializer):
@@ -660,6 +756,9 @@ class DespatchItemsSerializer(serializers.HyperlinkedModelSerializer):
             'facility',
             'requisition_item',
             'despatch',
+            'batch',
+            'wholesaler_despatch_confirmed',
+            'wholesaler_despatch_confirmed_by',
             'owner',
             'created',
             'updated'
@@ -669,6 +768,7 @@ class DespatchItemsSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'facility',
             'requisition_item',
+            'wholesaler_despatch_confirmed_by',
             'despatch',
             'owner',
             'created',
@@ -680,6 +780,40 @@ class DespatchItemsSerializer(serializers.HyperlinkedModelSerializer):
         item = models.RequisitionItems.objects.get(
             id=obj.requisition_item.id)
         return RequisitionItemsSerializer(item, context=self.context).data
+
+    @transaction.atomic
+    def update(self, despatch_item, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        # Retrieve quote item ID from context as it was passed in url
+        user_pk = self.context.get(
+            "user_pk")
+        user = Users.objects.get(id=user_pk)
+
+        wholesaler_confirmed = validated_data.pop('wholesaler_confirmed')
+        batch = validated_data.pop('batch')
+
+        if not wholesaler_confirmed:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"Please enter true to confirm item has been checked"})
+
+        if not batch or batch == "":
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"Please enter correct batch number or any text if none is available"})
+
+        if despatch_item.wholesaler_confirmed:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"Item has already been confirmed"})
+        else:
+            despatch_item.wholesaler_confirmed = wholesaler_confirmed
+            despatch_item.batch = batch
+            despatch_item.wholesaler_confirmed_by = user
+            despatch_item.save()
+            despatch_item.requisition_item.wholesaler_confirmed_by = user
+            despatch_item.requisition_item.save()
+        return despatch_item
 
 
 class RequisitionPaymentsSerializer(serializers.HyperlinkedModelSerializer):
@@ -746,9 +880,27 @@ class RequisitionPaymentsSerializer(serializers.HyperlinkedModelSerializer):
                         item.wholesale_product.total_quantity -= item.quantity_issued
                         item.wholesale_product.save()
 
+                        # Check if item has discount
+
+                        if item.wholesale_product.get_discounted_price() == 0.00:
+                            final_price = item.trade_price
+                        else:
+                            final_price = item.wholesale_product.get_discounted_price()
+
                         # Add item to despatch
                         despatch_item = models.DespatchItems.objects.create(
-                            facility=user.facility, owner=user, requisition_item=item, despatch=despatch)
+                            facility=user.facility,
+                            owner=user,
+                            requisition_item=item,
+                            despatch=despatch,
+                            pack_price=item.wholesale_product.trade_price,
+                            quantity_issued=item.wholesale_product.get_bonus_quantity(
+                                item.quantity_issued)
+                        )
+                        raise serializers.ValidationError(
+                            {"response_code": 1,
+                             "response_message": f"Bonus  {item.wholesale_product.get_bonus_quantity(10)}"})
+
                     else:
                         raise serializers.ValidationError(
                             {"response_code": 1,

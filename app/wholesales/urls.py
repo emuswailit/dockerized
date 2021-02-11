@@ -104,4 +104,6 @@ urlpatterns = [
          name=views.RequisitionPaymentsDetailAPIView.name),
     path('requisition-payments/<uuid:pk>/update', views.RequisitionPaymentsUpdateAPIView.as_view(),
          name=views.RequisitionPaymentsUpdateAPIView.name),
+
+
 ]

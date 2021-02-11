@@ -1004,7 +1004,9 @@ class DespatchesUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 class DespatchesWholesaleUpdateAPIView(generics.UpdateAPIView):
     """
-    Despatches update
+    Wholesale Superintendent
+    ---------------------------------------------------------
+    Update despatch to retailer to confirm it and also assign courier to deliver the requisition
     """
     name = "despatches-update"
     permission_classes = (app_permissions.WholesaleSuperintendentPermission,
@@ -1012,6 +1014,15 @@ class DespatchesWholesaleUpdateAPIView(generics.UpdateAPIView):
     serializer_class = serializers.DespatchesWholesaleUpdateSerializer
     queryset = models.Despatches.objects.all()
     lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(DespatchesWholesaleUpdateAPIView,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -1034,6 +1045,15 @@ class DespatchesRetailUpdateAPIView(generics.UpdateAPIView):
     serializer_class = serializers.DespatchesRetailUpdateSerializer
     queryset = models.Despatches.objects.all()
     lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(DespatchesRetailUpdateAPIView,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -1137,18 +1157,33 @@ class DespatchItemsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class DespatchItemsUpdateAPIView(generics.RetrieveUpdateAPIView):
+class DespatchItemsUpdateAPIView(generics.UpdateAPIView):
     """
-    Owner
+    Wholesale Superintendent
     ---------------------------------------------------------------
-    Update despatch item
+    -Update despatch item
+    -Of importance ins confirmation of the batch number of the item despatched
+    -Despatch cannot be confirmed untill all items in the despatch are confirmed
+
+    Input:
+    -batch (text)   : drug batch number
+    -wholesaler_confirmed (boolean)
     """
     name = "despatchitems-update"
-    permission_classes = (app_permissions.IsOwner,
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
                           )
     serializer_class = serializers.DespatchItemsSerializer
     queryset = models.DespatchItems.objects.all()
     lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(DespatchItemsUpdateAPIView,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
 
     def get_object(self):
         queryset = self.get_queryset()

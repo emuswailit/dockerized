@@ -200,7 +200,7 @@ class DepartmentCreate(FacilitySafeViewMixin, generics.CreateAPIView):
     """
     name = 'department-create'
     permission_classes = (
-        app_permissions.ClinicSuperintendentPermission,
+        app_permissions.FacilitySuperintendentPermission,
     )
     serializer_class = serializers.DepartmentSerializer
     queryset = models.Department.objects.all()
@@ -229,7 +229,7 @@ class DepartmentCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             return Response(data={"message": "Department not created", "department": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class DepartmentsList(generics.ListAPIView):
+class DepartmentsList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Pharmacists
     =============================================
@@ -497,7 +497,7 @@ class JobsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                 raise exceptions.NotAcceptable(
                     {"response_code": 1, "response_message": "Not on the default facility"})
 
-            #Admin not admissible here
+            # Admin not admissible here
             if user.is_staff:
                 raise exceptions.NotAcceptable("Not for administrators")
             else:

@@ -146,7 +146,7 @@ class RetailProductPhotos(FacilityRelatedModel):
 
 class RetailVariations(FacilityRelatedModel):
     distributor = models.ForeignKey(
-        Distributor, on_delete=models.CASCADE, null=True, blank=True)
+        Facility, related_name="retail_variation_facility", on_delete=models.CASCADE, null=True, blank=True)
     batch = models.CharField(max_length=50, null=True,
                              blank=True, editable=True)
     retail_product = models.ForeignKey(
