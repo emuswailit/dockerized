@@ -15,6 +15,11 @@ Users = get_user_model()
 
 
 class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
+    retailer_details = serializers.SerializerMethodField(
+        read_only=True)
+    wholesaler_details = serializers.SerializerMethodField(
+        read_only=True)
+
     class Meta:
         model = models.RetailerAccounts
         fields = (
@@ -31,10 +36,30 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
             'account_contact',
             'owner',
             'created',
-            'updated'
+            'updated',
+            'retailer_details',
+            'wholesaler_details',
         )
-        read_only_fields = ('id', 'url', 'facility', 'credit_limit', 'credit_allowed', 'account_manager', 'placement_allowed',  'is_active',
+        read_only_fields = ('id', 'url', 'facility', 'credit_limit', 'credit_allowed', 'retailer_verified', 'account_manager', 'placement_allowed',  'is_active',
                             'owner', 'created', 'updated')
+
+    def get_retailer_details(self, obj):
+        facility = None
+
+        if models.Facility.objects.filter(id=obj.facility_id).count() > 0:
+
+            retailer = models.Facility.objects.get(
+                id=obj.facility_id)
+        return FacilitySerializer(retailer, context=self.context).data
+
+    def get_wholesaler_details(self, obj):
+        wholesaler = None
+
+        if models.Facility.objects.filter(id=obj.facility_id).count() > 0:
+
+            wholesaler = models.Facility.objects.get(
+                id=obj.wholesale_id)
+        return FacilitySerializer(wholesaler, context=self.context).data
 
     @transaction.atomic
     def create(self, validated_data):
@@ -65,8 +90,9 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
             retailer_account = models.RetailerAccounts.objects.get(
                 facility=user.facility, wholesale=wholesale)
         else:
+            # Create ne account
             retailer_account = models.RetailerAccounts.objects.create(
-                wholesale=wholesale, **validated_data)
+                wholesale=wholesale, account_contact=account_contact, **validated_data)
 
         return retailer_account
 
