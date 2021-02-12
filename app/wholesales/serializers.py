@@ -32,15 +32,15 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
             'retailer_verified',
             'credit_allowed',
             'placement_allowed',
-            'account_manager',
-            'account_contact',
+            'wholesaler_contact',
+            'retailer_contact',
             'owner',
             'created',
             'updated',
             'retailer_details',
             'wholesaler_details',
         )
-        read_only_fields = ('id', 'url', 'facility', 'credit_limit', 'credit_allowed', 'retailer_verified', 'account_manager', 'placement_allowed',  'is_active',
+        read_only_fields = ('id', 'url', 'facility', 'credit_limit', 'credit_allowed', 'retailer_verified', 'wholesaler_contact', 'placement_allowed',  'is_active',
                             'owner', 'created', 'updated')
 
     def get_retailer_details(self, obj):
@@ -70,7 +70,7 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
         user = Users.objects.get(id=user_pk)
 
         # Retrieve user entered data
-        account_contact = validated_data.pop('account_contact')
+        retailer_contact = validated_data.pop('retailer_contact')
         wholesale = validated_data.pop('wholesale')
 
         # Create account only in a wholesale pharmacy
@@ -79,8 +79,8 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
                 {"response_code": 1, "response_message": f"{wholesale.title} is not a wholesale"})
 
         # If account contact is not specified then the creator becomes account contact
-        if not account_contact:
-            account_contact = user
+        if not retailer_contact:
+            retailer_contact = user
 
         if models.RetailerAccounts.objects.filter(facility=user.facility, wholesale=wholesale).count() > 0:
             """
@@ -92,7 +92,7 @@ class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
         else:
             # Create ne account
             retailer_account = models.RetailerAccounts.objects.create(
-                wholesale=wholesale, account_contact=account_contact, **validated_data)
+                wholesale=wholesale, retailer_contact=retailer_contact, **validated_data)
 
         return retailer_account
 
@@ -129,17 +129,34 @@ class RetailerAccountsUpdateSerializer(serializers.HyperlinkedModelSerializer):
             'retailer_verified',
             'credit_allowed',
             'placement_allowed',
-            'account_manager',
-            'account_contact',
+            'wholesaler_contact',
+            'retailer_contact',
             'owner',
             'created',
             'updated'
         )
-        read_only_fields = ('id', 'url', 'facility',  'account_manager', 'account_contact', 'wholesale',
+        read_only_fields = ('id', 'url', 'facility',  'wholesaler_contact', 'retailer_contact', 'wholesale',
                             'owner', 'created', 'updated')
 
 
-class WholesaleProductsSerializer(serializers.HyperlinkedModelSerializer):
+class WholesaleProductsSerializerForRetailer(serializers.HyperlinkedModelSerializer):
+    product_details = serializers.SerializerMethodField(
+        read_only=True)
+
+    class Meta:
+        model = models.WholesaleProducts
+        fields = ('id', 'url', 'facility',  'product', 'available_quantity',  'is_active',
+                  'owner', 'created', 'updated', 'product_details')
+        read_only_fields = ('id', 'url', 'facility',  'is_active',
+                            'owner', 'created', 'updated')
+
+    def get_product_details(self, obj):
+        product = Products.objects.filter(
+            id=obj.product.id)
+        return ProductsSerializer(product, context=self.context, many=True).data
+
+
+class WholesaleProductsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
     product_details = serializers.SerializerMethodField(
         read_only=True)
 
@@ -355,12 +372,12 @@ class RequisitionsSerializer(serializers.HyperlinkedModelSerializer):
             raise serializers.ValidationError(
                 f"Selected facility is not a wholesale pharmacy ")
         # Retrieve retail account
-        if models.RetailerAccounts.objects.filter(retailer=user.facility, facility=wholesale).exists():
+        if models.RetailerAccounts.objects.filter(facility=user.facility, wholesale=wholesale).exists():
 
             selected_payment_terms = payment_terms,
             # Retrieve the account
-            retailer_account = models.RetailerAccounts.objects.filter(
-                retailer=user.facility, facility=wholesale)
+            retailer_account = models.RetailerAccounts.objects.get(
+                facility=user.facility, wholesale=wholesale)
         else:
             # Enforce cash as payment terms
             selected_payment_terms = "CASH"
@@ -463,65 +480,34 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
             raise serializers.ValidationError(
                 {"response_code": 1, "response_message": "Requisition has no items added into it"})
 
-        # Enforce cash terms for retaailers with no accounts
-        if models.RetailerAccounts.objects.filter(retailer=user.facility).count() > 0:
-
-            selected_payment_terms = payment_terms
-            requisition.save()
-            retailer_account = models.RetailerAccounts.objects.get(
-                retailer=user.facility)
-            if not retailer_account.credit_allowed and payment_terms == "CREDIT":
-                """
-                Credit not allowed for this facility
-                """
-                raise serializers.ValidationError(
-                    {"response_code": 1, "response_message": "Credit terms not yet authorized. Please select different terms of payment"})
-            else:
-                pass
-                # TODO : Implement invoices
-                # 1: Create invoice
-                # 2. Track and confirm invoice payment
-            if not retailer_account.placement_allowed and payment_terms == "PLACEMENT":
-                """
-                Placement not allowed for this facility
-                """
-                raise serializers.ValidationError(
-                    {"response_code": 1, "response_message": "Placement terms not yet authorized. Please select different terms of payment"})
-
-            else:
-                pass
-             # Implement placement
-             # Placement authorization
-             # Placement tracking
-             # Placement revenue division
-             # Repayment confirmation
+        if not requisition.retailer_account:
+            # Create or update the cash payment
+            if requisition_items:
+                amount = 0.00
+                for item in requisition_items:
+                    amount += float(item.quantity_invoiced) * \
+                        float(item.wholesale_variation.selling_price)
+                if amount > 0.00:
+                    if models.RequisitionPayments.objects.filter(requisition=requisition).count() > 0:
+                        requisition_payment = models.RequisitionPayments.objects.get(
+                            requisition=requisition)
+                    else:
+                        requisition_payment = models.RequisitionPayments.objects.create(
+                            facility=user.facility, owner=user, requisition=requisition, payment_method=payment_method, payment_terms=payment_terms, amount=amount)
 
         else:
-            # CASH TERMS
-            if payment_method:
-                selected_payment_terms = 'CASH'
-                requisition.payment_terms = selected_payment_terms
-                requisition.save()
-                requisition.retailer_confirmed = True
-                requisition.payment_method = payment_method
-                requisition.status = "RETAILER_CONFIRMED"
-                requisition.save()
-            else:
-                raise serializers.ValidationError(
-                    {"response_code": 1, "response_message": "Select payment method"})
-        # Create or update the payment
-        if requisition_items:
-            amount = 0.00
-            for item in requisition_items:
-                amount += float(item.quantity_invoiced) * \
-                    float(item.wholesale_variation.selling_price)
-            if amount > 0.00:
-                if models.RequisitionPayments.objects.filter(requisition=requisition).count() > 0:
-                    requisition_payment = models.RequisitionPayments.objects.get(
-                        requisition=requisition)
-                else:
-                    requisition_payment = models.RequisitionPayments.objects.create(facility=user.facility, owner=user,
-                                                                                    requisition=requisition, payment_method=payment_method, payment_terms=payment_terms, amount=amount)
+            if payment_method == "CREDIT":
+                if requisition.retailer_account.credit_allowed:
+                    if requisition.retailer_account.credit_limit > 0.00:
+                        raise serializers.ValidationError(
+                            {"response_code": 1, "response_message": "Eligible for credit"})
+
+            elif payment_method == "PLACEMENT":
+                if requisition.retailer_account.placement_allowed:
+                    if requisition.retailer_account.placement_limit > 0.00:
+                        raise serializers.ValidationError(
+                            {"response_code": 1, "response_message": "Eligible for placement"})
+
         return requisition
 
 

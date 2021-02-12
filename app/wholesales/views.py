@@ -192,38 +192,43 @@ class WholesaleProductsCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Wholesale products not created", "wholesale-product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class WholesaleProductsListAPIView(generics.ListAPIView):
+class WholesaleProductsListForWholesaler(generics.ListAPIView):
     """
    Authenticated user
    ----------------------------------------------
    Wholesale product listing
     """
     name = "wholesaleproducts-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
                           )
     serializer_class = serializers.WholesaleProductsSerializer
 
     queryset = models.WholesaleProducts.objects.all()
-    # TODO : Reuse this for filtering by q.
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(WholesaleProductsListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    def get_queryset(self):
+        # Filter to return only for facility
+        return super().get_queryset().filter(facility=self.request.user.facility)
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(WholesaleProductsListAPIView,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
+    search_fields = ('product__title',
+                     'product__description', 'product__preparation__title', 'product__preparation__title')
+    ordering_fields = ('product__title', 'id')
 
-        return qs
+
+class WholesaleProductsListForRetailer(generics.ListAPIView):
+    """
+   Authenticated user
+   ----------------------------------------------
+   Wholesale product listing
+    """
+    name = "wholesaleproducts-list"
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
+                          )
+    serializer_class = serializers.WholesaleProductsSerializerForRetailer
+
+    queryset = models.WholesaleProducts.objects.all()
+    search_fields = ('product__title',
+                     'product__description', 'product__preparation__title', 'product__preparation__title')
+    ordering_fields = ('product__title', 'id')
 
 
 class WholesaleProductsDetailAPIView(generics.RetrieveAPIView):

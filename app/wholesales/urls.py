@@ -19,8 +19,10 @@ urlpatterns = [
 
     path('wholesale-products/create', views.WholesaleProductsCreateAPIView.as_view(),
          name=views.WholesaleProductsCreateAPIView.name),
-    path('wholesale-products', views.WholesaleProductsListAPIView.as_view(),
-         name=views.WholesaleProductsListAPIView.name),
+    path('wholesale-products/wholesaler', views.WholesaleProductsListForWholesaler.as_view(),
+         name=views.WholesaleProductsListForWholesaler.name),
+    path('wholesale-products/retailer', views.WholesaleProductsListForRetailer.as_view(),
+         name=views.WholesaleProductsListForRetailer.name),
     path('wholesale-products/<uuid:pk>', views.WholesaleProductsDetailAPIView.as_view(),
          name=views.WholesaleProductsDetailAPIView.name),
     path('wholesale-products/<uuid:pk>/update', views.WholesaleProductsUpdateAPIView.as_view(),

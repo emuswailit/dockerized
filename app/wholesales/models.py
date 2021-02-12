@@ -27,9 +27,9 @@ class RetailerAccounts(FacilityRelatedModel):
     credit_allowed = models.BooleanField(default=False)
     placement_allowed = models.BooleanField(default=False)
     retailer_verified = models.BooleanField(default=False)
-    account_manager = models.OneToOneField(
+    wholesaler_contact = models.OneToOneField(
         Employees, on_delete=models.CASCADE, null=True, blank=True)
-    account_contact = models.OneToOneField(
+    retailer_contact = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -215,7 +215,7 @@ class Requisitions(FacilityRelatedModel):
     status = models.CharField(
         max_length=100, choices=STATUS_CHOICES, default="PENDING")
     payment_terms = models.CharField(
-        max_length=100, choices=PAYMENT_TERMS_CHOICES)
+        max_length=100, choices=PAYMENT_TERMS_CHOICES, default="CASH")
     payment_method = models.ForeignKey(
         PaymentMethods, on_delete=models.CASCADE, null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
