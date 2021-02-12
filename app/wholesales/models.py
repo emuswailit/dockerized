@@ -17,13 +17,16 @@ class RetailerAccounts(FacilityRelatedModel):
     -Will be required for retailers who will buy on credit or with placement arrangements
 
     """
-    retailer = models.OneToOneField(
-        Facility, related_name="account_retail_facility", on_delete=models.CASCADE)
+    wholesale = models.OneToOneField(
+        Facility, related_name="retail_account_wholesale", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     credit_limit = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
+    placement_limit = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
     credit_allowed = models.BooleanField(default=False)
     placement_allowed = models.BooleanField(default=False)
+    retailer_verified = models.BooleanField(default=False)
     account_manager = models.OneToOneField(
         Employees, on_delete=models.CASCADE, null=True, blank=True)
     account_contact = models.OneToOneField(
@@ -32,6 +35,15 @@ class RetailerAccounts(FacilityRelatedModel):
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
         User, related_name="facility_account_owner", on_delete=models.CASCADE)
+    retailer_verified_by = models.ForeignKey(
+        User, related_name="retailer_verifier", on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        # Enforce account uniqueness
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'wholesale', ], name='Unique account per retailer')
+        ]
 
 
 class WholesaleProducts(FacilityRelatedModel):
@@ -88,19 +100,27 @@ class WholesaleVariations(FacilityRelatedModel):
         discounted_price = Decimal(0.00)
         if Discounts.objects.filter(wholesale_variation=self).count() > 0:
             discount = Discounts.objects.get(wholesale_variation=self)
-            discounted_price = (self.trade_price) - \
-                (self.trade_price * discount.percentage/100)
+            discounted_price = (self.selling_price) - \
+                (self.selling_price * discount.percentage/100)
 
         return discounted_price
 
-    def get_bonus_quantity(self):
-        discounted_price = Decimal(0.00)
-        if Discounts.objects.filter(wholesale_variation=self).count() > 0:
-            discount = Discounts.objects.get(wholesale_variation=self)
-            discounted_price = (self.trade_price) - \
-                (self.trade_price * discount.percentage/100)
+    def get_bonus_quantity(self, quantity_required):
+        """
+        -Calculate bonus based on quantity required and return to calling object
+        """
+        bonus_earned = 0
+        if Bonuses.objects.filter(wholesale_variation=self).count() > 0:
+            bonuses = Bonuses.objects.filter(wholesale_variation=self)
+            for bonus in bonuses:
+                if quantity_required >= bonus.lowest_limit and quantity_required <= bonus.highest_limit:
+                    bonus_earned = bonus.bonus_quantity
+                else:
+                    pass
+        else:
+            pass
 
-        return discounted_price
+        return bonus_earned
 
 
 class Discounts(FacilityRelatedModel):
@@ -121,7 +141,7 @@ class Discounts(FacilityRelatedModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     percentage = models.DecimalField(
-        max_digits=3, decimal_places=2, default=0.00)
+        max_digits=3, decimal_places=2)
     owner = models.ForeignKey(
         User, related_name="discount_owner", on_delete=models.CASCADE)
 
@@ -242,10 +262,11 @@ class RequisitionItems(FacilityRelatedModel):
     wholesale_variation = models.ForeignKey(
         WholesaleVariations, related_name="requisition_item", on_delete=models.CASCADE)
     quantity_required = models.IntegerField()
-    quantity_issued = models.IntegerField(default=0)
+    quantity_invoiced = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
     quantity_paid = models.IntegerField(default=0)
     quantity_unpaid = models.IntegerField(default=0)
+    bonus_quantity = models.IntegerField(default=0)
     retailer_confirmed = models.BooleanField(default=False)
     wholesaler_confirmed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)

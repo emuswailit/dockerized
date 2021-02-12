@@ -212,12 +212,11 @@ class RetailSuperintendentPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_authenticated:
-            if request.user.is_superintendent and request.user.facility.facility_type == 'RetailPharmacy' and obj.owner == re:
+            if request.user.is_superintendent and request.user.facility.facility_type == 'RetailPharmacy':
                 return True
 
             else:
-                raise NotAcceptable(
-                    "Retail superintendents only!")
+                return False
         else:
             raise NotAcceptable("Please log in")
 
@@ -258,11 +257,14 @@ class PharmacySuperintendentPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.user.is_authenticated:
+            if request.user.facility.facility_type != "RetailPharmacy":
+                raise NotAcceptable(
+                    "You are not authorized!")
 
-            if request.user.is_superintendent and request.user.facility.facility_type == "Pharmacy":
+            if request.user.is_superintendent and request.user.facility.facility_type == "RetailPharmacy":
                 return True
             else:
                 raise NotAcceptable(
-                    "Clinic superintendents only!")
+                    "Pharmacy superintendents only!")
         else:
             raise NotAcceptable("Please log in")

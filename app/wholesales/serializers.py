@@ -14,16 +14,17 @@ from core.serializers import FacilitySafeSerializerMixin
 Users = get_user_model()
 
 
-class RetailerAccountsSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+class RetailerAccountsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.RetailerAccounts
         fields = (
             'id',
             'url',
             'facility',
-            'retailer',
+            'wholesale',
             'is_active',
             'credit_limit',
+            'retailer_verified',
             'credit_allowed',
             'placement_allowed',
             'account_manager',
@@ -32,7 +33,83 @@ class RetailerAccountsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
             'created',
             'updated'
         )
-        read_only_fields = ('id', 'url', 'facility',  'is_active',
+        read_only_fields = ('id', 'url', 'facility', 'credit_limit', 'credit_allowed', 'account_manager', 'placement_allowed',  'is_active',
+                            'owner', 'created', 'updated')
+
+    @transaction.atomic
+    def create(self, validated_data):
+        selected_payment_terms = None
+        retailer_account = None
+        # Retrieve logged on user from context
+        user_pk = self.context.get("user_pk")
+        user = Users.objects.get(id=user_pk)
+
+        # Retrieve user entered data
+        account_contact = validated_data.pop('account_contact')
+        wholesale = validated_data.pop('wholesale')
+
+        # Create account only in a wholesale pharmacy
+        if wholesale.facility_type != "BulkPharmacy":
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": f"{wholesale.title} is not a wholesale"})
+
+        # If account contact is not specified then the creator becomes account contact
+        if not account_contact:
+            account_contact = user
+
+        if models.RetailerAccounts.objects.filter(facility=user.facility, wholesale=wholesale).count() > 0:
+            """
+            Check if account exists
+
+            """
+            retailer_account = models.RetailerAccounts.objects.get(
+                facility=user.facility, wholesale=wholesale)
+        else:
+            retailer_account = models.RetailerAccounts.objects.create(
+                wholesale=wholesale, **validated_data)
+
+        return retailer_account
+
+    def update(self, retailer_account, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        # Retrieve quote item ID from context as it was passed in url
+        user_pk = self.context.get(
+            "user_pk")
+        if user_pk:
+            user = Users.objects.get(id=user_pk)
+
+        if retailer_account.wholesale != user.facility:
+            raise serilaizers.ValidationError(
+                {"response_code": 1, "response_message": "You are not authorized"})
+
+
+class RetailerAccountsUpdateSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serializer for wholesalers to update retailer accounts
+    """
+    class Meta:
+        model = models.RetailerAccounts
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'wholesale',
+            'is_active',
+            'credit_limit',
+            'placement_limit',
+            'retailer_verified',
+            'credit_allowed',
+            'placement_allowed',
+            'account_manager',
+            'account_contact',
+            'owner',
+            'created',
+            'updated'
+        )
+        read_only_fields = ('id', 'url', 'facility',  'account_manager', 'account_contact', 'wholesale',
                             'owner', 'created', 'updated')
 
 
@@ -95,7 +172,6 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
             'buying_price',
             'selling_price',
             'manufacture_date',
-            'get_bonus_quantity',
             'get_discounted_price',
             'expiry_date',
             'source',
@@ -190,7 +266,7 @@ class WholesaleVariationsSerializer(serializers.HyperlinkedModelSerializer):
 class BonusesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Bonuses
-        fields = ('id', 'url', 'facility',  'wholesale_product', 'title', 'description', 'start_date', 'end_date', 'lowest_limit', 'highest_limit', 'bonus_quantity',  'is_active',
+        fields = ('id', 'url', 'facility',  'wholesale_variation', 'title', 'description', 'start_date', 'end_date', 'lowest_limit', 'highest_limit', 'bonus_quantity',  'is_active',
                   'owner', 'created', 'updated')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -199,7 +275,7 @@ class BonusesSerializer(serializers.HyperlinkedModelSerializer):
 class DiscountsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.Discounts
-        fields = ('id', 'url', 'facility',  'wholesale_product', 'title', 'description', 'start_date', 'end_date', 'percentage',   'is_active',
+        fields = ('id', 'url', 'facility',  'wholesale_variation', 'title', 'description', 'start_date', 'end_date', 'percentage',   'is_active',
                   'owner', 'created', 'updated')
         read_only_fields = ('id', 'url', 'facility',  'is_active',
                             'owner', 'created', 'updated')
@@ -374,14 +450,28 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
                 """
                 raise serializers.ValidationError(
                     {"response_code": 1, "response_message": "Credit terms not yet authorized. Please select different terms of payment"})
-
+            else:
+                pass
+                # TODO : Implement invoices
+                # 1: Create invoice
+                # 2. Track and confirm invoice payment
             if not retailer_account.placement_allowed and payment_terms == "PLACEMENT":
                 """
                 Placement not allowed for this facility
                 """
                 raise serializers.ValidationError(
                     {"response_code": 1, "response_message": "Placement terms not yet authorized. Please select different terms of payment"})
+
+            else:
+                pass
+             # Implement placement
+             # Placement authorization
+             # Placement tracking
+             # Placement revenue division
+             # Repayment confirmation
+
         else:
+            # CASH TERMS
             if payment_method:
                 selected_payment_terms = 'CASH'
                 requisition.payment_terms = selected_payment_terms
@@ -397,7 +487,7 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
         if requisition_items:
             amount = 0.00
             for item in requisition_items:
-                amount += float(item.quantity_issued) * \
+                amount += float(item.quantity_invoiced) * \
                     float(item.wholesale_variation.selling_price)
             if amount > 0.00:
                 if models.RequisitionPayments.objects.filter(requisition=requisition).count() > 0:
@@ -424,10 +514,11 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
             'wholesaler_confirmed',
             'retailer_confirmed',
             'quantity_required',
-            'quantity_issued',
+            'quantity_invoiced',
             'quantity_pending',
             'quantity_paid',
             'quantity_unpaid',
+            'bonus_quantity',
             'owner',
             'wholesaler_confirmed_by',
             'created',
@@ -441,10 +532,11 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
             'is_active',
             'retailer_confirmed',
             'wholesaler_confirmed',
-            'quantity_issued',
+            'quantity_invoiced',
             'quantity_pending',
             'quantity_paid',
             'quantity_unpaid',
+            'bonus_quantity',
             'wholesaler_confirmed_by',
             'owner',
             'created',
@@ -469,7 +561,7 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
         new_requisition_item = None
         retailer_account = None
         despatch_item = None
-        quantity_issued = None
+        quantity_invoiced = None
         user_pk = self.context.get("user_pk")
         user = Users.objects.get(id=user_pk)
 
@@ -502,11 +594,11 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
                 id=wholesale_variation.id).available_quantity
 
             # Set the available available_quantity as available_quantity required, entire available_quantity required cannot be availed
-            quantity_issued = available_quantity
+            quantity_invoiced = available_quantity
             # raise serializers.ValidationError(
             #     {"response_code": 1, "response_message": f"Available available_quantity: {available_quantity}"})
         else:
-            quantity_issued = quantity_required
+            quantity_invoiced = quantity_required
         # Requisition item should be unique
         if models.RequisitionItems.objects.filter(
                 facility=user.facility, requisition=requisition, wholesale_variation=wholesale_variation).count() > 0:
@@ -516,7 +608,11 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
             # Update retrieved requisition item with the new entered required available_quantity
 
             new_requisition_item.quantity_required = quantity_required
-            new_requisition_item.quantity_issued = quantity_issued
+            # Available quantity
+            new_requisition_item.quantity_invoiced = quantity_invoiced
+            # Save bonus quantity
+            new_requisition_item.bonus_quantity = wholesale_variation.get_bonus_quantity(
+                quantity_required)
             new_requisition_item.save()
         else:
             # Create requisition item if all is well
@@ -525,17 +621,18 @@ class RequisitionItemsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
                     requisition=requisition,
                     wholesale_variation=wholesale_variation,
                     quantity_required=quantity_required,
-                    quantity_issued=quantity_issued,
+                    quantity_invoiced=quantity_invoiced,
                     **validated_data)
 
         return new_requisition_item
 
-    @transaction.atomic
+    @ transaction.atomic
     def update(self, requisition_item, validated_data):
         """
         This method updates the prescription quote item
 
         """
+
         # Retrieve quote item ID from context as it was passed in url
         if requisition_item.retailer_confirmed:
             raise serializers.ValidationError(
@@ -597,9 +694,9 @@ class RequisitionPaymentsSerializer(FacilitySafeSerializerMixin, serializers.Hyp
                 requisition_items = models.RequisitionItems.objects.filter(
                     requisition=requisition_payment.requisition)
                 for item in requisition_items:
-                    if item.wholesale_variation.available_quantity >= item.quantity_issued:
+                    if item.wholesale_variation.available_quantity >= item.quantity_invoiced:
                         # Deduct sold available_quantity from inventory if available_quantity is still sufficient
-                        item.wholesale_variation.available_quantity -= item.quantity_issued
+                        item.wholesale_variation.available_quantity -= item.quantity_invoiced
                         item.wholesale_variation.save()
 
                         # Check if item has discount

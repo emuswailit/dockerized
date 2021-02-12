@@ -6,8 +6,11 @@ from users.views import FacilityDetail
 urlpatterns = [
     path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),
          name=views.RetailerAccountsCreateAPIView.name),
-    path('retailer-accounts', views.RetailerAccountsListAPIView.as_view(),
-         name=views.RetailerAccountsListAPIView.name),
+    path('retailer-accounts/retailer', views.RetailRetailerAccountsListAPIView.as_view(),
+         name=views.RetailRetailerAccountsListAPIView.name),
+
+    path('retailer-accounts/wholesaler', views.WholesaleRetailerAccountsListAPIView.as_view(),
+         name=views.WholesaleRetailerAccountsListAPIView.name),
     path('retailer-accounts/<uuid:pk>', views.RetailerAccountsDetailAPIView.as_view(),
          name=views.RetailerAccountsDetailAPIView.name),
     path('retailer-accounts/<uuid:pk>/update', views.RetailerAccountsUpdateAPIView.as_view(),
