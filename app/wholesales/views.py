@@ -158,138 +158,138 @@ class RetailerAccountsUpdateAPIView(generics.RetrieveUpdateAPIView):
 # Wholesale products views
 
 
-class WholesaleProductsCreateAPIView(generics.CreateAPIView):
-    """
-    Wholesale Superintendent
-    ------------------------------------------------------
-    Create a new wholesale product
+# class WholesaleProductsCreateAPIView(generics.CreateAPIView):
+#     """
+#     Wholesale Superintendent
+#     ------------------------------------------------------
+#     Create a new wholesale product
 
-    """
-    name = "wholesaleproducts-create"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.WholesaleProductsSerializer
-    queryset = models.WholesaleProducts.objects.all()
+#     """
+#     name = "wholesaleproducts-create"
+#     permission_classes = (app_permissions.FacilitySuperintendentPermission,
+#                           )
+#     serializer_class = serializers.WholesaleProductsSerializer
+#     queryset = models.WholesaleProducts.objects.all()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        serializer.save(owner=user, facility=user.facility)
+#     def perform_create(self, serializer):
+#         user = self.request.user
+#         serializer.save(owner=user, facility=user.facility)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Wholesale product created successfully.", "wholesale-product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_create(serializer)
+#             return Response(data={"message": "Wholesale product created successfully.", "wholesale-product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Wholesale products not created", "wholesale-product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
-
-class WholesaleProductsListForWholesaler(generics.ListAPIView):
-    """
-   Authenticated user
-   ----------------------------------------------
-   Wholesale product listing
-    """
-    name = "wholesaleproducts-list"
-    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
-                          )
-    serializer_class = serializers.WholesaleProductsSerializer
-
-    queryset = models.WholesaleProducts.objects.all()
-
-    def get_queryset(self):
-        # Filter to return only for facility
-        return super().get_queryset().filter(facility=self.request.user.facility)
-
-    search_fields = ('product__title',
-                     'product__description', 'product__preparation__title', 'product__preparation__title')
-    ordering_fields = ('product__title', 'id')
+#             return Response(data={"message": "Wholesale products not created", "wholesale-product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class WholesaleProductsListForRetailer(generics.ListAPIView):
-    """
-   Authenticated user
-   ----------------------------------------------
-   Wholesale product listing
-    """
-    name = "wholesaleproducts-list"
-    permission_classes = (app_permissions.PharmacySuperintendentPermission,
-                          )
-    serializer_class = serializers.WholesaleProductsSerializerForRetailer
+# class WholesaleProductsListForWholesaler(generics.ListAPIView):
+#     """
+#    Authenticated user
+#    ----------------------------------------------
+#    Wholesale product listing
+#     """
+#     name = "wholesaleproducts-list"
+#     permission_classes = (app_permissions.WholesaleSuperintendentPermission,
+#                           )
+#     serializer_class = serializers.WholesaleProductsSerializer
 
-    queryset = models.WholesaleProducts.objects.all()
-    search_fields = ('product__title',
-                     'product__description', 'product__preparation__title', 'product__preparation__title')
-    ordering_fields = ('product__title', 'id')
+#     queryset = models.WholesaleProducts.objects.all()
 
+#     def get_queryset(self):
+#         # Filter to return only for facility
+#         return super().get_queryset().filter(facility=self.request.user.facility)
 
-class WholesaleProductsDetailAPIView(generics.RetrieveAPIView):
-    """
-    Authenticated  User
-    ---------------------------------------------------------
-    View wholesale product details
-    """
-    name = "wholesaleproducts-detail"
-    permission_classes = (permissions.IsAuthenticated,
-                          )
-    serializer_class = serializers.WholesaleProductsSerializer
-    queryset = models.WholesaleProducts.objects.all()
-    lookup_fields = ('pk',)
-
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+#     search_fields = ('product__title',
+#                      'product__description', 'product__preparation__title', 'product__preparation__title')
+#     ordering_fields = ('product__title', 'id')
 
 
-class WholesaleProductsUpdateAPIView(generics.RetrieveUpdateAPIView):
-    """
-    Wholesale Superintendent
-    ------------------------------------------------------------
-    Update a wholesale product entry
-    """
-    name = "wholesaleproducts-update"
-    permission_classes = (app_permissions.FacilitySuperintendentPermission,
-                          )
-    serializer_class = serializers.WholesaleProductsSerializer
-    queryset = models.WholesaleProducts.objects.all()
-    lookup_fields = ('pk',)
+# class WholesaleProductsListForRetailer(generics.ListAPIView):
+#     """
+#    Authenticated user
+#    ----------------------------------------------
+#    Wholesale product listing
+#     """
+#     name = "wholesaleproducts-list"
+#     permission_classes = (app_permissions.PharmacySuperintendentPermission,
+#                           )
+#     serializer_class = serializers.WholesaleProductsSerializerForRetailer
 
-    def get_serializer_context(self):
-        user_pk = self.request.user.id
-        context = super(WholesaleProductsUpdateAPIView,
-                        self).get_serializer_context()
+#     queryset = models.WholesaleProducts.objects.all()
+#     search_fields = ('product__title',
+#                      'product__description', 'product__preparation__title', 'product__preparation__title')
+#     ordering_fields = ('product__title', 'id')
 
-        context.update({
-            "user_pk": user_pk
 
-        })
-        return context
+# class WholesaleProductsDetailAPIView(generics.RetrieveAPIView):
+#     """
+#     Authenticated  User
+#     ---------------------------------------------------------
+#     View wholesale product details
+#     """
+#     name = "wholesaleproducts-detail"
+#     permission_classes = (permissions.IsAuthenticated,
+#                           )
+#     serializer_class = serializers.WholesaleProductsSerializer
+#     queryset = models.WholesaleProducts.objects.all()
+#     lookup_fields = ('pk',)
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
+#     def get_object(self):
+#         queryset = self.get_queryset()
+#         filter = {}
+#         for field in self.lookup_fields:
+#             filter[field] = self.kwargs[field]
 
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+#         obj = get_object_or_404(queryset, **filter)
+#         self.check_object_permissions(self.request, obj)
+#         return obj
 
-    # Wholesale variations
+
+# class WholesaleProductsUpdateAPIView(generics.RetrieveUpdateAPIView):
+#     """
+#     Wholesale Superintendent
+#     ------------------------------------------------------------
+#     Update a wholesale product entry
+#     """
+#     name = "wholesaleproducts-update"
+#     permission_classes = (app_permissions.FacilitySuperintendentPermission,
+#                           )
+#     serializer_class = serializers.WholesaleProductsSerializer
+#     queryset = models.WholesaleProducts.objects.all()
+#     lookup_fields = ('pk',)
+
+#     def get_serializer_context(self):
+#         user_pk = self.request.user.id
+#         context = super(WholesaleProductsUpdateAPIView,
+#                         self).get_serializer_context()
+
+#         context.update({
+#             "user_pk": user_pk
+
+#         })
+#         return context
+
+#     def get_object(self):
+#         queryset = self.get_queryset()
+#         filter = {}
+#         for field in self.lookup_fields:
+#             filter[field] = self.kwargs[field]
+
+#         obj = get_object_or_404(queryset, **filter)
+#         self.check_object_permissions(self.request, obj)
+#         return obj
+
+#     # Wholesale variations
 
 
 class WholesaleVariationsCreateAPIView(generics.CreateAPIView):
@@ -336,27 +336,40 @@ class WholesaleVariationsCreateAPIView(generics.CreateAPIView):
             return Response(data={"message": "Wholesale variations not created", "wholesale-variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class WholesaleVariationsListAPIView(generics.ListAPIView):
+class WholesaleVariationsListForRetailer(generics.ListAPIView):
     """
     Authenticated users
     ------------------------------------------------------
-    Listing of all wholesale variations
+    Listing of all wholesale variations for all wholesales but items which are in stock
     """
-    name = "wholesalevariationss-list"
-    permission_classes = (permissions.IsAuthenticated,
+    name = "wholesalevariations-list"
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
+                          )
+    serializer_class = serializers.WholesaleVariationsSerializer
+    queryset = models.WholesaleVariations.objects.available_wholesale_variations()
+    search_fields = ('product__title', 'product__preparation__title',
+                     'product__description', 'product__manufacturer__title', 'comment')
+    ordering_fields = ('product__title', 'id')
+
+
+class WholesaleVariationsListForWholesaler(generics.ListAPIView):
+    """
+    Authenticated users
+    ------------------------------------------------------
+    Listing of all wholesale variations for a particular wholesale
+    """
+    name = "wholesalevariations-list"
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
                           )
     serializer_class = serializers.WholesaleVariationsSerializer
     queryset = models.WholesaleVariations.objects.all()
-    search_fields = ('wholesale_product__product__title',
-                     'wholesale_product__product__description', 'wholesale_product__product__manufacturer__title', 'comment')
-    ordering_fields = ('wholesale_product__product__title', 'id')
+    search_fields = ('product__title', 'product__preparation__title',
+                     'product__description', 'product__manufacturer__title', 'comment')
+    ordering_fields = ('product__title', 'id')
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(WholesaleVariationsListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    def get_queryset(self):
+        # Filter to return only for facility
+        return super().get_queryset().filter(facility=self.request.user.facility)
 
 
 class WholesaleVariationsDetailAPIView(generics.RetrieveAPIView):
@@ -431,6 +444,17 @@ class BonusesCreateAPIView(generics.CreateAPIView):
                           )
     serializer_class = serializers.BonusesSerializer
     queryset = models.Bonuses.objects.all()
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(BonusesCreateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -524,6 +548,17 @@ class BonusesUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = models.Bonuses.objects.all()
     lookup_fields = ('pk',)
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(BonusesUpdateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def get_object(self):
         queryset = self.get_queryset()
         filter = {}
@@ -547,6 +582,17 @@ class DiscountsCreateAPIView(generics.CreateAPIView):
     serializer_class = serializers.DiscountsSerializer
     queryset = models.Discounts.objects.all()
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(DiscountsCreateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(owner=user, facility=user.facility)
@@ -556,7 +602,7 @@ class DiscountsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Bonus created successfully.", "bonus": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Discount created successfully.", "discount": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -565,7 +611,7 @@ class DiscountsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Bonus not created", "bonus": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Discount not created", "discount": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiscountsListAPIView(generics.ListAPIView):
@@ -639,6 +685,17 @@ class DiscountsUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = models.Discounts.objects.all()
     lookup_fields = ('pk',)
 
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(DiscountsUpdateAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
     def get_object(self):
         queryset = self.get_queryset()
         filter = {}
@@ -694,32 +751,36 @@ class RequisitionsCreateAPIView(FacilitySafeViewMixin, generics.CreateAPIView):
             return Response(data={"message": "Requisition not created", "requisition": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class RetailerRequisitionsListAPIView(FacilitySafeViewMixin, generics.ListAPIView):
+class RequisitionsListForRetailer(FacilitySafeViewMixin, generics.ListAPIView):
     """
    Retail Superintendent
    ------------------------------------------------
    View list of requisitions a retail pharmacy has created on different wholesales
     """
     name = "requisitions-list"
-    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionsSerializer
 
     queryset = models.Requisitions.objects.all()
+    search_fields = ('wholesale__title',
+                     'status',)
+    ordering_fields = (
+        'wholesale__title', 'id')
 
     def get_queryset(self):
 
-        return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
+        return super().get_queryset().filter(facility=self.request.user.facility)
 
 
-class WholesalerRequisitionsListAPIView(generics.ListAPIView):
+class RequisitionsListForWholesaler(generics.ListAPIView):
     """
    Wholesale Superintendent
    ------------------------------------------------
    View list of requisitions created on a wholesale
     """
     name = "requisitions-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionsSerializer
 
@@ -785,7 +846,7 @@ class RetailerConfirmRequisitionAPIView(generics.UpdateAPIView):
     -Confirmation also creates foundation for payment
     """
     name = "requisitions-update"
-    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
                           )
     serializer_class = serializers.RequisitionsRetailerConfirmSerializer
     queryset = models.Requisitions.objects.all()
@@ -873,10 +934,10 @@ class RetailerRequisitionItemsListAPIView(FacilitySafeViewMixin, generics.ListAP
 
         return super().get_queryset().filter(facility=self.request.user.facility, owner=self.request.user)
 
-    search_fields = ('wholesale_variation__wholesale_product__product__title',
-                     'wholesale_variation__wholesale_product__product__description', 'wholesale_variation__wholesale_product__product__manufacturer__title',)
+    search_fields = ('wholesale_variation__product__title',
+                     'wholesale_variation__product__description', 'wholesale_variation__product__manufacturer__title',)
     ordering_fields = (
-        'wholesale_variation__wholesale_product__product__title', 'id')
+        'wholesale_variation__product__title', 'id')
 
 
 class WholesaleRequisitionItemsListAPIView(generics.ListAPIView):
@@ -893,10 +954,10 @@ class WholesaleRequisitionItemsListAPIView(generics.ListAPIView):
     queryset = models.RequisitionItems.objects.retailer_confirmed_items()
     # TODO : Reuse this for filtering by q.
 
-    search_fields = ('wholesale_variation__wholesale_product__product__title',
-                     'wholesale_variation__wholesale_product__product__description', 'wholesale_variation__wholesale_product__product__manufacturer__title',)
+    search_fields = ('wholesale_variation__product__title',
+                     'wholesale_variation__product__description', 'wholesale_variation__product__manufacturer__title',)
     ordering_fields = (
-        'wholesale_variation__wholesale_product__product__title', 'id')
+        'wholesale_variation__product__title', 'id')
 
 
 class RequisitionItemsDetailAPIView(generics.RetrieveAPIView):

@@ -202,7 +202,7 @@ class FacilitySuperintendentPermission(permissions.BasePermission):
 
             else:
                 raise NotAcceptable(
-                    "Facility superintendent only!")
+                    {"response_code": 1, "response_message": "You are not authorized to access this!"})
         else:
             raise NotAcceptable("Please log in")
 
@@ -231,9 +231,10 @@ class WholesaleSuperintendentPermission(permissions.BasePermission):
 
             else:
                 raise NotAcceptable(
-                    "Wholesale superintendents only!")
+                    {"response_code": 1, "response_message": "You are not authorized to access this!"})
         else:
-            raise NotAcceptable("Please log in")
+            raise NotAcceptable(
+                {"response_code": 1, "response_message": "Please log in"})
 
 
 class ClinicSuperintendentPermission(permissions.BasePermission):
@@ -247,9 +248,10 @@ class ClinicSuperintendentPermission(permissions.BasePermission):
 
             else:
                 raise NotAcceptable(
-                    "Clinic superintendents only!")
+                    {"response_code": 1, "response_message": "You are not authorized to access this!"})
         else:
-            raise NotAcceptable("Please log in")
+            raise NotAcceptable(
+                {"response_code": 1, "response_message": "Please log in"})
 
 
 class PharmacySuperintendentPermission(permissions.BasePermission):
@@ -258,13 +260,14 @@ class PharmacySuperintendentPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.user.is_authenticated:
             if request.user.facility.facility_type != "RetailPharmacy":
-                raise NotAcceptable(
-                    "You are not authorized!")
+                raise NotAcceptable({"response_code": 1, "response_message": "You are not authorized to access this!"}
+                                    )
 
             if request.user.is_superintendent and request.user.facility.facility_type == "RetailPharmacy":
                 return True
             else:
                 raise NotAcceptable(
-                    "Pharmacy superintendents only!")
+                    {"response_code": 1, "response_message": "You are not authorized to access this!"})
         else:
-            raise NotAcceptable("Please log in")
+            raise NotAcceptable(
+                {"response_code": 1, "response_message": "Please log in"})

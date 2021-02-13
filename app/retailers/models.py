@@ -10,13 +10,12 @@ from django.db import models
 from users.models import Facility
 from drugs.models import Products
 from core.models import FacilityRelatedModel
-from drugs.models import Distributor
+# from drugs.models import Distributor
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.db.models.signals import post_save, pre_save
 from .utils import unique_slug_generator
 from django.utils.text import slugify
-from wholesales.models import WholesaleProducts
 import decimal
 # from drugs.models import Categories
 
@@ -151,8 +150,8 @@ class RetailVariations(FacilityRelatedModel):
                              blank=True, editable=True)
     retail_product = models.ForeignKey(
         RetailProducts, on_delete=models.CASCADE)
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="retail_product_images", on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey(
+        Products, related_name="retail_product_images", on_delete=models.CASCADE, null=True, blank=True)
     units_per_pack = models.IntegerField(default=0)
     pack_quantity = models.IntegerField(default=0)
     pack_buying_price = models.DecimalField(

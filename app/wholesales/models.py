@@ -46,19 +46,36 @@ class RetailerAccounts(FacilityRelatedModel):
         ]
 
 
-class WholesaleProducts(FacilityRelatedModel):
-    """Model for product variation, unique to each facility"""
-    product = models.ForeignKey(
-        Products, related_name="listing_products", on_delete=models.CASCADE)
-    is_active = models.BooleanField(default=True)
-    available_quantity = models.IntegerField(default=0)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(
-        User, related_name="listing_owner", on_delete=models.CASCADE)
+# class WholesaleProducts(FacilityRelatedModel):
+#     """Model for product variation, unique to each facility"""
+#     product = models.ForeignKey(
+#         Products, related_name="listing_products", on_delete=models.CASCADE)
+#     is_active = models.BooleanField(default=True)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
+#     owner = models.ForeignKey(
+#         User, related_name="listing_owner", on_delete=models.CASCADE)
 
-    def __str__(self):
-        return self.product.title
+#     def __str__(self):
+#         return self.product.title
+
+class WholesaleVariationsQuerySet(models.QuerySet):
+    def all_wholesale_variations(self):
+        return self.all()
+
+    def available_wholesale_variations(self):
+        return self.filter(quantity_available__gte=1)
+
+
+class WholesaleVariationsManager(models.Manager):
+    def get_queryset(self):
+        return WholesaleVariationsQuerySet(self.model, using=self._db)
+
+    def all_wholesale_variations(self):
+        return self.get_queryset().all_wholesale_variations()
+
+    def available_wholesale_variations(self):
+        return self.get_queryset().available_wholesale_variations()
 
 
 class WholesaleVariations(FacilityRelatedModel):
@@ -68,13 +85,14 @@ class WholesaleVariations(FacilityRelatedModel):
     -A wholesale can thus have two or more batches of a particular item in stock, difering by date received, price, discounts, expiry dates, etc,
 
     """
-    wholesale_product = models.ForeignKey(
-        WholesaleProducts, related_name="wholesale_variation_product", on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey(
+        Products, related_name="wholesale_variation_product", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    received_quantity = models.IntegerField()
-    available_quantity = models.IntegerField()
+    quantity_received = models.IntegerField()
+    quantity_issued = models.IntegerField(default=0)
+    quantity_available = models.IntegerField(default=0)
     buying_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00)
     selling_price = models.DecimalField(
@@ -89,21 +107,22 @@ class WholesaleVariations(FacilityRelatedModel):
         User, related_name="inventory_owner", on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    source = models.ForeignKey(Distributor, on_delete=models.CASCADE)
+
+    objects = WholesaleVariationsManager()
 
     def __str__(self):
-        if self.wholesale_product.product.preparation:
-            return f"{self.wholesale_product.product.preparation.title} ({self.wholesale_product.product.title}) - Available: {self.available_quantity} -Expiry:  {self.expiry_date}"
-        return f"{self.wholesale_product.product.title} - Available qty: {self.available_quantity} -Expiry: {self.expiry_date}"
+        if self.product.preparation:
+            return f"{self.product.preparation.title} ({self.product.title}) - Available: {self.quantity_available} -Expiry:  {self.expiry_date}"
+        return f"{self.product.title} - Available qty: {self.quantity_available} -Expiry: {self.expiry_date}"
 
-    def get_discounted_price(self):
-        discounted_price = Decimal(0.00)
+    def get_final_price(self):
+        final_price = self.selling_price
         if Discounts.objects.filter(wholesale_variation=self).count() > 0:
             discount = Discounts.objects.get(wholesale_variation=self)
-            discounted_price = (self.selling_price) - \
+            final_price = (self.selling_price) - \
                 (self.selling_price * discount.percentage/100)
 
-        return discounted_price
+        return final_price
 
     def get_bonus_quantity(self, quantity_required):
         """
@@ -141,7 +160,7 @@ class Discounts(FacilityRelatedModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     percentage = models.DecimalField(
-        max_digits=3, decimal_places=2)
+        max_digits=4, decimal_places=2)
     owner = models.ForeignKey(
         User, related_name="discount_owner", on_delete=models.CASCADE)
 
@@ -212,6 +231,8 @@ class Requisitions(FacilityRelatedModel):
     wholesaler_confirmed = models.BooleanField(default=False)
     is_closed = models.BooleanField(default=False)
     priority = models.CharField(max_length=100, choices=PRIORITY_CHOICES)
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(
         max_length=100, choices=STATUS_CHOICES, default="PENDING")
     payment_terms = models.CharField(
@@ -286,6 +307,8 @@ class RequisitionItems(FacilityRelatedModel):
 
     # def __str__(self):
     #     return self.title
+    def get_total_quantity_issued(self):
+        return f"{self.quantity_invoiced+ self.bonus_quantity}"
 
 
 class RequisitionPayments(FacilityRelatedModel):

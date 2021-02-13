@@ -14,7 +14,7 @@ User = get_user_model()
 class Distributor(FacilityRelatedModel):
     title = models.CharField(max_length=100, unique=True)
     physical_address = models.CharField(max_length=120, unique=True)
-    postal_address = models.CharField(max_length=120, unique=True)
+    postal_address = models.CharField(max_length=120, null=True, blank=True)
     description = models.TextField(max_length=100, null=True, blank=True)
     phone1 = models.CharField(max_length=30, null=True, blank=True)
     phone2 = models.CharField(max_length=30, null=True, blank=True)
@@ -27,9 +27,6 @@ class Distributor(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
-
-    class Meta:
-        db_table = 'distributors'
 
 
 class Manufacturer(FacilityRelatedModel):
