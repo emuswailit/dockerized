@@ -431,14 +431,34 @@ class RequisitionsSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True)
     wholesale_details = serializers.SerializerMethodField(
         read_only=True)
+    invoice = serializers.SerializerMethodField(
+        read_only=True)
 
     class Meta:
         model = models.Requisitions
-        fields = ('id', 'url', 'facility',  'wholesale', 'retailer_account', 'status', 'retailer_confirmed', 'wholesaler_confirmed', 'payment_terms', 'priority',
-                  'is_closed',  'owner', 'created', 'updated', 'items', 'payment', 'wholesale_details')
-        read_only_fields = ('id', 'url', 'facility', 'retailer_account',  'status',  'is_active', 'retailer_confirmed', 'wholesaler_confirmed',
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'wholesale',
+            'retailer_account',
+            'status',
+            'total_amount',
+            'retailer_confirmed',
+            'wholesaler_confirmed',
+            'payment_terms',
+            'priority',
+            'is_closed',
+            'owner',
+            'created',
+            'updated', 'items', 'payment', 'wholesale_details', 'invoice')
+        read_only_fields = (
+            'id',
+            'url',
+            'facility',
+            'retailer_account',  'status', 'total_amount',  'is_active', 'retailer_confirmed', 'wholesaler_confirmed',
 
-                            'is_closed', 'payment_terms', 'owner', 'created', 'updated', 'items', 'wholesale_details')
+            'is_closed', 'payment_terms', 'owner', 'created', 'updated', 'items', 'wholesale_details')
 
     def get_items(self, obj):
         items = models.RequisitionItems.objects.filter(requisition=obj)
@@ -456,6 +476,12 @@ class RequisitionsSerializer(serializers.HyperlinkedModelSerializer):
             wholesale = Facility.objects.get(
                 id=obj.wholesale.id)
             return FacilitySerializer(wholesale, context=self.context).data
+
+    def get_invoice(self, obj):
+        invoice = {}
+        if models.Invoices.objects.filter(requisition=obj).count() > 0:
+            invoice = models.Invoices.objects.get(requisition=obj)
+            return InvoicesSerializer(invoice, context=self.context).data
 
     @transaction.atomic
     def create(self, validated_data):
@@ -485,6 +511,9 @@ class RequisitionsSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializer):
+    """
+
+    """
     items = serializers.SerializerMethodField(
         read_only=True)
     payment = serializers.SerializerMethodField(
@@ -565,6 +594,19 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
         requisition_items = None
         requisition_payment = None
         amount = 0.00
+        retailer_account = None
+        invoice = None
+        invoice_item = None
+
+        if requisition.is_closed:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": "Requisition is already closed"})
+
+        if models.RetailerAccounts.objects.filter(facility=user.facility, wholesale=requisition.wholesale).count() > 0:
+            retailer_account = models.RetailerAccounts.objects.get(
+                facility=user.facility, wholesale=requisition.wholesale)
+        else:
+            pass
 
         if models.RequisitionItems.objects.filter(requisition=requisition).count() > 0:
             requisition_items = models.RequisitionItems.objects.filter(
@@ -578,32 +620,158 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
                 {"response_code": 1, "response_message": "Requisition has no items added into it"})
 
         if payment_terms == "CASH":
-            if models.RequisitionPayments.objects.filter(requisition=requisition).count() > 0:
+
+            # Create or retrieve an invoice for the cash payment
+            if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+                invoice = models.Invoices.objects.get(
+                    facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+            else:
+                invoice = models.Invoices.objects.create(
+                    facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+            if invoice and requisition_items:
+                for item in requisition_items:
+                    if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
+                        invoice_item = models.InvoiceItems.objects.get(
+                            invoice=invoice, requisition_item=item)
+                        invoice_item.bonus_quantity = item.bonus_quantity
+                        invoice_item.quantity_invoiced = item.quantity_invoiced
+                        invoice_item.price = item.wholesale_variation.get_final_price()
+                        invoice_item.save()
+                    else:
+                        invoice_item = models.InvoiceItems.objects.create(
+                            facility=user.facility,
+                            invoice=invoice,
+                            requisition_item=item,
+                            quantity_invoiced=item.quantity_invoiced,
+                            bonus_quantity=item.bonus_quantity,
+                            price=item.wholesale_variation.get_final_price(),
+                            owner=user
+                        )
+
+            if models.RequisitionPayments.objects.filter(requisition=requisition, facility=user.facility).count() > 0:
                 requisition_payment = models.RequisitionPayments.objects.get(
-                    requisition=requisition)
+                    requisition=requisition, facility=user.facility)
                 requisition_payment.amount = amount
                 requisition_payment.payment_method = payment_method
                 requisition_payment.save()
             else:
                 requisition_payment = models.RequisitionPayments.objects.create(
-                    facility=user.facility, owner=user, requisition=requisition, payment_method=payment_method, payment_terms=payment_terms, amount=amount)
+                    facility=user.facility,
+                    owner=user, requisition=requisition,
+                    payment_method=payment_method,
+                    amount=amount,
+                    invoice=invoice
+                )
 
             if requisition_payment:
                 requisition.retailer_confirmed = True
                 requisition.status = "RETAILER_CONFIRMED"
                 requisition.total_amount = amount
+                requisition.is_closed = True
                 requisition.save()
             else:
                 raise serializers.ValidationError(
                     {"response_code": 1, "response_message": "An error occurred while processing your cash payment"})
         elif payment_terms == "CREDIT":
-            raise serializers.ValidationError(
-                {"response_code": 1, "response_message": "You selected credit"})
+
+            if retailer_account:
+                if retailer_account.credit_allowed:
+                    if retailer_account.credit_limit >= amount:
+
+                        # Create or retrieve an invoice
+                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+                            invoice = models.Invoices.objects.get(
+                                facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+                        else:
+                            invoice = models.Invoices.objects.create(
+                                facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+                        if invoice and requisition_items:
+                            for item in requisition_items:
+                                if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
+                                    invoice_item = models.InvoiceItems.objects.get(
+                                        invoice=invoice, requisition_item=item)
+                                    invoice_item.bonus_quantity = item.bonus_quantity
+                                    invoice_item.quantity_invoiced = item.quantity_invoiced
+                                    invoice_item.price = item.wholesale_variation.get_final_price()
+                                    invoice_item.save()
+                                else:
+                                    invoice_item = models.InvoiceItems.objects.create(
+                                        facility=user.facility,
+                                        invoice=invoice,
+                                        requisition_item=item,
+                                        quantity_invoiced=item.quantity_invoiced,
+                                        bonus_quantity=item.bonus_quantity,
+                                        price=item.wholesale_variation.get_final_price(),
+                                        owner=user
+                                    )
+                        if invoice:
+                            requisition.retailer_confirmed = True
+                            requisition.status = "RETAILER_CONFIRMED"
+                            requisition.total_amount = amount
+                            requisition.is_closed = True
+                            requisition.save()
+
+                        else:
+                            raise serializers.ValidationError(
+                                {"response_code": 1, "response_message": f"Available credit limit is { retailer_account.credit_limit}"})
+
+                else:
+                    raise serializers.ValidationError(
+                        {"response_code": 1, "response_message": "Not eligible for this plan"})
+
+            else:
+                raise serializers.ValidationError(
+                    {"response_code": 1, "response_message": "Please create an account with us to enjoy this facility"})
 
         elif payment_terms == "PLACEMENT":
-            raise serializers.ValidationError(
-                {"response_code": 1, "response_message": "You selected placement"})
+            if retailer_account:
+                if retailer_account.placement_allowed:
+                    if retailer_account.placement_limit >= amount:
 
+                        # Create or retrieve an invoice
+                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+                            invoice = models.Invoices.objects.get(
+                                facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+                        else:
+                            invoice = models.Invoices.objects.create(
+                                facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+                        if invoice and requisition_items:
+                            for item in requisition_items:
+                                if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
+                                    invoice_item = models.InvoiceItems.objects.get(
+                                        invoice=invoice, requisition_item=item)
+                                    invoice_item.bonus_quantity = item.bonus_quantity
+                                    invoice_item.quantity_invoiced = item.quantity_invoiced
+                                    invoice_item.price = item.wholesale_variation.get_final_price()
+                                    invoice_item.save()
+                                else:
+                                    invoice_item = models.InvoiceItems.objects.create(
+                                        facility=user.facility,
+                                        invoice=invoice,
+                                        requisition_item=item,
+                                        quantity_invoiced=item.quantity_invoiced,
+                                        bonus_quantity=item.bonus_quantity,
+                                        price=item.wholesale_variation.get_final_price(),
+                                        owner=user
+                                    )
+                        if invoice_item:
+                            requisition.retailer_confirmed = True
+                            requisition.status = "RETAILER_CONFIRMED"
+                            requisition.total_amount = amount
+                            requisition.is_closed = True
+                            requisition.save()
+
+                    else:
+                        raise serializers.ValidationError(
+                            {"response_code": 1, "response_message": f"Available placement limit is { retailer_account.placement_limit}"})
+
+                else:
+                    raise serializers.ValidationError(
+                        {"response_code": 1, "response_message": "Not eligible for this plan"})
+
+            else:
+                raise serializers.ValidationError(
+                    {"response_code": 1, "response_message": "Please create an account with us to enjoy this facility"})
         return requisition
 
 
@@ -832,3 +1000,48 @@ class RequisitionPaymentsSerializer(FacilitySafeSerializerMixin, serializers.Hyp
                  "response_message": f"Check if your payment was succesfully processed"})
 
         return requisition_payment
+
+
+class InvoicesSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Invoices
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+        read_only_fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')

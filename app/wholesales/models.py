@@ -281,7 +281,7 @@ class RequisitionItems(FacilityRelatedModel):
     requisition = models.ForeignKey(
         Requisitions, related_name="requisition", on_delete=models.CASCADE)
     wholesale_variation = models.ForeignKey(
-        WholesaleVariations, related_name="requisition_item", on_delete=models.CASCADE)
+        WholesaleVariations, related_name="requisition_item_variation", on_delete=models.CASCADE)
     quantity_required = models.IntegerField()
     quantity_invoiced = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
@@ -311,6 +311,83 @@ class RequisitionItems(FacilityRelatedModel):
         return f"{self.quantity_invoiced+ self.bonus_quantity}"
 
 
+class Invoices(FacilityRelatedModel):
+    """
+    -Model for despatch payment
+    -Created alongside a despatch in a 1:1 relationship
+
+    """
+    INVOICE_TYPE_CHOICES = (
+        ("CASH", "CASH"),
+        ("CREDIT", "CREDIT"),
+        ("PLACEMENT", "PLACEMENT"),
+    )
+    requisition = models.OneToOneField(
+        Requisitions, related_name="invoice_requisition", on_delete=models.CASCADE)
+    retailer_account = models.OneToOneField(
+        RetailerAccounts, related_name="invoice_requisition", on_delete=models.CASCADE)
+    invoice_type = models.CharField(
+        max_length=100, choices=INVOICE_TYPE_CHOICES)
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    paid_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    due_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    despatch_confirmed = models.BooleanField(default=False)
+    courier_confirmed = models.BooleanField(default=False)
+    receipt_confirmed = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)
+    owner = models.ForeignKey(
+        User, related_name="invoice_owner", on_delete=models.CASCADE)
+    wholesale_despatch_by = models.ForeignKey(
+        User, related_name="wholesale_despatch_by", on_delete=models.CASCADE, null=True, blank=True)
+    wholesale_approved_by = models.ForeignKey(
+        User, related_name="wholesale_aproved_by", on_delete=models.CASCADE, null=True, blank=True)
+    retail_receipt_by = models.ForeignKey(
+        User, related_name="retail_receipt_by", on_delete=models.CASCADE, null=True, blank=True)
+    courier = models.ForeignKey(
+        Employees, related_name="courier_done_by", on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.requisition.wholesale.title - self.requisition.facility.title }"
+
+    class Meta:
+        # Enforce account uniqueness
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'retailer_account', 'requisition', ], name='Unique invoice per requisition')
+        ]
+
+
+class InvoiceItems(FacilityRelatedModel):
+    """
+    Model for requisition item
+
+    """
+    invoice = models.ForeignKey(
+        Invoices, related_name="requisition_item_invoice", on_delete=models.CASCADE)
+    requisition_item = models.ForeignKey(
+        RequisitionItems, related_name="requisition_item", on_delete=models.CASCADE)
+    quantity_invoiced = models.IntegerField(default=0)
+    bonus_quantity = models.IntegerField(default=0)
+    price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    owner = models.ForeignKey(
+        User, related_name="invoice_item_owner", on_delete=models.CASCADE)
+
+    class Meta:
+        # Enforce account uniqueness
+        constraints = [
+            models.UniqueConstraint(
+                fields=['facility', 'invoice', 'requisition_item', ], name='Unique invoice item per invoice')
+        ]
+
+
 class RequisitionPayments(FacilityRelatedModel):
     """
     -Model for despatch payment
@@ -324,17 +401,13 @@ class RequisitionPayments(FacilityRelatedModel):
         ("CANCELLED", "CANCELLED"),
     )
 
-    PAYMENT_TERMS_CHOICES = (
-        ("CASH", "CASH"),
-        ("CREDIT", "CREDIT"),
-        ("PLACEMENT", "PLACEMENT"),
-    )
     requisition = models.OneToOneField(
         Requisitions, related_name="payment_requisition", on_delete=models.CASCADE)
+
+    invoice = models.ForeignKey(
+        Requisitions, related_name="requisition_payment_invoice", on_delete=models.CASCADE)
     payment_method = models.ForeignKey(
         PaymentMethods, related_name="requisition_payment_method", on_delete=models.CASCADE)
-    payment_terms = models.CharField(
-        max_length=100, choices=PAYMENT_TERMS_CHOICES)
     status = models.CharField(
         max_length=100, choices=PAYMENT_STATUS_CHOICES, default="PENDING")
     amount = models.DecimalField(
@@ -342,7 +415,7 @@ class RequisitionPayments(FacilityRelatedModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(
-        User, related_name="despatch_payment_owner", on_delete=models.CASCADE)
+        User, related_name="requisition_payment_owner", on_delete=models.CASCADE)
 
-    # def __str__(self):
-    #     return self.title
+    def __str__(self):
+        return f"{self.requisition.wholesale.title - self.requisition.facility.title }"

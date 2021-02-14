@@ -92,5 +92,11 @@ urlpatterns = [
     path('requisition-payments/<uuid:pk>/update', views.RequisitionPaymentsUpdateAPIView.as_view(),
          name=views.RequisitionPaymentsUpdateAPIView.name),
 
+    path('invoices', views.InvoicesListAPIView.as_view(),
+         name=views.InvoicesListAPIView.name),
+    path('invoices/<uuid:pk>', views.InvoicesDetailAPIView.as_view(),
+         name=views.InvoicesDetailAPIView.name),
+    path('invoices/<uuid:pk>/update', views.InvoicesUpdateAPIView.as_view(),
+         name=views.InvoicesUpdateAPIView.name),
 
 ]
