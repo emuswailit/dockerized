@@ -1,64 +1,64 @@
-import React, { useState, useEffect, Fragment } from "react";
-import PropTypes from "prop-types";
-import clsx from "clsx";
-import { lighten, makeStyles } from "@material-ui/core/styles";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
-import TableHead from "@material-ui/core/TableHead";
-import TablePagination from "@material-ui/core/TablePagination";
-import TableRow from "@material-ui/core/TableRow";
-import Toolbar from "@material-ui/core/Toolbar";
-import Checkbox from "@material-ui/core/Checkbox";
-import IconButton from "@material-ui/core/IconButton";
-import Tooltip from "@material-ui/core/Tooltip";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Switch from "@material-ui/core/Switch";
-import DeleteIcon from "@material-ui/icons/Delete";
-import FilterListIcon from "@material-ui/icons/FilterList";
-import TableSortLabel from "@material-ui/core/TableSortLabel";
-import Paper from "@material-ui/core/Paper";
-import TextField from "@material-ui/core/TextField";
-import InputAdornment from "@material-ui/core/InputAdornment";
-import SearchIcon from "@material-ui/icons/Search";
-import TableFooter from "@material-ui/core/TableFooter";
-import Button from "@material-ui/core/Button";
-import FirstPageIcon from "@material-ui/icons/FirstPage";
-import KeyboardArrowLeft from "@material-ui/icons/KeyboardArrowLeft";
-import KeyboardArrowRight from "@material-ui/icons/KeyboardArrowRight";
-import LastPageIcon from "@material-ui/icons/LastPage";
-import { getUsers, addUser, deleteUser, changeUser } from "../../actions/users";
-import { connect } from "react-redux";
-import Grid from "@material-ui/core/Grid";
-import Dialog from "@material-ui/core/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
-import InputLabel from "@material-ui/core/InputLabel";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import "date-fns";
-import { format } from "date-fns";
-import DateFnsUtils from "@date-io/date-fns";
-import Snackbar from "@material-ui/core/Snackbar";
+import React, {useState, useEffect, Fragment} from "react"
+import PropTypes from "prop-types"
+import clsx from "clsx"
+import {lighten, makeStyles} from "@material-ui/core/styles"
+import Table from "@material-ui/core/Table"
+import TableBody from "@material-ui/core/TableBody"
+import TableCell from "@material-ui/core/TableCell"
+import TableContainer from "@material-ui/core/TableContainer"
+import TableHead from "@material-ui/core/TableHead"
+import TablePagination from "@material-ui/core/TablePagination"
+import TableRow from "@material-ui/core/TableRow"
+import Toolbar from "@material-ui/core/Toolbar"
+import Checkbox from "@material-ui/core/Checkbox"
+import IconButton from "@material-ui/core/IconButton"
+import Tooltip from "@material-ui/core/Tooltip"
+import FormControlLabel from "@material-ui/core/FormControlLabel"
+import Switch from "@material-ui/core/Switch"
+import DeleteIcon from "@material-ui/icons/Delete"
+import FilterListIcon from "@material-ui/icons/FilterList"
+import TableSortLabel from "@material-ui/core/TableSortLabel"
+import Paper from "@material-ui/core/Paper"
+import TextField from "@material-ui/core/TextField"
+import InputAdornment from "@material-ui/core/InputAdornment"
+import SearchIcon from "@material-ui/icons/Search"
+import TableFooter from "@material-ui/core/TableFooter"
+import Button from "@material-ui/core/Button"
+import FirstPageIcon from "@material-ui/icons/FirstPage"
+import KeyboardArrowLeft from "@material-ui/icons/KeyboardArrowLeft"
+import KeyboardArrowRight from "@material-ui/icons/KeyboardArrowRight"
+import LastPageIcon from "@material-ui/icons/LastPage"
+import {getUsers, addUser, deleteUser, changeUser} from "../../actions/users"
+import {connect} from "react-redux"
+import Grid from "@material-ui/core/Grid"
+import Dialog from "@material-ui/core/Dialog"
+import DialogActions from "@material-ui/core/DialogActions"
+import DialogContent from "@material-ui/core/DialogContent"
+import DialogContentText from "@material-ui/core/DialogContentText"
+import DialogTitle from "@material-ui/core/DialogTitle"
+import FormControl from "@material-ui/core/FormControl"
+import Select from "@material-ui/core/Select"
+import InputLabel from "@material-ui/core/InputLabel"
+import {Formik, Form, Field, ErrorMessage} from "formik"
+import * as Yup from "yup"
+import "date-fns"
+import {format} from "date-fns"
+import DateFnsUtils from "@date-io/date-fns"
+import Snackbar from "@material-ui/core/Snackbar"
 
-import EditIcon from "@material-ui/icons/Edit";
-import Card from "@material-ui/core/Card";
-import CardActions from "@material-ui/core/CardActions";
-import CardContent from "@material-ui/core/CardContent";
-import Typography from "@material-ui/core/Typography";
+import EditIcon from "@material-ui/icons/Edit"
+import Card from "@material-ui/core/Card"
+import CardActions from "@material-ui/core/CardActions"
+import CardContent from "@material-ui/core/CardContent"
+import Typography from "@material-ui/core/Typography"
 import {
   MuiPickersUtilsProvider,
   KeyboardTimePicker,
   KeyboardDatePicker,
-} from "@material-ui/pickers";
-import MuiAlert from "@material-ui/lab/Alert";
+} from "@material-ui/pickers"
+import MuiAlert from "@material-ui/lab/Alert"
 function Alert(props) {
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
+  return <MuiAlert elevation={6} variant="filled" {...props} />
 }
 
 // const rows = [
@@ -79,28 +79,28 @@ function Alert(props) {
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
-    return -1;
+    return -1
   }
   if (b[orderBy] > a[orderBy]) {
-    return 1;
+    return 1
   }
-  return 0;
+  return 0
 }
 
 function getComparator(order, orderBy) {
   return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
+    : (a, b) => -descendingComparator(a, b, orderBy)
 }
 
 function stableSort(array, comparator) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+  const stabilizedThis = array.map((el, index) => [el, index])
   stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
+    const order = comparator(a[0], b[0])
+    if (order !== 0) return order
+    return a[1] - b[1]
+  })
+  return stabilizedThis.map((el) => el[0])
 }
 
 const headCells = [
@@ -116,11 +116,11 @@ const headCells = [
     disablePadding: false,
     label: "Last Name",
   },
-  { id: "email", numeric: false, disablePadding: false, label: "Email" },
-  { id: "phone", numeric: false, disablePadding: false, label: "Phone" },
-  { id: "gender", numeric: false, disablePadding: false, label: "Gender" },
-  { id: "actions", numeric: false, disablePadding: false, label: "Actions" },
-];
+  {id: "email", numeric: false, disablePadding: false, label: "Email"},
+  {id: "phone", numeric: false, disablePadding: false, label: "Phone"},
+  {id: "gender", numeric: false, disablePadding: false, label: "Gender"},
+  {id: "actions", numeric: false, disablePadding: false, label: "Actions"},
+]
 
 function EnhancedTableHead(props) {
   const {
@@ -131,10 +131,10 @@ function EnhancedTableHead(props) {
     numSelected,
     rowCount,
     onRequestSort,
-  } = props;
+  } = props
   const createSortHandler = (property) => (event) => {
-    onRequestSort(event, property);
-  };
+    onRequestSort(event, property)
+  }
 
   return (
     <TableHead>
@@ -144,7 +144,7 @@ function EnhancedTableHead(props) {
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            inputProps={{ "aria-label": "select all desserts" }}
+            inputProps={{"aria-label": "select all desserts"}}
           />
         </TableCell>
         {headCells.map((headCell) => (
@@ -170,7 +170,7 @@ function EnhancedTableHead(props) {
         ))}
       </TableRow>
     </TableHead>
-  );
+  )
 }
 
 EnhancedTableHead.propTypes = {
@@ -181,7 +181,7 @@ EnhancedTableHead.propTypes = {
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
   rowCount: PropTypes.number.isRequired,
-};
+}
 
 const useToolbarStyles = makeStyles((theme) => ({
   root: {
@@ -201,11 +201,11 @@ const useToolbarStyles = makeStyles((theme) => ({
   title: {
     flex: "1 1 100%",
   },
-}));
+}))
 
 const EnhancedTableToolbar = (props) => {
-  const classes = useToolbarStyles();
-  const { numSelected } = props;
+  const classes = useToolbarStyles()
+  const {numSelected} = props
 
   return (
     <Toolbar
@@ -248,12 +248,12 @@ const EnhancedTableToolbar = (props) => {
         </Tooltip>
       )} */}
     </Toolbar>
-  );
-};
+  )
+}
 
 EnhancedTableToolbar.propTypes = {
   numSelected: PropTypes.number.isRequired,
-};
+}
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -288,158 +288,158 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(1),
     minWidth: 200,
   },
-}));
+}))
 
 const Users = (props) => {
-  const classes = useStyles();
-  const [search, setSearch] = useState("");
-  const [rows, setRows] = React.useState([]);
-  const [order, setOrder] = React.useState("asc");
-  const [orderBy, setOrderBy] = React.useState("last_name");
-  const [selected, setSelected] = React.useState([]);
-  const [selectedUser, setSelectedUser] = useState({});
-  const [editingUser, setEditingUser] = useState(false);
+  const classes = useStyles()
+  const [search, setSearch] = useState("")
+  const [rows, setRows] = React.useState([])
+  const [order, setOrder] = React.useState("asc")
+  const [orderBy, setOrderBy] = React.useState("last_name")
+  const [selected, setSelected] = React.useState([])
+  const [selectedUser, setSelectedUser] = useState({})
+  const [editingUser, setEditingUser] = useState(false)
 
-  const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [isSubmitionCompleted, setSubmitionCompleted] = useState(false);
+  const [page, setPage] = React.useState(0)
+  const [dense, setDense] = React.useState(false)
+  const [rowsPerPage, setRowsPerPage] = React.useState(5)
+  const [isSubmitionCompleted, setSubmitionCompleted] = useState(false)
 
   //Snack bar state
-  const [message, setMessage] = useState(props.message.message);
-  const [openSnackBar, setOpenSnackBar] = useState(true);
-  const [openErrorSnackBar, setOpenErrorSnackBar] = useState(false);
+  const [message, setMessage] = useState(props.message.message)
+  const [openSnackBar, setOpenSnackBar] = useState(true)
+  const [openErrorSnackBar, setOpenErrorSnackBar] = useState(false)
 
   //Create new user state
-  const [creatingUser, setCreatingUser] = useState(false);
-  const [selectedDate, setSelectedDate] = React.useState(new Date());
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [selectedDate, setSelectedDate] = React.useState(new Date())
 
   useEffect(() => {
-    props.getUsers();
-  }, []);
+    props.getUsers()
+  }, [])
 
   useEffect(() => {
-    setMessage(props.message.message);
-    setOpenSnackBar(true);
-  }, [props.message.message]);
+    setMessage(props.message.message)
+    setOpenSnackBar(true)
+  }, [props.message.message])
 
   //Check for successful requests
   useEffect(() => {
     //Close edit user modal
-    setEditingUser(false);
+    setEditingUser(false)
     //Close create user modal
-    setCreatingUser(false);
-    setSubmitionCompleted(true);
-  }, [props.snackbarreducer.success]);
+    setCreatingUser(false)
+    setSubmitionCompleted(true)
+  }, [props.snackbarreducer.success])
 
   useEffect(() => {
-    setRows(props.users);
-  }, [props.users]);
+    setRows(props.users)
+  }, [props.users])
 
   const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+    const isAsc = orderBy === property && order === "asc"
+    setOrder(isAsc ? "desc" : "asc")
+    setOrderBy(property)
+  }
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = rows.map((n) => n.id);
-      setSelected(newSelecteds);
-      return;
+      const newSelecteds = rows.map((n) => n.id)
+      setSelected(newSelecteds)
+      return
     }
-    setSelected([]);
-  };
+    setSelected([])
+  }
 
   const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
+    const selectedIndex = selected.indexOf(id)
+    let newSelected = []
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
+      newSelected = newSelected.concat(selected, id)
     } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
+      newSelected = newSelected.concat(selected.slice(1))
     } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
+      newSelected = newSelected.concat(selected.slice(0, -1))
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
         selected.slice(selectedIndex + 1)
-      );
+      )
     }
 
-    setSelected(newSelected);
-  };
+    setSelected(newSelected)
+  }
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+    setPage(newPage)
+  }
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
   const handleChangeDense = (event) => {
-    setDense(event.target.checked);
-  };
+    setDense(event.target.checked)
+  }
 
-  const isSelected = (id) => selected.indexOf(id) !== -1;
+  const isSelected = (id) => selected.indexOf(id) !== -1
 
   const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage)
 
   const onSearchChange = (e) => {
-    setSearch(e.target.value);
-  };
+    setSearch(e.target.value)
+  }
 
   const handleCreateNewUser = () => {
-    setSubmitionCompleted(false);
-    setCreatingUser(true);
-  };
+    setSubmitionCompleted(false)
+    setCreatingUser(true)
+  }
 
   //Edit user
 
   const handleDeleteUser = (user_id) => {
-    console.log(user_id);
-    props.deleteUser(user_id);
-  };
+    console.log(user_id)
+    props.deleteUser(user_id)
+  }
 
   //Delete user
 
   const handleEditUser = (user) => {
-    console.log("Edit User", user);
-    setEditingUser(!editingUser);
-    setSelectedUser(user);
+    console.log("Edit User", user)
+    setEditingUser(!editingUser)
+    setSelectedUser(user)
 
     // props.deleteUser(user_id);
-  };
+  }
 
   //Close modals
   const handleClose = () => {
-    setCreatingUser(false);
-  };
+    setCreatingUser(false)
+  }
 
   //Close SnackBars
   const handleSnackClose = (event, reason) => {
     if (reason === "clickaway") {
-      return;
+      return
     }
 
-    setOpenSnackBar(false);
-    setOpenErrorSnackBar(false);
-  };
+    setOpenSnackBar(false)
+    setOpenErrorSnackBar(false)
+  }
 
   //Handle date change
   const handleDateChange = (setFieldValue, date) => {
     // setSelectedDate(moment(date, "yyyy-MM-dd").format());
-    setFieldValue("date_of_birth", format(date, "yyyy-MM-dd"));
-  };
+    setFieldValue("date_of_birth", format(date, "yyyy-MM-dd"))
+  }
 
   //Cancel editing user
   const handleCancelEdit = () => {
-    setEditingUser(false);
-  };
+    setEditingUser(false)
+  }
 
   return (
     <div className={classes.root}>
@@ -469,11 +469,11 @@ const Users = (props) => {
                   </TableCell>
                   <TableCell align="right">
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       color="primary"
                       onClick={handleCreateNewUser}
                     >
-                      Add new
+                      + Add new
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -525,12 +525,12 @@ const Users = (props) => {
                         password: "",
                         confirm_password: "",
                       }}
-                      onSubmit={(values, { setSubmitting }) => {
-                        props.addUser(values);
+                      onSubmit={(values, {setSubmitting}) => {
+                        props.addUser(values)
 
-                        setOpenErrorSnackBar(true);
+                        setOpenErrorSnackBar(true)
 
-                        console.log(values);
+                        console.log(values)
                       }}
                       validationSchema={Yup.object().shape({
                         first_name: Yup.string().required(
@@ -567,28 +567,36 @@ const Users = (props) => {
                           handleBlur,
                           handleSubmit,
                           handleReset,
-                        } = props;
+                        } = props
                         return (
                           <form onSubmit={handleSubmit}>
                             <div>
-                              <TextField
-                                fullWidth
-                                margin="normal"
-                                variant="outlined"
-                                error={errors.first_name && touched.first_name}
-                                label="First Name:"
-                                name="first_name"
-                                type="text"
-                                value={values.first_name}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                helperText={
-                                  errors.first_name &&
-                                  touched.first_name &&
-                                  errors.first_name
-                                }
-                                autoFocus
-                              />
+                              <Grid container>
+                                <Grid item xs={6}>
+                                  <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    variant="outlined"
+                                    error={
+                                      errors.first_name && touched.first_name
+                                    }
+                                    label="First Name:"
+                                    name="first_name"
+                                    type="text"
+                                    value={values.first_name}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    helperText={
+                                      errors.first_name &&
+                                      touched.first_name &&
+                                      errors.first_name
+                                    }
+                                    autoFocus
+                                  />
+                                </Grid>
+                                <Grid item xs={6}></Grid>
+                              </Grid>
+
                               <TextField
                                 fullWidth
                                 margin="normal"
@@ -786,7 +794,7 @@ const Users = (props) => {
                               </DialogActions>
                             </div>
                           </form>
-                        );
+                        )
                       }}
                     </Formik>
                   </DialogContent>
@@ -822,15 +830,15 @@ const Users = (props) => {
                         first_name: selectedUser.first_name,
                         last_name: selectedUser.last_name,
                       }}
-                      onSubmit={(values, { setSubmitting }) => {
+                      onSubmit={(values, {setSubmitting}) => {
                         // setSubmitting(props.submissionSuccessful);
 
                         // props.addUser(values);
                         // setSubmitionCompleted(props.submissionSuccessful);
-                        setOpenErrorSnackBar(true);
+                        setOpenErrorSnackBar(true)
 
-                        console.log(values);
-                        props.changeUser(values, selectedUser.id);
+                        console.log(values)
+                        props.changeUser(values, selectedUser.id)
                       }}
                       validationSchema={Yup.object().shape({
                         first_name: Yup.string().required(
@@ -853,7 +861,7 @@ const Users = (props) => {
                           handleBlur,
                           handleSubmit,
                           handleReset,
-                        } = props;
+                        } = props
                         return (
                           <form onSubmit={handleSubmit}>
                             <div>
@@ -915,7 +923,7 @@ const Users = (props) => {
                               </DialogActions>
                             </div>
                           </form>
-                        );
+                        )
                       }}
                     </Formik>
                   </DialogContent>
@@ -961,8 +969,8 @@ const Users = (props) => {
                     row.last_name.includes(search)
                 )
                 .map((row, index) => {
-                  const isItemSelected = isSelected(row.id);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+                  const isItemSelected = isSelected(row.id)
+                  const labelId = `enhanced-table-checkbox-${index}`
 
                   return (
                     <TableRow hover>
@@ -976,7 +984,7 @@ const Users = (props) => {
                           key={row.id}
                           selected={isItemSelected}
                           checked={isItemSelected}
-                          inputProps={{ "aria-labelledby": labelId }}
+                          inputProps={{"aria-labelledby": labelId}}
                         />
                       </TableCell>
                       <TableCell
@@ -1010,10 +1018,10 @@ const Users = (props) => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  );
+                  )
                 })}
               {emptyRows > 0 && (
-                <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
+                <TableRow style={{height: (dense ? 33 : 53) * emptyRows}}>
                   <TableCell colSpan={6} />
                 </TableRow>
               )}
@@ -1035,8 +1043,8 @@ const Users = (props) => {
         label="Dense padding"
       />
     </div>
-  );
-};
+  )
+}
 
 const mapStateToProps = (state) => {
   return {
@@ -1046,12 +1054,12 @@ const mapStateToProps = (state) => {
     message: state.messages,
     error: state.errors,
     utility: state.utility,
-  };
-};
+  }
+}
 
 export default connect(mapStateToProps, {
   getUsers,
   addUser,
   deleteUser,
   changeUser,
-})(Users);
+})(Users)

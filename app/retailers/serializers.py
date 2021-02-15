@@ -674,13 +674,13 @@ class PharmacyPaymentsSerializer(FacilitySafeSerializerMixin, serializers.Hyperl
         return self.order.get_total_price()
 
 
-class RetailProductPhotosSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = models.RetailProductPhotos
-        fields = "__all__"
-        read_only_fields = (
-            'variation', 'owner'
-        )
+# class RetailProductPhotosSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+#     class Meta:
+#         model = models.RetailProductPhotos
+#         fields = "__all__"
+#         read_only_fields = (
+#             'variation', 'owner'
+#         )
 
 
 class RetailVariationsDisplaySerializer(serializers.HyperlinkedModelSerializer):
@@ -697,54 +697,54 @@ class RetailVariationsDisplaySerializer(serializers.HyperlinkedModelSerializer):
 # Not using FacilitySafeSerializerMixin to allow global view of products
 
 
-class RetailProductsSerializer(serializers.HyperlinkedModelSerializer):
-    # variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
-    product_details = serializers.SerializerMethodField(read_only=True)
-    variations = serializers.SerializerMethodField(read_only=True)
+# class RetailProductsSerializer(serializers.HyperlinkedModelSerializer):
+#     # variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
+#     product_details = serializers.SerializerMethodField(read_only=True)
+#     variations = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
-        model = models.RetailProducts
-        fields = (
-            'id',  'facility', 'url', 'product', 'get_available_units', 'get_available_packs', 'product_details', 'variations',
-            'created', 'updated', 'owner', 'is_active',
-        )
-        read_only_fields = (
-            'created', 'updated', 'owner', 'facility', 'is_active'
-        )
+#     class Meta:
+#         model = models.RetailProducts
+#         fields = (
+#             'id',  'facility', 'url', 'product', 'get_available_units', 'get_available_packs', 'product_details', 'variations',
+#             'created', 'updated', 'owner', 'is_active',
+#         )
+#         read_only_fields = (
+#             'created', 'updated', 'owner', 'facility', 'is_active'
+#         )
 
-    def get_product_details(self, obj):
-        if obj.product:
-            product = Products.objects.get_by_id(id=obj.product.id)
-            return ProductsSerializer(product, context=self.context).data
+#     def get_product_details(self, obj):
+#         if obj.product:
+#             product = Products.objects.get_by_id(id=obj.product.id)
+#             return ProductsSerializer(product, context=self.context).data
 
-    def get_variations(self, obj):
+#     def get_variations(self, obj):
 
-        items = models.RetailVariations.objects.filter(retail_product=obj)
-        return RetailVariationsDisplaySerializer(items, context=self.context, many=True).data
+#         items = models.RetailVariations.objects.filter(retail_product=obj)
+#         return RetailVariationsDisplaySerializer(items, context=self.context, many=True).data
 
-    @transaction.atomic
-    def create(self, validated_data):
+#     @transaction.atomic
+#     def create(self, validated_data):
 
-        user_pk = self.context.get("user_pk")
+#         user_pk = self.context.get("user_pk")
 
-        user = User.objects.get(id=user_pk)
-        # title = validated_data.pop('title')
-        product = validated_data.pop('product')
-        # category = validated_data.pop('category')
+#         user = User.objects.get(id=user_pk)
+#         # title = validated_data.pop('title')
+#         product = validated_data.pop('product')
+#         # category = validated_data.pop('category')
 
-        if user.facility == Facility.objects.default_facility():
-            raise serializers.ValidationError(
-                f"You are not allowed to create inventory in this facility")
-        if product:
-            if models.RetailProducts.objects.filter(product=product, facility=user.facility).count() > 0:
-                raise serializers.ValidationError(
-                    {"response_code": 1, "response_message": f"{product.title} already added to facility"})
+#         if user.facility == Facility.objects.default_facility():
+#             raise serializers.ValidationError(
+#                 f"You are not allowed to create inventory in this facility")
+#         if product:
+#             if models.RetailProducts.objects.filter(product=product, facility=user.facility).count() > 0:
+#                 raise serializers.ValidationError(
+#                     {"response_code": 1, "response_message": f"{product.title} already added to facility"})
 
-            else:
-                created = models.RetailProducts.objects.create(
-                    product=product, **validated_data)
+#             else:
+#                 created = models.RetailProducts.objects.create(
+#                     product=product, **validated_data)
 
-        return created
+#         return created
 
 
 class RetailVariationsSerializer(serializers.HyperlinkedModelSerializer):
@@ -758,25 +758,25 @@ class RetailVariationsSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class RetailProductsUpdateSerializer(serializers.HyperlinkedModelSerializer):
-    variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
-    product_details = serializers.SerializerMethodField(read_only=True)
+# class RetailProductsUpdateSerializer(serializers.HyperlinkedModelSerializer):
+#     variation_images = RetailProductPhotosSerializer(many=True, read_only=True)
+#     product_details = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
-        model = models.RetailProducts
-        fields = (
-            'id',  'facility', 'url',
-            'created', 'updated', 'owner', 'product', 'is_active', 'variation_images', 'product_details',
-        )
-        read_only_fields = (
-            'created', 'updated', 'owner',  'is_active', 'facility', 'product',
-        )
+#     class Meta:
+#         model = models.RetailProducts
+#         fields = (
+#             'id',  'facility', 'url',
+#             'created', 'updated', 'owner', 'product', 'is_active', 'variation_images', 'product_details',
+#         )
+#         read_only_fields = (
+#             'created', 'updated', 'owner',  'is_active', 'facility', 'product',
+#         )
 
-    def get_product_details(self, obj):
-        if obj.product:
-            product = Products.objects.get_by_id(id=obj.product.id)
-            return ProductsSerializer(product, context=self.context).data
+#     def get_product_details(self, obj):
+#         if obj.product:
+#             product = Products.objects.get_by_id(id=obj.product.id)
+#             return ProductsSerializer(product, context=self.context).data
 
-    def delete(self):
-        raise serializers.ValidationError(
-            {"response_code": 1, "response_message": "Item cannot be deleted"})
+#     def delete(self):
+#         raise serializers.ValidationError(
+#             {"response_code": 1, "response_message": "Item cannot be deleted"})

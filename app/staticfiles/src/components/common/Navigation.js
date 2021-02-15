@@ -1,25 +1,25 @@
-import React, { useState, Fragment } from "react";
-import { withStyles } from "@material-ui/core/styles";
-import Drawer from "@material-ui/core/Drawer";
-import Grid from "@material-ui/core/Grid";
-import Button from "@material-ui/core/Button";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListSubheader from "@material-ui/core/ListSubheader";
-import Typography from "@material-ui/core/Typography";
-import Collapse from "@material-ui/core/Collapse";
-import AddIcon from "@material-ui/icons/Add";
-import RemoveIcon from "@material-ui/icons/Remove";
-import ShowChartIcon from "@material-ui/icons/ShowChart";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import IconButton from "@material-ui/core/IconButton";
-import MenuIcon from "@material-ui/icons/Menu";
-import { useHistory } from "react-router-dom";
-import { logout } from "../../actions/auth";
-import { useDispatch, useSelector } from "react-redux";
+import React, {useState, Fragment} from "react"
+import {withStyles} from "@material-ui/core/styles"
+import Drawer from "@material-ui/core/Drawer"
+import Grid from "@material-ui/core/Grid"
+import Button from "@material-ui/core/Button"
+import List from "@material-ui/core/List"
+import ListItem from "@material-ui/core/ListItem"
+import ListItemIcon from "@material-ui/core/ListItemIcon"
+import ListItemText from "@material-ui/core/ListItemText"
+import ListSubheader from "@material-ui/core/ListSubheader"
+import Typography from "@material-ui/core/Typography"
+import Collapse from "@material-ui/core/Collapse"
+import AddIcon from "@material-ui/icons/Add"
+import RemoveIcon from "@material-ui/icons/Remove"
+import ShowChartIcon from "@material-ui/icons/ShowChart"
+import AppBar from "@material-ui/core/AppBar"
+import Toolbar from "@material-ui/core/Toolbar"
+import IconButton from "@material-ui/core/IconButton"
+import MenuIcon from "@material-ui/icons/Menu"
+import {useHistory} from "react-router-dom"
+import {logout} from "../../actions/auth"
+import {useDispatch, useSelector} from "react-redux"
 
 const styles = (theme) => ({
   root: {
@@ -47,13 +47,13 @@ const styles = (theme) => ({
       background: "inherit",
     },
   },
-});
+})
 
-const ListItems = ({ items, visible, onClick }) => (
+const ListItems = ({items, visible, onClick}) => (
   <Collapse in={visible}>
     {items
-      .filter(({ hidden }) => !hidden)
-      .map(({ label, disabled, Icon }, i) => (
+      .filter(({hidden}) => !hidden)
+      .map(({label, disabled, Icon}, i) => (
         <ListItem button key={i} disabled={disabled} onClick={onClick(label)}>
           <ListItemIcon>
             <Icon />
@@ -62,123 +62,122 @@ const ListItems = ({ items, visible, onClick }) => (
         </ListItem>
       ))}
   </Collapse>
-);
+)
 
-const Navigation = withStyles(styles)(({ classes, user }) => {
-  const dispatch = useDispatch();
-  console.log("user here", user);
+const Navigation = withStyles(styles)(({classes, user}) => {
+  const dispatch = useDispatch()
+  console.log("user here", user)
 
-  const history = useHistory();
-  const [open, setOpen] = useState(false);
-  const [drawer, setDrawer] = useState(false);
-  const [content, setContent] = useState("Home");
+  const history = useHistory()
+  const [open, setOpen] = useState(false)
+  const [drawer, setDrawer] = useState(false)
+  const [content, setContent] = useState("Home")
   const [items] = useState({
     ADMIN: [
-      { label: "Users", Icon: AddIcon },
-      { label: "Body Systems", Icon: RemoveIcon },
-      { label: "Drug Classes", Icon: ShowChartIcon },
-      { label: "Drug Sub Classes", Icon: ShowChartIcon },
-      { label: "Drug Formulations", Icon: ShowChartIcon },
-      { label: "Drug Generics", Icon: ShowChartIcon },
-      { label: "Drug Preparations", Icon: ShowChartIcon },
-      { label: "Drug Posologies", Icon: ShowChartIcon },
-      { label: "Drug Intake Frequencies", Icon: ShowChartIcon },
-      { label: "Drug Intake Instructions", Icon: ShowChartIcon },
-      { label: "Drug Products", Icon: ShowChartIcon },
-      { label: "Drug Manufacturers", Icon: ShowChartIcon },
-      { label: "Drug Distributors", Icon: ShowChartIcon },
+      {label: "Users", Icon: AddIcon},
+      {label: "Body Systems", Icon: RemoveIcon},
+      {label: "Drug Classes", Icon: ShowChartIcon},
+      {label: "Drug Sub Classes", Icon: ShowChartIcon},
+      {label: "Drug Formulations", Icon: ShowChartIcon},
+      {label: "Drug Generics", Icon: ShowChartIcon},
+      {label: "Drug Preparations", Icon: ShowChartIcon},
+      {label: "Drug Posologies", Icon: ShowChartIcon},
+      {label: "Drug Intake Frequencies", Icon: ShowChartIcon},
+      {label: "Drug Intake Instructions", Icon: ShowChartIcon},
+      {label: "Drug Products", Icon: ShowChartIcon},
+      {label: "Drug Manufacturers", Icon: ShowChartIcon},
+      {label: "Drug Distributors", Icon: ShowChartIcon},
     ],
     CLIENTS: [
-      { label: "Add Memory", Icon: AddIcon },
-      { label: "Usage", Icon: ShowChartIcon },
+      {label: "Add Memory", Icon: AddIcon},
+      {label: "Usage", Icon: ShowChartIcon},
     ],
     PHARMACISTS: [
-      { label: "Add Storage", Icon: AddIcon },
-      { label: "Usage", Icon: ShowChartIcon },
+      {label: "Add Storage", Icon: AddIcon},
+      {label: "Usage", Icon: ShowChartIcon},
     ],
     PRESCRIBERS: [
-      { label: "Add Network", Icon: AddIcon, disabled: true },
-      { label: "Usage", Icon: ShowChartIcon },
+      {label: "Add Network", Icon: AddIcon, disabled: true},
+      {label: "Usage", Icon: ShowChartIcon},
     ],
-  });
+  })
   const [sections, setSections] = useState({
     ADMIN: true,
     CLIENTS: false,
     PHARMACISTS: false,
     PRESCRIBERS: false,
-  });
+  })
 
   const onClick = (content) => () => {
-    setOpen(false);
-    setContent(content);
+    setOpen(false)
+    setContent(content)
     if (content == "Users") {
-      history.push("/users");
+      history.push("/users")
     }
 
     if (content == "Body Systems") {
-      history.push("/body_systems");
+      history.push("/body_systems")
     }
 
     if (content == "Drug Classes") {
-      history.push("/drug_classes");
+      history.push("/drug_classes")
     }
 
     if (content == "Drug Sub Classes") {
-      history.push("/sub_classes");
+      history.push("/sub_classes")
     }
     if (content == "Drug Formulations") {
-      history.push("/formulations");
+      history.push("/formulations")
     }
 
     if (content == "Drug Generics") {
-      history.push("/generics");
+      history.push("/generics")
     }
 
     if (content == "Drug Preparations") {
-      history.push("/preparations");
+      history.push("/preparations")
     }
 
     if (content == "Drug Posologies") {
-      history.push("/posologies");
+      history.push("/posologies")
     }
 
     if (content == "Drug Intake Frequencies") {
-      history.push("/frequencies");
+      history.push("/frequencies")
     }
 
     if (content == "Drug Intake Instructions") {
-      history.push("/instructions");
+      history.push("/instructions")
     }
 
     if (content == "Drug Manufacturers") {
-      history.push("/manufacturers");
+      history.push("/manufacturers")
     }
 
     if (content == "Drug Distributors") {
-      history.push("/distributors");
+      history.push("/distributors")
     }
 
     if (content == "Drug Products") {
-      history.push("/products");
+      history.push("/products")
     }
     if (content == "") {
-      history.push("/");
+      history.push("/")
     }
-  };
+  }
   const toggleDrawer = () => {
-    setOpen(!open);
-  };
+    setOpen(!open)
+  }
   const onLogOut = () => {
-    dispatch(logout());
+    dispatch(logout())
     console.log("logout again")
-    
-  };
+  }
 
   const toggleSection = (name) => () => {
-    setSections({ ...sections, [name]: !sections[name] });
-  };
+    setSections({...sections, [name]: !sections[name]})
+  }
 
-  const MyToolbar = withStyles(styles)(({ classes, title, onMenuClick }) => (
+  const MyToolbar = withStyles(styles)(({classes, title, onMenuClick}) => (
     <Fragment>
       <AppBar className={classes.aboveDrawer}>
         <Toolbar>
@@ -201,7 +200,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
       </AppBar>
       <div className={classes.toolbarMargin} />
     </Fragment>
-  ));
+  ))
 
   return (
     <div className={classes.root}>
@@ -219,7 +218,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
                   <ListSubheader>
                     <Button
                       disableRipple
-                      classes={{ root: classes.listSubheader }}
+                      classes={{root: classes.listSubheader}}
                       onClick={toggleSection("ADMIN")}
                     >
                       ADMIN
@@ -236,7 +235,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
               <ListSubheader>
                 <Button
                   disableRipple
-                  classes={{ root: classes.listSubheader }}
+                  classes={{root: classes.listSubheader}}
                   onClick={toggleSection("CLIENTS")}
                 >
                   CLIENTS
@@ -254,7 +253,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
                   <ListSubheader>
                     <Button
                       disableRipple
-                      classes={{ root: classes.listSubheader }}
+                      classes={{root: classes.listSubheader}}
                       onClick={toggleSection("PHARMACISTS")}
                     >
                       PHARMACISTS
@@ -274,7 +273,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
                   <ListSubheader>
                     <Button
                       disableRipple
-                      classes={{ root: classes.listSubheader }}
+                      classes={{root: classes.listSubheader}}
                       onClick={toggleSection("PRESCRIBERS")}
                     >
                       PRESCRIBERS
@@ -292,7 +291,7 @@ const Navigation = withStyles(styles)(({ classes, user }) => {
         </Grid>
       </Grid>
     </div>
-  );
-});
+  )
+})
 
-export default Navigation;
+export default Navigation

@@ -10,7 +10,7 @@ from django.db import models
 from users.models import Facility
 from drugs.models import Products
 from core.models import FacilityRelatedModel
-# from drugs.models import Distributor
+from wholesales.models import Invoices
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.db.models.signals import post_save, pre_save
@@ -30,117 +30,117 @@ def retail_product_image_upload_to(instance, filename):
     return new_filename
 
 
-class RetailProductsQuerySet(models.query.QuerySet):
-    def active(self):
-        return self.filter(active=True)
+# class RetailProductsQuerySet(models.query.QuerySet):
+#     def active(self):
+#         return self.filter(active=True)
 
-    def featured(self):
-        return self.filter(featured=True, active=True)
+#     def featured(self):
+#         return self.filter(featured=True, active=True)
 
-    def search(self, query):
-        lookups = (Q(title__icontains=query) |
-                   Q(description__icontains=query) |
-                   Q(price__icontains=query) |
-                   Q(tag__title__icontains=query)
-                   )
-    # tshirt, t-shirt, t shirt, red, green, blue,
-        return self.filter(lookups).distinct()
-
-
-class RetailProductsManager(models.Manager):
-    def get_queryset(self):
-        return RetailProductsQuerySet(self.model, using=self._db)
-
-    def all(self):
-        return self.get_queryset().all()
-
-    def featured(self):  # RetailProducts.objects.featured()
-        return self.get_queryset().featured()
-
-    def get_by_id(self, id):
-        # RetailProducts.objects == self.get_queryset()
-        qs = self.get_queryset().filter(id=id)
-        if qs.count() == 1:
-            return qs.first()
-        return None
-
-    def search(self, query):
-        return self.get_queryset().active().search(query)
+#     def search(self, query):
+#         lookups = (Q(title__icontains=query) |
+#                    Q(description__icontains=query) |
+#                    Q(price__icontains=query) |
+#                    Q(tag__title__icontains=query)
+#                    )
+#     # tshirt, t-shirt, t shirt, red, green, blue,
+#         return self.filter(lookups).distinct()
 
 
-class RetailProducts(FacilityRelatedModel):
-    """
-    -Model for retail product retail product, unique to each facility
-    -Inherits most of its parameters from Products
+# class RetailProductsManager(models.Manager):
+#     def get_queryset(self):
+#         return RetailProductsQuerySet(self.model, using=self._db)
 
-    """
-    product = models.ForeignKey(
-        Products, related_name="retail_products_product", on_delete=models.CASCADE, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    featured = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE)
+#     def all(self):
+#         return self.get_queryset().all()
 
-    objects = RetailProductsManager()
+#     def featured(self):  # RetailProducts.objects.featured()
+#         return self.get_queryset().featured()
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['facility', 'product'], name='one product per facility')
-        ]
+#     def get_by_id(self, id):
+#         # RetailProducts.objects == self.get_queryset()
+#         qs = self.get_queryset().filter(id=id)
+#         if qs.count() == 1:
+#             return qs.first()
+#         return None
 
-    def __str__(self):
-        return f"{self.product.title}"
-
-    def get_price(self):
-        if self.sale_price is not None:
-            return self.sale_price
-        else:
-            return self.price
-
-    def get_absolute_url(self):
-        return self.product.get_absolute_url()
-
-    def get_available_units(self):
-        available_units = 0
-        if RetailVariations.objects.filter(retail_product=self).count() > 0:
-            items = RetailVariations.objects.filter(retail_product=self)
-
-            for item in items:
-                available_units += item.unit_quantity
-        return available_units
-
-    def get_available_packs(self):
-        available_packs = 0
-        if RetailVariations.objects.filter(retail_product=self).count() > 0:
-            items = RetailVariations.objects.filter(retail_product=self)
-
-            for item in items:
-                available_packs += item.pack_quantity
-
-        return available_packs
+#     def search(self, query):
+#         return self.get_queryset().active().search(query)
 
 
-# TODO : When a product is deactivated all retail product should be deactivated too
-# A product retail product with retail variation greater than one cannot be activated
+# class RetailProducts(FacilityRelatedModel):
+#     """
+#     -Model for retail product retail product, unique to each facility
+#     -Inherits most of its parameters from Products
 
-# TODO update retail product retail variation upon release to outlets
+#     """
+#     product = models.ForeignKey(
+#         Products, related_name="retail_products_product", on_delete=models.CASCADE, null=True, blank=True)
+#     is_active = models.BooleanField(default=True)
+#     featured = models.BooleanField(default=False)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
+#     owner = models.ForeignKey(
+#         User, on_delete=models.CASCADE)
+
+#     objects = RetailProductsManager()
+
+#     class Meta:
+#         constraints = [
+#             models.UniqueConstraint(
+#                 fields=['facility', 'product'], name='one product per facility')
+#         ]
+
+#     def __str__(self):
+#         return f"{self.product.title}"
+
+#     def get_price(self):
+#         if self.sale_price is not None:
+#             return self.sale_price
+#         else:
+#             return self.price
+
+#     def get_absolute_url(self):
+#         return self.product.get_absolute_url()
+
+#     def get_available_units(self):
+#         available_units = 0
+#         if RetailVariations.objects.filter(retail_product=self).count() > 0:
+#             items = RetailVariations.objects.filter(retail_product=self)
+
+#             for item in items:
+#                 available_units += item.unit_quantity
+#         return available_units
+
+#     def get_available_packs(self):
+#         available_packs = 0
+#         if RetailVariations.objects.filter(retail_product=self).count() > 0:
+#             items = RetailVariations.objects.filter(retail_product=self)
+
+#             for item in items:
+#                 available_packs += item.pack_quantity
+
+#         return available_packs
 
 
-class RetailProductPhotos(FacilityRelatedModel):
-    """Model for uploading profile product image"""
-    retail_product = models.ForeignKey(
-        RetailProducts, related_name="retail_product_images", on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=retail_product_image_upload_to)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(
-        User, on_delete=models.CASCADE)
+# # TODO : When a product is deactivated all retail product should be deactivated too
+# # A product retail product with retail variation greater than one cannot be activated
 
-    def __str__(self):
-        return self.retail_product.title
+# # TODO update retail product retail variation upon release to outlets
+
+
+# class RetailProductPhotos(FacilityRelatedModel):
+#     """Model for uploading profile product image"""
+#     retail_product = models.ForeignKey(
+#         RetailProducts, related_name="retail_product_images", on_delete=models.CASCADE)
+#     image = models.ImageField(upload_to=retail_product_image_upload_to)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
+#     owner = models.ForeignKey(
+#         User, on_delete=models.CASCADE)
+
+#     def __str__(self):
+#         return self.retail_product.title
 
 
 class RetailVariations(FacilityRelatedModel):
@@ -148,10 +148,12 @@ class RetailVariations(FacilityRelatedModel):
         Facility, related_name="retail_variation_facility", on_delete=models.CASCADE, null=True, blank=True)
     batch = models.CharField(max_length=50, null=True,
                              blank=True, editable=True)
-    retail_product = models.ForeignKey(
-        RetailProducts, on_delete=models.CASCADE)
     product = models.ForeignKey(
-        Products, related_name="retail_product_images", on_delete=models.CASCADE, null=True, blank=True)
+        Products, related_name="retail_variation_product", on_delete=models.CASCADE)
+
+    invoice = models.ForeignKey(
+        Products, related_name="wholesaler_invoice", on_delete=models.CASCADE, null=True, blank=True)
+
     units_per_pack = models.IntegerField(default=0)
     pack_quantity = models.IntegerField(default=0)
     pack_buying_price = models.DecimalField(
@@ -166,6 +168,7 @@ class RetailVariations(FacilityRelatedModel):
     description = models.CharField(max_length=120, blank=True, null=True)
     manufacture_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
+    in_placement = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -279,8 +282,8 @@ class QuoteItem(FacilityRelatedModel):
         PrescriptionQuote, on_delete=models.CASCADE, null=True, blank=True)
     prescription_item = models.ForeignKey(
         PrescriptionItem, related_name="prescription_item", on_delete=models.CASCADE, null=True, blank=True)
-    retail_product = models.ForeignKey(
-        RetailProducts, related_name="quote_item_retail_variation", on_delete=models.CASCADE, null=True, blank=True)
+    retail_variation = models.ForeignKey(
+        RetailVariations, related_name="quote_item_retail_variation", on_delete=models.CASCADE, null=True, blank=True)
     quantity_required = models.IntegerField(default=0)
     quantity_dispensed = models.IntegerField(default=0)
     quantity_pending = models.IntegerField(default=0)
@@ -302,7 +305,7 @@ class QuoteItem(FacilityRelatedModel):
 
     class Meta:
         unique_together = ('prescription_quote',
-                           'prescription_item', 'retail_product')
+                           'prescription_item', )
 
 
 class Order(FacilityRelatedModel):

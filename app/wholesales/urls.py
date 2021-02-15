@@ -92,11 +92,19 @@ urlpatterns = [
     path('requisition-payments/<uuid:pk>/update', views.RequisitionPaymentsUpdateAPIView.as_view(),
          name=views.RequisitionPaymentsUpdateAPIView.name),
 
-    path('invoices', views.InvoicesListAPIView.as_view(),
-         name=views.InvoicesListAPIView.name),
+    path('invoices/retailer', views.InvoicesListForRetailer.as_view(),
+         name=views.InvoicesListForRetailer.name),
+    path('invoices/wholesaler', views.InvoicesListForWholesaler.as_view(),
+         name=views.InvoicesListForWholesaler.name),
     path('invoices/<uuid:pk>', views.InvoicesDetailAPIView.as_view(),
          name=views.InvoicesDetailAPIView.name),
-    path('invoices/<uuid:pk>/update', views.InvoicesUpdateAPIView.as_view(),
-         name=views.InvoicesUpdateAPIView.name),
+    path('invoices/<uuid:pk>/retailer-update', views.InvoicesUpdateForRetailer.as_view(),
+         name=views.InvoicesUpdateForRetailer.name),
+    path('invoices/<uuid:pk>/wholesaler-update', views.InvoicesUpdateForWholesaler.as_view(),
+         name=views.InvoicesUpdateForWholesaler.name),
+    path('invoices/<uuid:pk>/retailer-update', views.InvoicesUpdateForRetailer.as_view(),
+         name=views.InvoicesUpdateForRetailer.name),
+    path('invoices/<uuid:pk>/courier-update', views.InvoicesUpdateForCourier.as_view(),
+         name=views.InvoicesUpdateForCourier.name),
 
 ]

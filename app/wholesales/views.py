@@ -1135,38 +1135,44 @@ class RequisitionPaymentsUpdateAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class InvoicesListAPIView(generics.ListAPIView):
+class InvoicesListForRetailer(generics.ListAPIView):
     """
     Authenticated user
     ---------------------------------------------------
     View list of despatch payments
     """
     name = "invoices-list"
-    permission_classes = (permissions.IsAuthenticated,
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
                           )
     serializer_class = serializers.InvoicesSerializer
 
     queryset = models.Invoices.objects.all()
-    # TODO : Reuse this for filtering by q.
+    search_fields = ('invoice__requisition__wholesale__title', 'invoice__requisition__facility__title'
+                     )
+    ordering_fields = ('invoice__requisition__wholesale__title', 'id')
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(InvoicesListAPIView, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
+    def get_queryset(self):
+        return super().get_queryset().filter(facility=self.request.user.facility,)
 
-    def get_queryset(self, *args, **kwargs):
-        qs = super(InvoicesListAPIView,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
 
-        return qs
+class InvoicesListForWholesaler(generics.ListAPIView):
+    """
+    Authenticated user
+    ---------------------------------------------------
+    View list of despatch payments
+    """
+    name = "invoices-list"
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
+                          )
+    serializer_class = serializers.InvoicesSerializer
+
+    queryset = models.Invoices.objects.all()
+    search_fields = ('invoice__requisition__wholesale__title', 'invoice__requisition__facility__title'
+                     )
+    ordering_fields = ('invoice__requisition__wholesale__title', 'id')
+
+    def get_queryset(self):
+        return super().get_queryset().filter(wholesale=self.request.user.facility,)
 
 
 class InvoicesDetailAPIView(generics.RetrieveAPIView):
@@ -1193,7 +1199,7 @@ class InvoicesDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class InvoicesUpdateAPIView(generics.RetrieveUpdateAPIView):
+class InvoicesUpdateForRetailer(generics.RetrieveUpdateAPIView):
     """
     Retail Superintendent
     ---------------------------------------------------------------
@@ -1203,16 +1209,87 @@ class InvoicesUpdateAPIView(generics.RetrieveUpdateAPIView):
     -Load items to retail
     """
     name = "invoices-update"
-    permission_classes = (permissions.IsAuthenticated, app_permissions.IsOwner,
+    permission_classes = (app_permissions.PharmacySuperintendentPermission,
                           )
-    serializer_class = serializers.InvoicesSerializer
+    serializer_class = serializers.InvoicesUpdateSerializerForRetailer
     queryset = models.Invoices.objects.all()
     lookup_fields = ('pk',)
 
     def get_serializer_context(self):
         user_pk = self.request.user.id
         requisition_pk = self.kwargs.get("pk")
-        context = super(InvoicesUpdateAPIView,
+        context = super(InvoicesUpdateForRetailer,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class InvoicesUpdateForWholesaler(generics.RetrieveUpdateAPIView):
+    """
+    Retail Superintendent
+    ---------------------------------------------------------------
+    -Update requisition payment to SUCCESS
+    -Done after succesfull outsourced payment processing e.g mpesa, visa
+    -Part of checkout process
+    -Load items to retail
+    """
+    name = "invoices-update"
+    permission_classes = (app_permissions.WholesaleSuperintendentPermission,
+                          )
+    serializer_class = serializers.InvoicesUpdateSerializerForWholesaler
+    queryset = models.Invoices.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+        context = super(InvoicesUpdateForWholesaler,
+                        self).get_serializer_context()
+        context.update({
+            "user_pk": user_pk})
+        return context
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class InvoicesUpdateForCourier(generics.RetrieveUpdateAPIView):
+    """
+    Courier
+    ---------------------------------------------------------------
+    -Update invoice on succesfull delivery
+
+    """
+    name = "invoices-update"
+    permission_classes = (app_permissions.CourierPermission,
+                          )
+    serializer_class = serializers.InvoicesUpdateSerializerForCourier
+    queryset = models.Invoices.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        requisition_pk = self.kwargs.get("pk")
+
+        context = super(InvoicesUpdateForCourier,
                         self).get_serializer_context()
         context.update({
             "user_pk": user_pk})

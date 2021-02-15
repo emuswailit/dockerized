@@ -1,100 +1,100 @@
-import React, { useState, useEffect, Fragment, useSelector } from "react";
-import PropTypes from "prop-types";
-import clsx from "clsx";
-import { lighten, makeStyles } from "@material-ui/core/styles";
-import Table from "@material-ui/core/Table";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
-import TableHead from "@material-ui/core/TableHead";
-import TablePagination from "@material-ui/core/TablePagination";
-import TableRow from "@material-ui/core/TableRow";
-import Toolbar from "@material-ui/core/Toolbar";
-import Checkbox from "@material-ui/core/Checkbox";
-import IconButton from "@material-ui/core/IconButton";
-import Tooltip from "@material-ui/core/Tooltip";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import Switch from "@material-ui/core/Switch";
-import DeleteIcon from "@material-ui/icons/Delete";
-import FilterListIcon from "@material-ui/icons/FilterList";
-import TableSortLabel from "@material-ui/core/TableSortLabel";
-import Paper from "@material-ui/core/Paper";
-import TextField from "@material-ui/core/TextField";
-import InputAdornment from "@material-ui/core/InputAdornment";
-import SearchIcon from "@material-ui/icons/Search";
-import TableFooter from "@material-ui/core/TableFooter";
-import Button from "@material-ui/core/Button";
-import FirstPageIcon from "@material-ui/icons/FirstPage";
-import KeyboardArrowLeft from "@material-ui/icons/KeyboardArrowLeft";
-import KeyboardArrowRight from "@material-ui/icons/KeyboardArrowRight";
-import LastPageIcon from "@material-ui/icons/LastPage";
-import { MenuItem, Input, FormHelperText } from "@material-ui/core";
+import React, {useState, useEffect, Fragment, useSelector} from "react"
+import PropTypes from "prop-types"
+import clsx from "clsx"
+import {lighten, makeStyles} from "@material-ui/core/styles"
+import Table from "@material-ui/core/Table"
+import TableBody from "@material-ui/core/TableBody"
+import TableCell from "@material-ui/core/TableCell"
+import TableContainer from "@material-ui/core/TableContainer"
+import TableHead from "@material-ui/core/TableHead"
+import TablePagination from "@material-ui/core/TablePagination"
+import TableRow from "@material-ui/core/TableRow"
+import Toolbar from "@material-ui/core/Toolbar"
+import Checkbox from "@material-ui/core/Checkbox"
+import IconButton from "@material-ui/core/IconButton"
+import Tooltip from "@material-ui/core/Tooltip"
+import FormControlLabel from "@material-ui/core/FormControlLabel"
+import Autocomplete from "@material-ui/lab/Autocomplete"
+import Switch from "@material-ui/core/Switch"
+import DeleteIcon from "@material-ui/icons/Delete"
+import FilterListIcon from "@material-ui/icons/FilterList"
+import TableSortLabel from "@material-ui/core/TableSortLabel"
+import Paper from "@material-ui/core/Paper"
+import TextField from "@material-ui/core/TextField"
+import InputAdornment from "@material-ui/core/InputAdornment"
+import SearchIcon from "@material-ui/icons/Search"
+import TableFooter from "@material-ui/core/TableFooter"
+import Button from "@material-ui/core/Button"
+import FirstPageIcon from "@material-ui/icons/FirstPage"
+import KeyboardArrowLeft from "@material-ui/icons/KeyboardArrowLeft"
+import KeyboardArrowRight from "@material-ui/icons/KeyboardArrowRight"
+import LastPageIcon from "@material-ui/icons/LastPage"
+import {MenuItem, Input, FormHelperText} from "@material-ui/core"
 import {
   getDrugSubClasses,
   addDrugSubClass,
   deleteDrugSubClass,
   changeDrugSubClass,
-} from "../../actions/drugsubclasses";
-import { getDrugClasses } from "../../actions/drug_classes";
-import { connect } from "react-redux";
-import Grid from "@material-ui/core/Grid";
-import Dialog from "@material-ui/core/Dialog";
-import DialogActions from "@material-ui/core/DialogActions";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogContentText from "@material-ui/core/DialogContentText";
-import DialogTitle from "@material-ui/core/DialogTitle";
-import FormControl from "@material-ui/core/FormControl";
-import Select from "@material-ui/core/Select";
-import InputLabel from "@material-ui/core/InputLabel";
-import { Formik, Form, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
-import "date-fns";
-import { format } from "date-fns";
-import DateFnsUtils from "@date-io/date-fns";
-import Snackbar from "@material-ui/core/Snackbar";
+} from "../../actions/drugsubclasses"
+import {getDrugClasses} from "../../actions/drug_classes"
+import {connect} from "react-redux"
+import Grid from "@material-ui/core/Grid"
+import Dialog from "@material-ui/core/Dialog"
+import DialogActions from "@material-ui/core/DialogActions"
+import DialogContent from "@material-ui/core/DialogContent"
+import DialogContentText from "@material-ui/core/DialogContentText"
+import DialogTitle from "@material-ui/core/DialogTitle"
+import FormControl from "@material-ui/core/FormControl"
+import Select from "@material-ui/core/Select"
+import InputLabel from "@material-ui/core/InputLabel"
+import {Formik, Form, Field, ErrorMessage} from "formik"
+import * as Yup from "yup"
+import "date-fns"
+import {format} from "date-fns"
+import DateFnsUtils from "@date-io/date-fns"
+import Snackbar from "@material-ui/core/Snackbar"
 
-import EditIcon from "@material-ui/icons/Edit";
-import Card from "@material-ui/core/Card";
-import CardActions from "@material-ui/core/CardActions";
-import CardContent from "@material-ui/core/CardContent";
-import Typography from "@material-ui/core/Typography";
-import Box from "@material-ui/core/Box";
+import EditIcon from "@material-ui/icons/Edit"
+import Card from "@material-ui/core/Card"
+import CardActions from "@material-ui/core/CardActions"
+import CardContent from "@material-ui/core/CardContent"
+import Typography from "@material-ui/core/Typography"
+import Box from "@material-ui/core/Box"
 import {
   MuiPickersUtilsProvider,
   KeyboardTimePicker,
   KeyboardDatePicker,
-} from "@material-ui/pickers";
-import MuiAlert from "@material-ui/lab/Alert";
+} from "@material-ui/pickers"
+import MuiAlert from "@material-ui/lab/Alert"
 
 function Alert(props) {
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
+  return <MuiAlert elevation={6} variant="filled" {...props} />
 }
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
-    return -1;
+    return -1
   }
   if (b[orderBy] > a[orderBy]) {
-    return 1;
+    return 1
   }
-  return 0;
+  return 0
 }
 
 function getComparator(order, orderBy) {
   return order === "desc"
     ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
+    : (a, b) => -descendingComparator(a, b, orderBy)
 }
 
 function stableSort(array, comparator) {
-  const stabilizedThis = array.map((el, index) => [el, index]);
+  const stabilizedThis = array.map((el, index) => [el, index])
   stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-  return stabilizedThis.map((el) => el[0]);
+    const order = comparator(a[0], b[0])
+    if (order !== 0) return order
+    return a[1] - b[1]
+  })
+  return stabilizedThis.map((el) => el[0])
 }
 
 const headCells = [
@@ -117,8 +117,8 @@ const headCells = [
     label: "Drug Class",
   },
   // { id: "owner", numeric: false, disablePadding: false, label: "Created By" },
-  { id: "actions", numeric: false, disablePadding: false, label: "Actions" },
-];
+  {id: "actions", numeric: false, disablePadding: false, label: "Actions"},
+]
 
 function EnhancedTableHead(props) {
   const {
@@ -129,10 +129,10 @@ function EnhancedTableHead(props) {
     numSelected,
     rowCount,
     onRequestSort,
-  } = props;
+  } = props
   const createSortHandler = (property) => (event) => {
-    onRequestSort(event, property);
-  };
+    onRequestSort(event, property)
+  }
 
   return (
     <TableHead>
@@ -142,7 +142,7 @@ function EnhancedTableHead(props) {
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            inputProps={{ "aria-label": "select all systems" }}
+            inputProps={{"aria-label": "select all systems"}}
           />
         </TableCell>
         {headCells.map((headCell) => (
@@ -168,7 +168,7 @@ function EnhancedTableHead(props) {
         ))}
       </TableRow>
     </TableHead>
-  );
+  )
 }
 
 EnhancedTableHead.propTypes = {
@@ -179,7 +179,7 @@ EnhancedTableHead.propTypes = {
   order: PropTypes.oneOf(["asc", "desc"]).isRequired,
   orderBy: PropTypes.string.isRequired,
   rowCount: PropTypes.number.isRequired,
-};
+}
 
 const useToolbarStyles = makeStyles((theme) => ({
   root: {
@@ -199,11 +199,11 @@ const useToolbarStyles = makeStyles((theme) => ({
   title: {
     flex: "1 1 100%",
   },
-}));
+}))
 
 const EnhancedTableToolbar = (props) => {
-  const classes = useToolbarStyles();
-  const { numSelected } = props;
+  const classes = useToolbarStyles()
+  const {numSelected} = props
 
   return (
     <Toolbar
@@ -245,12 +245,12 @@ const EnhancedTableToolbar = (props) => {
         </Tooltip>
       )}
     </Toolbar>
-  );
-};
+  )
+}
 
 EnhancedTableToolbar.propTypes = {
   numSelected: PropTypes.number.isRequired,
-};
+}
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -293,137 +293,137 @@ const useStyles = makeStyles((theme) => ({
   formFormik: {
     backgroundColor: "#aed581",
   },
-}));
+}))
 
 const DrugSubClasses = (props) => {
-  const classes = useStyles();
-  const [search, setSearch] = useState("");
-  const [rows, setRows] = React.useState([]);
-  const [order, setOrder] = React.useState("asc");
-  const [orderBy, setOrderBy] = React.useState("description");
-  const [selected, setSelected] = React.useState([]);
-  const [drugClasses, setDrugClasses] = React.useState(props.bodysystems);
-  const [reload, setReload] = useState();
+  const classes = useStyles()
+  const [search, setSearch] = useState("")
+  const [rows, setRows] = React.useState([])
+  const [order, setOrder] = React.useState("asc")
+  const [orderBy, setOrderBy] = React.useState("description")
+  const [selected, setSelected] = React.useState([])
+  const [drugClasses, setDrugClasses] = React.useState(props.bodysystems)
+  const [reload, setReload] = useState()
 
-  const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const [isSubmitionCompleted, setSubmitionCompleted] = useState(false);
-  const [creatingDrugClass, setCreatingDrugClass] = useState(false);
-  const [selectedDrugClass, setSelectedDrugClass] = useState({});
-  const [editDrugClass, setEditingDrugClass] = useState(false);
-
-  useEffect(() => {
-    props.getDrugSubClasses();
-    props.getDrugClasses();
-  }, []);
+  const [page, setPage] = React.useState(0)
+  const [dense, setDense] = React.useState(false)
+  const [rowsPerPage, setRowsPerPage] = React.useState(5)
+  const [isSubmitionCompleted, setSubmitionCompleted] = useState(false)
+  const [creatingDrugClass, setCreatingDrugClass] = useState(false)
+  const [selectedDrugClass, setSelectedDrugClass] = useState({})
+  const [editDrugClass, setEditingDrugClass] = useState(false)
 
   useEffect(() => {
-    setDrugClasses(props.drugclasses);
-  }, [props.drugclasses]);
+    props.getDrugSubClasses()
+    props.getDrugClasses()
+  }, [])
 
   useEffect(() => {
-    setRows(props.drugsubclasses);
-  }, [props.drugsubclasses]);
+    setDrugClasses(props.drugclasses)
+  }, [props.drugclasses])
 
   useEffect(() => {
-    props.getDrugSubClasses();
-    console.log("please update");
-    setEditingDrugClass(false);
-    setCreatingDrugClass(false);
-  }, [props.update]);
+    setRows(props.drugsubclasses)
+  }, [props.drugsubclasses])
+
+  useEffect(() => {
+    props.getDrugSubClasses()
+    console.log("please update")
+    setEditingDrugClass(false)
+    setCreatingDrugClass(false)
+  }, [props.update])
 
   const handleRequestSort = (event, property) => {
-    const isAsc = orderBy === property && order === "asc";
-    setOrder(isAsc ? "desc" : "asc");
-    setOrderBy(property);
-  };
+    const isAsc = orderBy === property && order === "asc"
+    setOrder(isAsc ? "desc" : "asc")
+    setOrderBy(property)
+  }
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds = rows.map((n) => n.id);
-      setSelected(newSelecteds);
-      return;
+      const newSelecteds = rows.map((n) => n.id)
+      setSelected(newSelecteds)
+      return
     }
-    setSelected([]);
-  };
+    setSelected([])
+  }
 
   const handleClick = (event, id) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected = [];
+    const selectedIndex = selected.indexOf(id)
+    let newSelected = []
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
+      newSelected = newSelected.concat(selected, id)
     } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
+      newSelected = newSelected.concat(selected.slice(1))
     } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
+      newSelected = newSelected.concat(selected.slice(0, -1))
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
         selected.slice(selectedIndex + 1)
-      );
+      )
     }
 
-    setSelected(newSelected);
-  };
+    setSelected(newSelected)
+  }
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+    setPage(newPage)
+  }
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
 
   const handleChangeDense = (event) => {
-    setDense(event.target.checked);
-  };
+    setDense(event.target.checked)
+  }
 
-  const isSelected = (id) => selected.indexOf(id) !== -1;
+  const isSelected = (id) => selected.indexOf(id) !== -1
 
   const emptyRows =
-    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
+    rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage)
 
   const onSearchChange = (e) => {
-    setSearch(e.target.value);
-  };
+    setSearch(e.target.value)
+  }
 
   const handleCreateNewUser = () => {
-    setSubmitionCompleted(false);
-    setCreatingDrugClass(true);
-  };
+    setSubmitionCompleted(false)
+    setCreatingDrugClass(true)
+  }
 
   //Edit drug class
 
   const handleDeleteUser = (user_id) => {
-    console.log(user_id);
-    props.deleteDrugSubClass(user_id);
-  };
+    console.log(user_id)
+    props.deleteDrugSubClass(user_id)
+  }
 
   //Close modals
   const handleClose = () => {
-    setCreatingDrugClass(false);
-    setEditingDrugClass(false);
-  };
+    setCreatingDrugClass(false)
+    setEditingDrugClass(false)
+  }
 
   const handleEditBodySystem = (bodysystem) => {
-    console.log("Edit system", bodysystem);
-    setEditingDrugClass(true);
-    setSelectedDrugClass(bodysystem);
-  };
+    console.log("Edit system", bodysystem)
+    setEditingDrugClass(true)
+    setSelectedDrugClass(bodysystem)
+  }
 
   //Cancel editing drug class
   const handleCancelEdit = () => {
-    setEditingDrugClass(false);
-  };
+    setEditingDrugClass(false)
+  }
 
   const handleAutoCompleteValues = (setFieldValue, value) => {
-    const { id } = value;
-    console.log("my dear id", id);
-    setFieldValue("drug_class", id);
-  };
+    const {id} = value
+    console.log("my dear id", id)
+    setFieldValue("drug_class", id)
+  }
 
   return (
     <div className={classes.root}>
@@ -491,13 +491,13 @@ const DrugSubClasses = (props) => {
                           title: "",
                         },
                       }}
-                      onSubmit={(values, { setSubmitting }) => {
-                        setSubmitting(false);
-                        console.log("drug class to save", values);
+                      onSubmit={(values, {setSubmitting}) => {
+                        setSubmitting(false)
+                        console.log("drug class to save", values)
 
-                        props.addDrugSubClass(values);
-                        setSubmitionCompleted(props.submissionSuccessful);
-                        setOpenErrorSnackBar(true);
+                        props.addDrugSubClass(values)
+                        setSubmitionCompleted(props.submissionSuccessful)
+                        setOpenErrorSnackBar(true)
                       }}
                       validationSchema={Yup.object().shape({
                         title: Yup.string().required("Title is required"),
@@ -519,7 +519,7 @@ const DrugSubClasses = (props) => {
                           handleBlur,
                           handleSubmit,
                           handleReset,
-                        } = props;
+                        } = props
                         return (
                           <form onSubmit={handleSubmit}>
                             <div>
@@ -609,7 +609,7 @@ const DrugSubClasses = (props) => {
                               </DialogActions>
                             </div>
                           </form>
-                        );
+                        )
                       }}
                     </Formik>
                   </DialogContent>
@@ -636,9 +636,9 @@ const DrugSubClasses = (props) => {
                         description: selectedDrugClass.description,
                         drug_class: selectedDrugClass.drug_class,
                       }}
-                      onSubmit={(values, { setSubmitting }) => {
-                        console.log("at submit for edit", values);
-                        props.changeDrugSubClass(values, selectedDrugClass.id);
+                      onSubmit={(values, {setSubmitting}) => {
+                        console.log("at submit for edit", values)
+                        props.changeDrugSubClass(values, selectedDrugClass.id)
                       }}
                       validationSchema={Yup.object().shape({
                         title: Yup.string().required("Title is required"),
@@ -659,7 +659,7 @@ const DrugSubClasses = (props) => {
                           handleBlur,
                           handleSubmit,
                           handleReset,
-                        } = props;
+                        } = props
                         return (
                           <form onSubmit={handleSubmit}>
                             <div>
@@ -716,7 +716,7 @@ const DrugSubClasses = (props) => {
                               </DialogActions>
                             </div>
                           </form>
-                        );
+                        )
                       }}
                     </Formik>
                   </DialogContent>
@@ -750,8 +750,8 @@ const DrugSubClasses = (props) => {
                     row.description.includes(search)
                 )
                 .map((row, index) => {
-                  const isItemSelected = isSelected(row.id);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+                  const isItemSelected = isSelected(row.id)
+                  const labelId = `enhanced-table-checkbox-${index}`
 
                   return (
                     <TableRow hover>
@@ -765,7 +765,7 @@ const DrugSubClasses = (props) => {
                           key={row.id}
                           selected={isItemSelected}
                           checked={isItemSelected}
-                          inputProps={{ "aria-labelledby": labelId }}
+                          inputProps={{"aria-labelledby": labelId}}
                         />
                       </TableCell>
                       <TableCell
@@ -804,10 +804,10 @@ const DrugSubClasses = (props) => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  );
+                  )
                 })}
               {emptyRows > 0 && (
-                <TableRow style={{ height: (dense ? 33 : 53) * emptyRows }}>
+                <TableRow style={{height: (dense ? 33 : 53) * emptyRows}}>
                   <TableCell colSpan={6} />
                 </TableRow>
               )}
@@ -829,16 +829,16 @@ const DrugSubClasses = (props) => {
         label="Dense padding"
       />
     </div>
-  );
-};
+  )
+}
 
 const mapStateToProps = (state) => {
   return {
     drugclasses: state.drugclasses.drugclasses,
     drugsubclasses: state.drugsubclasses.drugsubclasses,
     update: state.drugsubclasses.update,
-  };
-};
+  }
+}
 
 export default connect(mapStateToProps, {
   getDrugClasses,
@@ -846,4 +846,4 @@ export default connect(mapStateToProps, {
   addDrugSubClass,
   deleteDrugSubClass,
   changeDrugSubClass,
-})(DrugSubClasses);
+})(DrugSubClasses)

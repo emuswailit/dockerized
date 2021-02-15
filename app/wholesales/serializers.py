@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from drugs.models import Products
 from drugs.serializers import ProductsSerializer
 from users.serializers import FacilitySerializer
-from retailers.models import RetailVariations, RetailProducts
+from retailers.models import RetailVariations
 from core.serializers import FacilitySafeSerializerMixin
 
 
@@ -622,12 +622,12 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
         if payment_terms == "CASH":
 
             # Create or retrieve an invoice for the cash payment
-            if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+            if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account).count() > 0:
                 invoice = models.Invoices.objects.get(
-                    facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+                    facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account)
             else:
                 invoice = models.Invoices.objects.create(
-                    facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+                    facility=user.facility, owner=user, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
             if invoice and requisition_items:
                 for item in requisition_items:
                     if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
@@ -679,12 +679,12 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
                     if retailer_account.credit_limit >= amount:
 
                         # Create or retrieve an invoice
-                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account).count() > 0:
                             invoice = models.Invoices.objects.get(
-                                facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+                                facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account)
                         else:
                             invoice = models.Invoices.objects.create(
-                                facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+                                facility=user.facility, owner=user, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
                         if invoice and requisition_items:
                             for item in requisition_items:
                                 if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
@@ -729,12 +729,12 @@ class RequisitionsRetailerConfirmSerializer(serializers.HyperlinkedModelSerializ
                     if retailer_account.placement_limit >= amount:
 
                         # Create or retrieve an invoice
-                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, retailer_account=retailer_account).count() > 0:
+                        if models.Invoices.objects.filter(facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account).count() > 0:
                             invoice = models.Invoices.objects.get(
-                                facility=user.facility, requisition=requisition, retailer_account=retailer_account)
+                                facility=user.facility, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account)
                         else:
                             invoice = models.Invoices.objects.create(
-                                facility=user.facility, owner=user, requisition=requisition, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
+                                facility=user.facility, owner=user, requisition=requisition, wholesale=requisition.wholesale, retailer_account=retailer_account, invoice_type=payment_terms, total_amount=amount)
                         if invoice and requisition_items:
                             for item in requisition_items:
                                 if models.InvoiceItems.objects.filter(invoice=invoice, requisition_item=item).count() > 0:
@@ -1040,6 +1040,155 @@ class InvoicesSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedMod
             'receipt_confirmed',
             'owner',
             'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+
+
+class InvoicesUpdateSerializerForRetailer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Invoices
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'retailer_comment',
+            'wholesaler_comment',
+            'courier_comment',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+        read_only_fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+
+
+class InvoicesUpdateSerializerForWholesaler(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Invoices
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'wholesale',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'retailer_comment',
+            'courier_comment',
+            'wholesaler_comment',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+        read_only_fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'wholesale',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'retailer_comment',
+            'courier_comment',
+            'owner',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+
+
+class InvoicesUpdateSerializerForCourier(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.Invoices
+        fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'wholesale',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'despatch_confirmed',
+            'retailer_comment',
+            'courier_comment',
+            'wholesaler_comment',
+            'courier_confirmed',
+            'receipt_confirmed',
+            'owner',
+            'courier',
+            'wholesale_despatch_by',
+            'wholesale_approved_by',
+            'retail_receipt_by',
+            'created',
+            'updated')
+        read_only_fields = (
+            'id',
+            'url',
+            'facility',
+            'requisition',
+            'wholesale',
+            'retailer_account',
+            'invoice_type',
+            'total_amount',
+            'paid_amount',
+            'due_amount',
+            'receipt_confirmed',
+            'wholesaler_comment',
+            'courier_confirmed',
+            'retailer_comment',
+            'courier',
+            'owner',
             'wholesale_despatch_by',
             'wholesale_approved_by',
             'retail_receipt_by',

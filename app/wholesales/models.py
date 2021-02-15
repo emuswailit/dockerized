@@ -322,6 +322,8 @@ class Invoices(FacilityRelatedModel):
         ("CREDIT", "CREDIT"),
         ("PLACEMENT", "PLACEMENT"),
     )
+    wholesale = models.ForeignKey(
+        Facility, related_name="invoicing_wholesale", on_delete=models.CASCADE)
     requisition = models.OneToOneField(
         Requisitions, related_name="invoice_requisition", on_delete=models.CASCADE)
     retailer_account = models.OneToOneField(
@@ -339,6 +341,10 @@ class Invoices(FacilityRelatedModel):
     despatch_confirmed = models.BooleanField(default=False)
     courier_confirmed = models.BooleanField(default=False)
     receipt_confirmed = models.BooleanField(default=False)
+    retailer_comment = models.CharField(max_length=140, null=True, blank=True)
+    courier_comment = models.CharField(max_length=140, null=True, blank=True)
+    wholesaler_comment = models.CharField(
+        max_length=140, null=True, blank=True)
     is_approved = models.BooleanField(default=False)
     owner = models.ForeignKey(
         User, related_name="invoice_owner", on_delete=models.CASCADE)
@@ -358,7 +364,7 @@ class Invoices(FacilityRelatedModel):
         # Enforce account uniqueness
         constraints = [
             models.UniqueConstraint(
-                fields=['facility', 'retailer_account', 'requisition', ], name='Unique invoice per requisition')
+                fields=['facility', 'wholesale', 'retailer_account', 'requisition', ], name='Unique invoice per requisition')
         ]
 
 

@@ -24,7 +24,6 @@ from . import serializers, models
 from rest_framework.response import Response
 from core.app_permissions import PharmacistPermission, FacilitySuperintendentPermission, IsOwner
 from consultations.models import Prescription
-from retailers.models import RetailProducts
 from django.urls import resolve
 
 
@@ -735,171 +734,171 @@ class PharmacyPaymentsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class RetailProductsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
-    """
-    Superintendent Pharmacist
-    ============================================================
-    1. Create new product variation
-    """
-    name = 'retailproducts-create'
-    permission_classes = (
-        FacilitySuperintendentPermission,
-    )
-    serializer_class = serializers.RetailProductsSerializer
-    queryset = models.RetailProducts.objects.all()
+# class RetailProductsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+#     """
+#     Superintendent Pharmacist
+#     ============================================================
+#     1. Create new product variation
+#     """
+#     name = 'retailproducts-create'
+#     permission_classes = (
+#         FacilitySuperintendentPermission,
+#     )
+#     serializer_class = serializers.RetailProductsSerializer
+#     queryset = models.RetailProducts.objects.all()
 
-    def get_serializer_context(self):
-        user_pk = self.request.user.id
-        context = super(RetailProductsCreate,
-                        self).get_serializer_context()
+#     def get_serializer_context(self):
+#         user_pk = self.request.user.id
+#         context = super(RetailProductsCreate,
+#                         self).get_serializer_context()
 
-        context.update({
-            "user_pk": user_pk
+#         context.update({
+#             "user_pk": user_pk
 
-        })
-        return context
+#         })
+#         return context
 
-    def perform_create(self, serializer):
+#     def perform_create(self, serializer):
 
-        try:
-            user = self.request.user
-            facility = self.request.user.facility
-            serializer.save(owner=user, facility=facility)
-        except IntegrityError as e:
-            raise exceptions.NotAcceptable(
-                {"detail": ["RetailProducts must be to be unique. Similar item is already added!", ]})
+#         try:
+#             user = self.request.user
+#             facility = self.request.user.facility
+#             serializer.save(owner=user, facility=facility)
+#         except IntegrityError as e:
+#             raise exceptions.NotAcceptable(
+#                 {"detail": ["RetailProducts must be to be unique. Similar item is already added!", ]})
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Facility pharmacist created successfully.", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_create(serializer)
+#             return Response(data={"message": "Facility pharmacist created successfully.", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Facility pharmacist not created", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
-
-class RetailProductsList(FacilitySafeViewMixin, generics.ListAPIView):
-    """
-    Superintendent Pharmacist
-    ============================================================
-    1. List of items in inventory
-    """
-    name = 'retailproducts-list'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.RetailProductsSerializer
-    queryset = models.RetailProducts.objects.all()
-    search_fields = ('title', 'description', 'product__title',
-                     'product__manufacturer__title')
-    ordering_fields = ('title', 'id')
-
-    # def get_queryset(self):
-    #     facility_id = self.request.user.facility_id
-    #     return super().get_queryset().filter(facility_id=facility_id)
+#             return Response(data={"message": "Facility pharmacist not created", "variation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class RetailProductsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    name = 'retailproducts-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.RetailProductsSerializer
-    queryset = models.RetailProducts.objects.all()
+# class RetailProductsList(FacilitySafeViewMixin, generics.ListAPIView):
+#     """
+#     Superintendent Pharmacist
+#     ============================================================
+#     1. List of items in inventory
+#     """
+#     name = 'retailproducts-list'
+#     permission_classes = (
+#         permissions.IsAuthenticated,
+#     )
+#     serializer_class = serializers.RetailProductsSerializer
+#     queryset = models.RetailProducts.objects.all()
+#     search_fields = ('title', 'description', 'product__title',
+#                      'product__manufacturer__title')
+#     ordering_fields = ('title', 'id')
 
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
-
-
-class RetailProductsUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
-    """
-    Superintendent Pharmacist
-    ============================================================
-    Update inventory item
-    """
-    name = 'retailproducts-update'
-    permission_classes = (
-        FacilitySuperintendentPermission,
-    )
-    serializer_class = serializers.RetailProductsUpdateSerializer
-    queryset = models.RetailProducts.objects.all()
-
-    def get_queryset(self):
-        facility_id = self.request.user.facility_id
-        return super().get_queryset().filter(facility_id=facility_id)
-
-    def delete(self, request, *args, **kwargs):
-        raise exceptions.NotAcceptable(
-            {"response_code": 1, "response_message": "This item cannot be deleted!"})
+#     # def get_queryset(self):
+#     #     facility_id = self.request.user.facility_id
+#     #     return super().get_queryset().filter(facility_id=facility_id)
 
 
-class RetailProductsPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
-    """
-    Logged In User
-    =================================================================
-    1. Add pharmacist photo
-    2. View own courier instance
-    """
-    name = 'variationphoto-list'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.RetailProductPhotosSerializer
-    queryset = models.RetailProductPhotos.objects.all()
+# class RetailProductsDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+#     name = 'retailproducts-detail'
+#     permission_classes = (
+#         permissions.IsAuthenticated,
+#     )
+#     serializer_class = serializers.RetailProductsSerializer
+#     queryset = models.RetailProducts.objects.all()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        variation_pk = self.kwargs.get("pk")
-        facility_id = self.request.user.facility_id
-        serializer.save(facility_id=facility_id, owner=user,
-                        variation_id=variation_pk)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "RetailProducts photo created successfully.", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-        else:
-            default_errors = serializer.errors  # default errors dict
-            errors_messages = []
-            for field_name, field_errors in default_errors.items():
-                for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
-                    errors_messages.append(error_message)
-
-            return Response(data={"message": "RetailProducts photo not created", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
-
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
+#     def get_queryset(self):
+#         facility_id = self.request.user.facility_id
+#         return super().get_queryset().filter(facility_id=facility_id)
 
 
-class RetailProductsPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
-    """
-    Logged in Facility Superintendent
-    ================================================================
-    1. View details of variation photo instance
-    """
-    name = 'variationphoto-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.RetailProductPhotosSerializer
-    queryset = models.RetailProductPhotos.objects.all()
+# class RetailProductsUpdate(FacilitySafeViewMixin, generics.RetrieveUpdateAPIView):
+#     """
+#     Superintendent Pharmacist
+#     ============================================================
+#     Update inventory item
+#     """
+#     name = 'retailproducts-update'
+#     permission_classes = (
+#         FacilitySuperintendentPermission,
+#     )
+#     serializer_class = serializers.RetailProductsUpdateSerializer
+#     queryset = models.RetailProducts.objects.all()
 
-    def get_queryset(self):
-        user = self.request.user
-        return super().get_queryset().filter(owner=user)
+#     def get_queryset(self):
+#         facility_id = self.request.user.facility_id
+#         return super().get_queryset().filter(facility_id=facility_id)
+
+#     def delete(self, request, *args, **kwargs):
+#         raise exceptions.NotAcceptable(
+#             {"response_code": 1, "response_message": "This item cannot be deleted!"})
+
+
+# class RetailProductsPhotoList(FacilitySafeViewMixin, generics.ListCreateAPIView):
+#     """
+#     Logged In User
+#     =================================================================
+#     1. Add pharmacist photo
+#     2. View own courier instance
+#     """
+#     name = 'variationphoto-list'
+#     permission_classes = (
+#         permissions.IsAuthenticated,
+#     )
+#     serializer_class = serializers.RetailProductPhotosSerializer
+#     queryset = models.RetailProductPhotos.objects.all()
+
+#     def perform_create(self, serializer):
+#         user = self.request.user
+#         variation_pk = self.kwargs.get("pk")
+#         facility_id = self.request.user.facility_id
+#         serializer.save(facility_id=facility_id, owner=user,
+#                         variation_id=variation_pk)
+
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_create(serializer)
+#             return Response(data={"message": "RetailProducts photo created successfully.", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
+
+#             return Response(data={"message": "RetailProducts photo not created", "variation-photo": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+#     def get_queryset(self):
+#         user = self.request.user
+#         return super().get_queryset().filter(owner=user)
+
+
+# class RetailProductsPhotoDetail(FacilitySafeViewMixin, generics.RetrieveAPIView):
+#     """
+#     Logged in Facility Superintendent
+#     ================================================================
+#     1. View details of variation photo instance
+#     """
+#     name = 'variationphoto-detail'
+#     permission_classes = (
+#         permissions.IsAuthenticated,
+#     )
+#     serializer_class = serializers.RetailProductPhotosSerializer
+#     queryset = models.RetailProductPhotos.objects.all()
+
+#     def get_queryset(self):
+#         user = self.request.user
+#         return super().get_queryset().filter(owner=user)
 
 
 class RetailVariationsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
