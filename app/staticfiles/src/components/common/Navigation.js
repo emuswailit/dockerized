@@ -20,10 +20,26 @@ import MenuIcon from "@material-ui/icons/Menu"
 import {useHistory} from "react-router-dom"
 import {logout} from "../../actions/auth"
 import {useDispatch, useSelector} from "react-redux"
-
+import {Badge, InputBase} from "@material-ui/core"
+import NotificationsNoneIcon from "@material-ui/icons/NotificationsNone"
+import PowerSettingsNewIcon from "@material-ui/icons/PowerSettingsNew"
+import ChatBubbleOutlineIcon from "@material-ui/icons/ChatBubbleOutline"
+import SearchIcon from "@material-ui/icons/Search"
 const styles = (theme) => ({
   root: {
     flexGrow: 1,
+  },
+
+  searchInput: {
+    opacity: "0.6",
+    padding: "0px 8px",
+    fontSize: "0.8rem",
+    "&:hover": {
+      backgroundColor: "#f2f2f2",
+    },
+    "& .MuiSvgIcon-root": {
+      marginRight: "8px",
+    },
   },
   flex: {
     flex: 1,
@@ -35,6 +51,7 @@ const styles = (theme) => ({
   toolbarMargin: theme.mixins.toolbar,
   aboveDrawer: {
     zIndex: theme.zIndex.drawer + 1,
+    backgroundColor: "#fff",
   },
   alignContent: {
     alignSelf: "center",
@@ -181,21 +198,45 @@ const Navigation = withStyles(styles)(({classes, user}) => {
     <Fragment>
       <AppBar className={classes.aboveDrawer}>
         <Toolbar>
-          <IconButton
-            className={classes.menuButton}
-            color="inherit"
-            aria-label="Menu"
-            onClick={onMenuClick}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" color="inherit" className={classes.flex}>
-            {title}
-          </Typography>
+          <Grid container xs={12} alignItems="center">
+            <Grid item>
+              <IconButton
+                className={classes.menuButton}
+                color="inherit"
+                aria-label="Menu"
+                onClick={onMenuClick}
+              >
+                <MenuIcon />
+              </IconButton>
+              {/* <Typography variant="h6" color="inherit">
+                {title}
+              </Typography> */}
+            </Grid>
 
-          <Button color="inherit" onClick={onLogOut}>
-            Logout
-          </Button>
+            <Grid sm alignItems="center">
+              <InputBase
+                className={classes.searchInput}
+                placeholder="Search topics"
+                startAdornment={<SearchIcon fontSize="small" />}
+              />
+            </Grid>
+            <Grid item alignItems="flex-end">
+              <IconButton>
+                <Badge badgeContent={4} color="primary">
+                  <NotificationsNoneIcon />
+                </Badge>
+              </IconButton>
+              <IconButton>
+                <Badge badgeContent={4} color="secondary">
+                  <ChatBubbleOutlineIcon />
+                </Badge>
+              </IconButton>
+
+              <IconButton onClick={onLogOut}>
+                <PowerSettingsNewIcon />
+              </IconButton>
+            </Grid>
+          </Grid>
         </Toolbar>
       </AppBar>
       <div className={classes.toolbarMargin} />

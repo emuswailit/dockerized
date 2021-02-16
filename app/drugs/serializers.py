@@ -1,14 +1,13 @@
-from utilities.models import Categories
+from django.contrib.auth import get_user_model
+from django_countries.fields import Country
 from django_countries.fields import CountryField as ModelCountryField
-from django_countries.serializer_fields import CountryField
 from django_countries.serializers import CountryFieldMixin
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from utilities.models import Categories
+
 from . import models
-from django_countries.fields import Country
-from users.serializers import UserSerializer
+
 User = get_user_model()
 
 
@@ -17,7 +16,9 @@ class DistributorSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = models.Distributor
-        fields = ('id', 'url', 'title', 'physical_address', 'postal_address', 'phone1', 'phone2', 'phone3', 'email', 'website', 'description', 'owner',
+        fields = ('id', 'url', 'title', 'physical_address',
+                  'postal_address', 'phone1', 'phone2', 'phone3', 'email',
+                  'website', 'description', 'owner',
                   'created', 'updated', )
 
         read_only_fields = ('id', 'url', 'created',
@@ -41,7 +42,7 @@ class BodySystemSerializer(serializers.HyperlinkedModelSerializer):
                   'created', 'updated', )
 
         read_only_fields = ('id', 'url', 'created',
-                            'updated', 'owner',
+                            'updated', 'owner', 'category', 'is_active'
 
 
                             )
@@ -170,7 +171,8 @@ class GenericSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Generic
         extra_kwargs = {'response_message': "Request successful"}
-        fields = ('id', 'url', 'title', 'description', 'drug_class', 'drug_sub_class', 'drug_class_details', 'drug_sub_class_details',  'owner',
+        fields = ('id', 'url', 'title', 'description', 'drug_class', 'drug_sub_class', 'drug_class_details',
+                  'drug_sub_class_details',  'owner',
                   'created', 'updated',)
 
         read_only_fields = ('id', 'url', 'created',
@@ -380,7 +382,8 @@ class ProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Products
         fields = ('id', 'url', 'title', 'preparation', 'category', 'sub_category', 'manufacturer',
-                  'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack', 'manufacturer_details', 'preparation_details', 'active', 'created', 'updated')
+                  'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack', 'manufacturer_details',
+                  'preparation_details', 'active', 'created', 'updated')
 
         read_only_fields = ('id', 'url',
                             'owner',

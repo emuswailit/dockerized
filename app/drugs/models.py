@@ -1,13 +1,10 @@
-from django.db import models
-import uuid
-from django_countries.fields import CountryField
-from django.contrib.auth import get_user_model
 from core.models import FacilityRelatedModel
-from django.db.models import signals
-from django.db.models.signals import post_save, pre_save
-from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+from django.db import models
 from django.utils.text import slugify
+from django_countries.fields import CountryField
 from utilities.models import Categories, SubCategories
+
 User = get_user_model()
 
 
@@ -191,7 +188,8 @@ class Indications(FacilityRelatedModel):
             db_table = 'indications'
             constraints = [
                 models.UniqueConstraint(fields=[
-                    'generic', 'indication'], name='Do not repeat entry for generic')
+                    'generic', 'indication'],
+                    name='Do not repeat entry for generic')
             ]
 
 
@@ -385,15 +383,6 @@ class ProductsQuerySet(models.query.QuerySet):
 
     def featured(self):
         return self.filter(featured=True, active=True)
-
-    def search(self, query):
-        lookups = (Q(title__icontains=query) |
-                   Q(description__icontains=query) |
-                   Q(price__icontains=query) |
-                   Q(tag__title__icontains=query)
-                   )
-    # tshirt, t-shirt, t shirt, red, green, blue,
-        return self.filter(lookups).distinct()
 
 
 class ProductsManager(models.Manager):

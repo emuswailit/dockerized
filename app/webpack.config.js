@@ -41,7 +41,8 @@ module.exports = {
   entry: path.join(__dirname, "staticfiles/src/js/index"),
   output: {
     path: path.join(__dirname, "staticfiles/dist"),
-    filename: "[name]-[hash].js",
+    // filename: "[name]-[hash].js",
+    filename: "[name].js",
   },
   plugins: [
     new BundleTracker({
@@ -49,4 +50,4 @@ module.exports = {
       filename: "webpack-stats.json",
     }),
   ],
-};
+}
