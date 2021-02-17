@@ -68,9 +68,14 @@ const BodySystems = (props) => {
       fn: (items) => {
         if (target.value == "") return items
         else
-          return items.filter((x) =>
-            x.title.toLowerCase().includes(target.value)
-          )
+          return items.filter((x) => {
+            if (
+              x.title.toLowerCase().includes(target.value) ||
+              x.description.toLowerCase().includes(target.value)
+            ) {
+              return true
+            }
+          })
       },
     })
   }
