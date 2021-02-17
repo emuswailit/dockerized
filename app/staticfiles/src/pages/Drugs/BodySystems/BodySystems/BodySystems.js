@@ -20,11 +20,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
+
+const headCells = [
+  {id: "title", label: "Title"},
+  {id: "description", label: "Description"},
+]
 const BodySystems = (props) => {
   const classes = useStyles()
   const [rows, setRows] = React.useState([])
 
-  const {TblContainer} = useTable()
+  const {TblContainer, TblHead, TblPagination, recordsAfterPagingAndSorting} = useTable(rows, headCells)
 
   useEffect(() => {
     props.getBodySystems()
@@ -46,8 +51,9 @@ const BodySystems = (props) => {
       <Paper className={classes.pageContent}>
         {/* <BodySystemsForm /> */}
         <TblContainer>
+          <TblHead />
           <TableBody>
-            {props.bodysystems.map((item) => (
+            {recordsAfterPagingAndSorting().map((item) => (
               <TableRow>
                 <TableCell>{item.title}</TableCell>
                 <TableCell>{item.description}</TableCell>
@@ -55,6 +61,7 @@ const BodySystems = (props) => {
             ))}
           </TableBody>
         </TblContainer>
+        <TblPagination  />
       </Paper>
     </div>
   )
