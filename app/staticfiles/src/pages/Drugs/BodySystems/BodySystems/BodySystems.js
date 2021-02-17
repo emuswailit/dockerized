@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from "react"
 import PageHeader from "../../../../components/common/PageHeader"
 import BodySystemsForm from "./BodySystemsForm"
+import {Search} from "@material-ui/icons"
 import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline"
 import {
   makeStyles,
@@ -9,14 +10,25 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Toolbar,
+  InputAdornment,
 } from "@material-ui/core"
 import useTable from "../../../../components/common/useTable"
 import {getBodySystems} from "../../../../actions/body_systems"
 import {connect} from "react-redux"
+import Controls from "../../../../components/controls/Control"
 const useStyles = makeStyles((theme) => ({
   pageContent: {
     margin: theme.spacing(1),
     padding: theme.spacing(1),
+  },
+
+  searchInput: {
+    width: "75%",
+  },
+  newButton: {
+    position: "absolute",
+    right: "10px",
   },
 }))
 
@@ -28,8 +40,17 @@ const headCells = [
 const BodySystems = (props) => {
   const classes = useStyles()
   const [rows, setRows] = React.useState([])
-
-  const {TblContainer, TblHead, TblPagination, recordsAfterPagingAndSorting} = useTable(rows, headCells)
+  const [filterFn, setFilterFn] = useState({
+    fn: (items) => {
+      return items
+    },
+  })
+  const {
+    TblContainer,
+    TblHead,
+    TblPagination,
+    recordsAfterPagingAndSorting,
+  } = useTable(rows, headCells, filterFn)
 
   useEffect(() => {
     props.getBodySystems()
@@ -40,6 +61,19 @@ const BodySystems = (props) => {
     setRows(props.bodysystems)
     console.log(rows.length)
   }, [props.bodysystems])
+
+  const handleSearch = (e) => {
+    let target = e.target
+    setFilterFn({
+      fn: (items) => {
+        if (target.value == "") return items
+        else
+          return items.filter((x) =>
+            x.title.toLowerCase().includes(target.value)
+          )
+      },
+    })
+  }
   return (
     <div>
       <PageHeader
@@ -50,6 +84,21 @@ const BodySystems = (props) => {
 
       <Paper className={classes.pageContent}>
         {/* <BodySystemsForm /> */}
+
+        <Toolbar>
+          <Controls.Input
+            label="Search body systems"
+            className={classes.searchInput}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            onChange={handleSearch}
+          />
+        </Toolbar>
         <TblContainer>
           <TblHead />
           <TableBody>
@@ -61,7 +110,7 @@ const BodySystems = (props) => {
             ))}
           </TableBody>
         </TblContainer>
-        <TblPagination  />
+        <TblPagination />
       </Paper>
     </div>
   )
