@@ -3,6 +3,7 @@ import PageHeader from "../../../../components/common/PageHeader"
 import BodySystemsForm from "./BodySystemsForm"
 import {Search} from "@material-ui/icons"
 import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline"
+import {addBodySystem} from "../../../../actions/body_systems"
 import {
   makeStyles,
   Paper,
@@ -14,9 +15,13 @@ import {
   InputAdornment,
 } from "@material-ui/core"
 import useTable from "../../../../components/common/useTable"
+
+
 import {getBodySystems} from "../../../../actions/body_systems"
 import {connect} from "react-redux"
 import Controls from "../../../../components/controls/Control"
+import AddIcon from "@material-ui/icons/Add"
+import Popup from "../../../../components/common/Popup"
 const useStyles = makeStyles((theme) => ({
   pageContent: {
     margin: theme.spacing(1),
@@ -38,8 +43,10 @@ const headCells = [
   {id: "description", label: "Description"},
 ]
 const BodySystems = (props) => {
+  
   const classes = useStyles()
   const [rows, setRows] = React.useState([])
+     const [openPopup, setOpenPopup] = useState(false)
   const [filterFn, setFilterFn] = useState({
     fn: (items) => {
       return items
@@ -79,6 +86,14 @@ const BodySystems = (props) => {
       },
     })
   }
+
+const addOrEdit=(bodySystem, resetForm)=>{
+  props.addBodySystem(bodySystem)
+  resetForm()
+  setOpenPopup(false)
+  props.getBodySystems()
+}
+
   return (
     <div>
       <PageHeader
@@ -103,6 +118,15 @@ const BodySystems = (props) => {
             }}
             onChange={handleSearch}
           />
+          <Controls.Button
+            text="Add New"
+            variant="outlined"
+            startIcon={<AddIcon />}
+            className={classes.newButton}
+            onClick={() => {
+              setOpenPopup(()=>setOpenPopup(true))
+            }}
+          />
         </Toolbar>
         <TblContainer>
           <TblHead />
@@ -117,6 +141,14 @@ const BodySystems = (props) => {
         </TblContainer>
         <TblPagination />
       </Paper>
+
+      <Popup
+        title="Body Systems"
+        openPopup={openPopup}
+        setOpenPopup={setOpenPopup}
+      >
+        <BodySystemsForm  addOrEdit={addOrEdit} />
+      </Popup>
     </div>
   )
 }
@@ -129,5 +161,6 @@ const mapStateToProps = (state) => {
 }
 
 export default connect(mapStateToProps, {
+  addBodySystem,
   getBodySystems,
 })(BodySystems)

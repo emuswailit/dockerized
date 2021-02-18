@@ -29,6 +29,8 @@ const initialFValues = {
   is_active: true,
 }
 const BodySystemsForm = (props) => {
+
+  const {addOrEdit} = props
   const validate = (fieldValues = values) => {
     let temp = {...errors}
     if ("title" in fieldValues)
@@ -57,7 +59,7 @@ const BodySystemsForm = (props) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (validate()) props.addBodySystem(values)
+    if (validate()) addOrEdit(values, resetForm)
   }
 
   return (
