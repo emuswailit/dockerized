@@ -1,9 +1,11 @@
 import React, {useState, useEffect} from "react"
 import PageHeader from "../../../../components/common/PageHeader"
 import BodySystemsForm from "./BodySystemsForm"
-import {Search} from "@material-ui/icons"
+import {EditOutlined, Search} from "@material-ui/icons"
 import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline"
 import {addBodySystem} from "../../../../actions/body_systems"
+import EditOutlinedIcon from "@material-ui/icons/EditOutlined"
+import CloseIcon from "@material-ui/icons/Close"
 import {
   makeStyles,
   Paper,
@@ -15,7 +17,6 @@ import {
   InputAdornment,
 } from "@material-ui/core"
 import useTable from "../../../../components/common/useTable"
-
 
 import {getBodySystems} from "../../../../actions/body_systems"
 import {connect} from "react-redux"
@@ -37,16 +38,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-
 const headCells = [
   {id: "title", label: "Title"},
   {id: "description", label: "Description"},
+  {id: "actions", label: "Actions", disableSorting: true},
 ]
 const BodySystems = (props) => {
-  
   const classes = useStyles()
   const [rows, setRows] = React.useState([])
-     const [openPopup, setOpenPopup] = useState(false)
+  const [openPopup, setOpenPopup] = useState(false)
+  const [recordForEdit, setRecordForEdit] = useState(null)
   const [filterFn, setFilterFn] = useState({
     fn: (items) => {
       return items
@@ -87,12 +88,17 @@ const BodySystems = (props) => {
     })
   }
 
-const addOrEdit=(bodySystem, resetForm)=>{
-  props.addBodySystem(bodySystem)
-  resetForm()
-  setOpenPopup(false)
-  props.getBodySystems()
-}
+  const addOrEdit = (bodySystem, resetForm) => {
+    props.addBodySystem(bodySystem)
+    resetForm()
+    setOpenPopup(false)
+    props.getBodySystems()
+  }
+
+  const openInPopUp = (item) => {
+    setRecordForEdit(item)
+    setOpenPopup(true)
+  }
 
   return (
     <div>
@@ -124,7 +130,7 @@ const addOrEdit=(bodySystem, resetForm)=>{
             startIcon={<AddIcon />}
             className={classes.newButton}
             onClick={() => {
-              setOpenPopup(()=>setOpenPopup(true))
+              setOpenPopup(() => setOpenPopup(true))
             }}
           />
         </Toolbar>
@@ -135,6 +141,18 @@ const addOrEdit=(bodySystem, resetForm)=>{
               <TableRow>
                 <TableCell>{item.title}</TableCell>
                 <TableCell>{item.description}</TableCell>
+                <TableCell>
+                  <Controls.ActionButton
+                    color="primary"
+                    onClick={openInPopUp(item)}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </Controls.ActionButton>
+
+                  <Controls.ActionButton color="secondary">
+                    <CloseIcon fontSize="small" />
+                  </Controls.ActionButton>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -147,7 +165,7 @@ const addOrEdit=(bodySystem, resetForm)=>{
         openPopup={openPopup}
         setOpenPopup={setOpenPopup}
       >
-        <BodySystemsForm  addOrEdit={addOrEdit} />
+        <BodySystemsForm recordForEdit={recordForEdit} addOrEdit={addOrEdit} />
       </Popup>
     </div>
   )

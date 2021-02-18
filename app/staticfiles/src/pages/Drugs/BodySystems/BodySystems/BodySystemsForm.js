@@ -9,11 +9,11 @@ import {
   TextField,
 } from "@material-ui/core"
 import {connect} from "react-redux"
-import React, {useState} from "react"
+import React, {useEffect, useState} from "react"
 import {useForm, Form} from "../../../../components/common/useForm"
 import Controls from "../../../../components/controls/Control"
 import * as employeeService from "../../../../services/employeeService"
-import {addBodySystem} from "../../../../actions/body_systems"
+
 const categoryItems = [
   {id: "choice1", title: "Choice 1"},
   {id: "choice2", title: "Choice 2"},
@@ -29,8 +29,7 @@ const initialFValues = {
   is_active: true,
 }
 const BodySystemsForm = (props) => {
-
-  const {addOrEdit} = props
+  const {recordForEdit, addOrEdit} = props
   const validate = (fieldValues = values) => {
     let temp = {...errors}
     if ("title" in fieldValues)
@@ -61,6 +60,14 @@ const BodySystemsForm = (props) => {
     e.preventDefault()
     if (validate()) addOrEdit(values, resetForm)
   }
+
+useEffect(() => {
+  if (recordForEdit != null) {
+    setValues({
+      ...recordForEdit,
+    })
+  }
+}, [recordForEdit])
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -129,6 +136,4 @@ const mapStateToProps = (state) => {
   }
 }
 
-export default connect(mapStateToProps, {
-  addBodySystem,
-})(BodySystemsForm)
+export default connect(mapStateToProps, {})(BodySystemsForm)
