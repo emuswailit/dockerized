@@ -20,6 +20,8 @@ from .token_generator import account_activation_token
 from django.core.mail import send_mail
 from django.urls import reverse
 from notifications.tasks import send_verification_email
+from rest_framework import exceptions
+from core.models import FacilityRelatedModel
 
 
 # Create your models here.
@@ -34,6 +36,22 @@ def image_upload_to(instance, filename):
 
 
 def facility_image_upload_to(instance, filename):
+    name = instance.facility.title
+    slug = slugify(name)
+    basename, file_extension = filename.split(".")
+    new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
+    return new_filename
+
+
+def county_permit_upload_to(instance, filename):
+    name = instance.facility.title
+    slug = slugify(name)
+    basename, file_extension = filename.split(".")
+    new_filename = "%s-%s.%s" % (slug, instance.id, file_extension)
+    return new_filename
+
+
+def regulator_licence_upload_to(instance, filename):
     name = instance.facility.title
     slug = slugify(name)
     basename, file_extension = filename.split(".")
@@ -196,6 +214,45 @@ class Facility(models.Model):
         return self.is_subscribed
 
 
+class RegulatorLicence(FacilityRelatedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    """Model for uploading profile user image"""
+    facility = models.ForeignKey(
+        Facility, related_name="regulator_licence", on_delete=models.CASCADE)
+    licence = models.FileField(upload_to=regulator_licence_upload_to)
+    valid_from = models.DateField(auto_now_add=True)
+    valid_to = models.DateField(auto_now_add=True)
+    created = models.DateField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        'User', related_name="regulator_licence_verified_by", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.facility.title
+
+
+class CountyPermit(FacilityRelatedModel):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    """Model for uploading county business permits"""
+    facility = models.ForeignKey(
+        Facility, related_name="county_permit", on_delete=models.CASCADE)
+    licence = models.FileField(upload_to=county_permit_upload_to)
+    valid_from = models.DateField(auto_now_add=True)
+    valid_to = models.DateField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+    created = models.DateField(auto_now_add=True)
+    updated = models.DateField(auto_now=True)
+    owner = models.ForeignKey(
+        'User', on_delete=models.CASCADE)
+
+    verified_by = models.ForeignKey(
+        'User', related_name="county_permit_verified_by", on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.facility.title
+
+
 class FacilityImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     """Model for uploading profile user image"""
@@ -204,7 +261,7 @@ class FacilityImage(models.Model):
     image = models.ImageField(upload_to=facility_image_upload_to)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
-    created_by = models.ForeignKey(
+    owner = models.ForeignKey(
         'User', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -246,12 +303,25 @@ class CustomUserManager(BaseUserManager):
         """
         Create and save a User with the given email and password.
         """
-        if not email:
-            raise ValueError(_('The Email must be set'))
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
+        default_facility = None
+        if Facility.objects.all().count() == 0:
+            default_facility = Facility.objects.create(
+                title="Mobipharma", facility_type="Default")
+        else:
+            default_facility = Facility.objects.filter(
+                facility_type="Default", title="Mobipharma")
+
+        if default_facility:
+            if not email:
+                raise ValueError(_('The Email must be set'))
+            email = self.normalize_email(email)
+            user = self.model(email=email, **extra_fields)
+            user.set_password(password)
+            user.facility = default_facility
+            user.save(using=self._db)
+        else:
+            raise exceptions.NotAcceptable(
+                {"response_code": 0, "response_message": "Default facility is not created"})
 
         # Send email
         # if Site._meta.installed:
@@ -305,7 +375,7 @@ class User(AbstractUser):
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(
-        Facility, related_name='%(class)s', on_delete=models.CASCADE, editable=False, null=True, blank=True)
+        Facility, related_name='%(class)s', on_delete=models.CASCADE, editable=False)
     email = models.EmailField('email', unique=True)
     phone = models.CharField(max_length=30, unique=True)
     first_name = models.CharField(max_length=120)
@@ -404,7 +474,7 @@ class UserImage(models.Model):
     image = models.ImageField(upload_to=image_upload_to)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
-    created_by = models.ForeignKey(
+    owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
 
     def __str__(self):

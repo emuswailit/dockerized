@@ -17,7 +17,7 @@ class FacilityImageSerializer(serializers.HyperlinkedModelSerializer):
         model = models.FacilityImage
         fields = "__all__"
         read_only_fields = (
-            'created_by', 'facility',
+            'owner', 'facility',
         )
 
 
@@ -26,7 +26,7 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
         model = models.UserImage
         fields = "__all__"
         read_only_fields = (
-            'variation', 'created_by', 'owner',
+            'variation', 'owner',
         )
 
 
@@ -43,6 +43,22 @@ class FacilitySerializer(serializers.ModelSerializer):
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
     )
+
+    def create(self, validated_data):
+        """
+    Create slot after validating if time in betweeen in not taken
+        """
+        user_pk = self.context.get("user_pk")
+        user = User.objects.get(id=user_pk)
+
+        if user.is_staff:
+            raise serializers.ValidationError(
+                {"response_code": 1, "response_message": "Not for administrators"})
+
+        created = models.Facility.objects.create(owner=user, ** validated_data)
+
+        if created:
+            user.facility = created
 
     # def get_facility_image(self, obj):
     #     facility_image = FacilityImage.objects.filter(facility=obj)

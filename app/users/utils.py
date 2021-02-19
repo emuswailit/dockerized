@@ -25,9 +25,12 @@ def jwt_response_payload_handler(token, user=None, request=None):
         'gender': user.gender,
         'is_client': user.is_client,
         'is_pharmacist': user.is_pharmacist,
+        'is_professional': user.is_professional,
+        'is_administrator': user.is_administrator,
         'is_superintendent': user.is_superintendent,
         'is_prescriber': user.is_prescriber,
         'is_courier': user.is_courier,
         'is_staff': user.is_staff,
-        # 'facility': user.facility
+        'facility_title': user.facility.title,
+        'facility_type': user.facility.facility_type
     }

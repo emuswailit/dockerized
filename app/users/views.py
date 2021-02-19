@@ -32,9 +32,20 @@ class MerchantCreate(generics.CreateAPIView):
     """
     name = 'merchant-create'
     permission_classes = (
-        permissions.AllowAny,
+        permissions.IsAuthenticated,
     )
-    serializer_class = serializers.MerchantSerializer
+    serializer_class = serializers.FacilitySerializer
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(MerchantCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
 
 # class FacilityList(generics.ListAPIView):
