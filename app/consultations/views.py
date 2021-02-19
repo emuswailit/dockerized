@@ -8,7 +8,9 @@ from users.models import Dependant
 from entities.models import Professionals, Employees
 from . import models, serializers
 
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 # Appointment slots
 
 
@@ -181,27 +183,6 @@ class AppointmentPaymentsList(generics.ListAPIView):
     serializer_class = serializers.AppointmentPaymentsSerializer
 
     queryset = models.AppointmentPayments.objects.all()
-    # TODO : Reuse this for filtering by q.
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(AppointmentPaymentsList, self).get_context_data(
-            *args, **kwargs)
-        # context["now"] = timezone.now()
-        context["query"] = self.request.GET.get("q")  # None
-        return context
-
-    def get_queryset(self, *args, **kwargs):
-        user = self.request.user
-        qs = super(AppointmentPaymentsList,
-                   self).get_queryset(*args, **kwargs)
-        query = self.request.GET.get("q")
-        if query:
-            qs = super().get_queryset().filter(  # Change this to ensure it searches only already filtered queryset
-                Q(title__icontains=query) |
-                Q(description__icontains=query)
-            )
-
-        return qs.filter(owner=user)
 
 
 class AppointmentPaymentsDetail(generics.RetrieveAPIView):
@@ -441,7 +422,6 @@ class AllPrescriptionList(FacilitySafeViewMixin, generics.ListAPIView):
     ordering_fields = ('dependant__first_name', 'id')
 
     def get_queryset(self):
-        facility_id = self.request.user.facility_id
         return super().get_queryset().filter(owner=self.request.user)
 
 

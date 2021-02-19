@@ -30,15 +30,40 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class FacilitySerializer(serializers.ModelSerializer):
-    # facility_image = serializers.SerializerMethodField(
-    #     read_only=True)
+class RegulatorLicenceSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.RegulatorLicence
+        fields = "__all__"
+        read_only_fields = (
+            'variation', 'owner',
+        )
+
+
+class CountyPermitSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = models.CountyPermit
+        fields = "__all__"
+        read_only_fields = (
+            'variation', 'owner',
+        )
+
+
+class FacilitySerializer(FacilitySafeSerializerMixin, serializers.ModelSerializer):
+    facility_image = serializers.SerializerMethodField(
+        read_only=True)
+
+    county_permit = serializers.SerializerMethodField(
+        read_only=True)
+    regulator_licence = serializers.SerializerMethodField(
+        read_only=True)
 
     class Meta:
         model = models.Facility
         fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'trial_done', 'created', 'updated',)
-        read_only_fields = ('is_verified', 'trial_done', 'is_subscribed')
+                  'latitude', 'longitude', 'description', 'is_verified',
+                  'is_subscribed', 'trial_done', 'created',
+                  'updated', 'facility_image', 'regulator_licence', 'county_permit')
+        read_only_fields = ('is_verified', 'trial_done', 'is_subscribed',)
     title = serializers.CharField(
 
         validators=[UniqueValidator(queryset=models.Facility.objects.all())]
@@ -58,11 +83,50 @@ class FacilitySerializer(serializers.ModelSerializer):
         created = models.Facility.objects.create(owner=user, ** validated_data)
 
         if created:
+            #Set user to facility
             user.facility = created
+            user.is_administrator = True
+            user.is_superintendent = True
+            user.save()
+        return created
 
-    # def get_facility_image(self, obj):
-    #     facility_image = FacilityImage.objects.filter(facility=obj)
-    #     return FacilityImageSerializer(facility_image, context=self.context, many=True).data
+    def get_facility_image(self, obj):
+        facility_image = FacilityImage.objects.filter(facility=obj)
+        return FacilityImageSerializer(facility_image, context=self.context, many=True).data
+
+    def get_regulator_licence(self, obj):
+        regulator_licence = models.RegulatorLicence.objects.filter(
+            facility=obj)
+        return RegulatorLicenceSerializer(regulator_licence, context=self.context, many=True).data
+
+    def get_county_permit(self, obj):
+        county_permit = models.CountyPermit.objects.filter(
+            facility=obj)
+        return CountyPermitSerializer(county_permit, context=self.context, many=True).data
+
+
+class FacilityVerifySerializer(serializers.ModelSerializer):
+    # facility_image = serializers.SerializerMethodField(
+    #     read_only=True)
+
+    class Meta:
+        model = models.Facility
+        fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'trial_done', 'created', 'updated',)
+        read_only_fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
+                            'latitude', 'longitude', 'description',  'is_subscribed', 'trial_done', 'created', 'updated',)
+
+    def update(self, quote_item, validated_data):
+        """
+        This method updates the prescription quote item
+
+        """
+        user_pk = self.context.get(
+            "user_pk")
+
+        if user_pk:
+            raise serializers.ValidationError(f"{user_pk}")
+            user = Users.objects.get(id=user_pk)
 
 
 class AccountSerializer(serializers.HyperlinkedModelSerializer):

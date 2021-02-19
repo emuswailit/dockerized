@@ -184,6 +184,12 @@ class Facility(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    owner = models.ForeignKey(
+        'User', related_name="facility_owner", on_delete=models.CASCADE, null=True, blank=True)
+
+    verified_by = models.ForeignKey(
+        'User', related_name="facility_verified_by", on_delete=models.CASCADE, null=True, blank=True)
+
     objects = FacilityManager()
 
     class Meta:
@@ -308,7 +314,7 @@ class CustomUserManager(BaseUserManager):
             default_facility = Facility.objects.create(
                 title="Mobipharma", facility_type="Default")
         else:
-            default_facility = Facility.objects.filter(
+            default_facility = Facility.objects.get(
                 facility_type="Default", title="Mobipharma")
 
         if default_facility:
@@ -493,7 +499,22 @@ class Account(models.Model):
         User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.owner.email
+        return f"{self.owner.email}"
+
+
+class DependantQuerySet(models.QuerySet):
+    def all_dependants(self):
+        return self.all()
+
+
+class DependantManager(models.Manager):
+    """Manager for the Dependant model. Also handles the account creation"""
+
+    def get_queryset(self):
+        return DependantQuerySet(self.model, using=self._db)
+
+    def all_dependants(self):
+        return self.get_queryset().all_dependants()
 
 
 class Dependant(models.Model):
@@ -518,6 +539,8 @@ class Dependant(models.Model):
     updated = models.DateField(auto_now=True)
     owner = models.ForeignKey(
         User, on_delete=models.CASCADE)
+
+    objects = DependantManager()
 
     def __str__(self):
         return f"{self.first_name} {self.first_name} c/o {self.owner.first_name} {self.owner.last_name}"

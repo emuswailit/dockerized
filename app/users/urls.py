@@ -22,23 +22,26 @@ urlpatterns = [
     path('activate/<slug:uidb64>/<slug:token>/',
          views.activate_account, name='activate'),
 
-    path('facilities/', views.FacilityDetail.as_view(),
-         name=views.FacilityDetail.name),
+    path('facilities/user', views.FacilityList.as_view(),
+         name=views.FacilityList.name),
 
-    path('facilities/pharmacies', views.PharmaciesList.as_view(),
-         name=views.PharmaciesList.name),
-    path('facilities/clinics', views.ClinicsList.as_view(),
-         name=views.ClinicsList.name),
-    path('facilities/pharmacies', views.PharmaciesList.as_view(),
-         name=views.PharmaciesList.name),
+    path('facilities/user', views.FacilityListForAdmin.as_view(),
+         name=views.FacilityListForAdmin.name),
+
+    path('facilities/<uuid:pk>/verify', views.FacilityVerifyAPIView.as_view(),
+         name=views.FacilityVerifyAPIView.name),
     path('facilities/default', views.DefaultFacility.as_view(),
          name=views.DefaultFacility.name),
-
-
     path('facilities/<uuid:pk>', views.FacilityDetail.as_view(),
          name=views.FacilityDetail.name),
     path('facilities/<uuid:pk>/image', views.FacilityImageAPIView.as_view(),
          name=views.FacilityImageAPIView.name),
+    path('facilities/<uuid:pk>/regulator-licence', views.RegulatorLicenceAPIView.as_view(),
+         name=views.RegulatorLicenceAPIView.name),
+    path('facilities/<uuid:pk>/county-permit', views.CountyPermitAPIView.as_view(),
+         name=views.CountyPermitAPIView.name),
+
+
     path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
          name=views.FacilityImageDetail.name),
     #     Dependants urls
@@ -64,6 +67,8 @@ urlpatterns = [
 
     path('accounts/<uuid:pk>', views.AccountDetailAPIView.as_view(),
          name=views.AccountDetailAPIView.name),
+
+
 
     # Cadres urls
     path('cadres/create', views.CadresCreate.as_view(),

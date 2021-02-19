@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 import base64
 
 from django.contrib.auth import authenticate, get_user_model
@@ -48,75 +49,56 @@ class MerchantCreate(generics.CreateAPIView):
         return context
 
 
-# class FacilityList(generics.ListAPIView):
-#     """List of all porfolios"""
-#     name = 'portfolio-list'
-#     permission_classes = (
-#         permissions.IsAuthenticated,
-#     )
-#     serializer_class = serializers.FacilitySerializer
-#     queryset = models.Facility.objects.all()
-
-#     def get_queryset(self):
-#         # Ensure that the users belong to the portfolio of the user that is making the request
-#         owner_national_id = self.request.user.national_id
-#         return super().get_queryset().filter(owner_national_id=owner_national_id)
-
-# class FacilityDetail(generics.RetrieveAPIView):
-#     """
-#     Prescription details
-#     """
-#     name = "facility-detail"
-#     permission_classes = (permissions.IsAuthenticated,
-#                           )
-#     serializer_class = serializers.FacilitySerializer
-#     queryset = models.Facility.objects.all()
-#     lookup_fields = ('pk',)
-
-#     def get_object(self):
-#         queryset = self.get_queryset()
-#         filter = {}
-#         for field in self.lookup_fields:
-#             filter[field] = self.kwargs[field]
-
-#         obj = get_object_or_404(queryset, **filter)
-#         self.check_object_permissions(self.request, obj)
-#         return obj
-
-class PharmaciesList(generics.ListAPIView):
-    """
-    Prescriber
-    ============================================================
-    1. List of all prescriptions for this
-
-    """
-    name = 'facility-list'
+class FacilityListForAdmin(generics.ListAPIView):
+    """List of all porfolios"""
+    name = 'portfolio-list'
     permission_classes = (
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.retail_pharmacies()
+    queryset = models.Facility.objects.all()
 
-    # search_fields =('title','county','town', 'description',)
-    # ordering_fields =('title','id')
+    def get_queryset(self):
+        # Ensure that the users belong to the portfolio of the user that is making the request
+        user = self.request.user
+        return super().get_queryset().all()
 
 
-class ClinicsList(generics.ListAPIView):
-    """
-    Prescriber
-    ============================================================
-    1. List of all prescriptions for this
-
-    """
-    name = 'facility-list'
+class FacilityList(generics.ListAPIView):
+    """List of all porfolios"""
+    name = 'portfolio-list'
     permission_classes = (
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.clinics()
+    queryset = models.Facility.objects.all()
 
-    search_fields = ('title', 'county', 'town', 'description',)
-    ordering_fields = ('title', 'id')
+    def get_queryset(self):
+        # Ensure that the users belong to the portfolio of the user that is making the request
+        user = self.request.user
+        return super().get_queryset().filter(owner=user)
+
+
+class FacilityDetail(generics.RetrieveAPIView):
+    """
+    Prescription details
+    """
+    name = "facility-detail"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
+    serializer_class = serializers.FacilitySerializer
+    queryset = models.Facility.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class DefaultFacility(generics.ListAPIView):
@@ -134,23 +116,37 @@ class DefaultFacility(generics.ListAPIView):
     queryset = models.Facility.objects.all()
 
 
-class FacilityDetail(generics.RetrieveAPIView):
+class FacilityVerifyAPIView(generics.RetrieveUpdateAPIView):
     """
-    Logged in user
-    ================================================
-    1. View details of own facility
+    Account update
     """
-    name = 'facility-detail'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
-    serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.all_facilities()
-    # lookup_fields = ('pk',)
+    name = "account-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.FacilityVerifySerializer
+    queryset = models.Account.objects.all()
+    lookup_fields = ('pk',)
 
-    # def get_object(self):
-    #     # Ensure that users can only see the company that they belong to
-    #     return self.request.user.facility
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(FacilityVerifyAPIView,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class AnyUserRegisterAPIView(generics.CreateAPIView):
@@ -360,6 +356,92 @@ class FacilityImageDetail(generics.RetrieveUpdateDestroyAPIView):
     )
     serializer_class = serializers.FacilityImageSerializer
     queryset = models.FacilityImage.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+    def delete(self, request, pk=None, **kwargs):
+
+        print("No deletes")
+
+
+class RegulatorLicenceAPIView(FacilitySafeViewMixin, generics.CreateAPIView):
+    name = 'RegulatorLicence'
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.RegulatorLicenceSerializer
+    queryset = models.RegulatorLicence.objects.all()
+    lookup_fields = ('pk',)
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        serializer.save(created_by=user, facility=user.facility
+                        )
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class RegulatorLicenceDetail(generics.RetrieveUpdateDestroyAPIView):
+    name = 'RegulatorLicence-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.RegulatorLicenceSerializer
+    queryset = models.RegulatorLicence.objects.all()
+
+    def get_queryset(self):
+        facility_id = self.request.user.facility_id
+        return super().get_queryset().filter(facility_id=facility_id)
+
+    def delete(self, request, pk=None, **kwargs):
+
+        print("No deletes")
+
+
+# County permits
+
+class CountyPermitAPIView(generics.CreateAPIView):
+    name = 'countypermit-create'
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = serializers.CountyPermitSerializer
+    queryset = models.CountyPermit.objects.all()
+    lookup_fields = ('pk',)
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+
+        serializer.save(created_by=user, facility=user.facility
+                        )
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class CountyPermitDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
+    name = 'countypermit-detail'
+    permission_classes = (
+        permissions.IsAuthenticated,
+    )
+    serializer_class = serializers.CountyPermitSerializer
+    queryset = models.CountyPermit.objects.all()
 
     def get_queryset(self):
         facility_id = self.request.user.facility_id
