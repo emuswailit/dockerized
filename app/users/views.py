@@ -120,7 +120,7 @@ class DefaultFacility(generics.ListAPIView):
         permissions.IsAuthenticated,
     )
     serializer_class = serializers.FacilitySerializer
-    queryset = models.Facility.objects.default_facility()
+    queryset = models.Facility.objects.all()
 
 
 class FacilityDetail(generics.RetrieveAPIView):
