@@ -31,7 +31,8 @@ export const getBodySystems = () => (dispatch, getState) => {
       });
     })
     .catch((err) => {
-      dispatch(showSnackbarMessage(err.response.data.message, "error"));
+      console.log(err)
+      // dispatch(showSnackbarMessage(err.response.data.message, "error"));
     });
 };
 

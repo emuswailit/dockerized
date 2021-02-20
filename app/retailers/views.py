@@ -159,7 +159,7 @@ class PharmacyListAPIView(generics.ListAPIView):
     """
     Client
     =============================================
-    Retrieve all retailers or those close to user
+    Retrieve all pharmacies
     """
     name = "pharmacy-list"
     permission_classes = (permissions.IsAuthenticated,
@@ -330,10 +330,6 @@ class PharmacistConfirmPrescriptionQuote(generics.RetrieveUpdateAPIView):
     def get_serializer_context(self):
         prescription_quote_item_pk = self.kwargs.get("pk")
         context = super(PharmacistConfirmPrescriptionQuote,
-
-
-
-
                         self).get_serializer_context()
 
         context.update({
@@ -452,7 +448,7 @@ class PrescriptionQuoteItemsList(FacilitySafeViewMixin, generics.ListAPIView):
 
 class QuoteItemDetailAPIView(generics.RetrieveAPIView):
     """
-    Prescription details
+    Quote item details
     """
     name = "quoteitem-detail"
     permission_classes = (permissions.IsAuthenticated,
@@ -516,9 +512,9 @@ class PharmacistUpdateQuoteItem(FacilitySafeViewMixin, generics.RetrieveUpdateAP
 class AcceptQuoteItem(generics.RetrieveUpdateAPIView):
 
     """
-    Pharmacist
+    Client
     ----------------------------------------------------
-    Update prescription quote item
+    Update prescription quote item to accept it
     """
     name = "quoteitem-accept"
     permission_classes = (
@@ -555,7 +551,7 @@ class FacilityOrdersList(FacilitySafeViewMixin, generics.ListAPIView):
     """
     Facility employees
     ============================================================
-    1. List of product variations
+    1. List of orders
     """
     name = 'order-list'
     permission_classes = (
@@ -689,7 +685,7 @@ class ClientPharmacyPaymentsListAPIView(generics.ListAPIView):
     """
     Clients
     =============================================
-    Retrieve all pharmacy payments for a client
+    Retrpython manage.py runserverieve all pharmacy payments for a client
     """
     name = "pharmacypayments-list"
     permission_classes = (permissions.IsAuthenticated, IsOwner

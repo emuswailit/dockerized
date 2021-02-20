@@ -431,6 +431,7 @@ class Products(FacilityRelatedModel):
                              blank=True,)
     description = models.TextField(null=True, blank=True)
     is_drug = models.BooleanField(default=False)
+    is_prescription_only = models.BooleanField(default=False)
     manufacturer = models.ForeignKey(
         Manufacturer, on_delete=models.CASCADE, null=True, blank=True)
     packaging = models.CharField(max_length=100)

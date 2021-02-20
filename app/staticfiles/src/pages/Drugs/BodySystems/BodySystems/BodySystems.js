@@ -14,6 +14,7 @@ import {
   TableRow,
   Toolbar,
   InputAdornment,
+  Grid,
 } from "@material-ui/core"
 import useTable from "../../../../components/common/useTable"
 
@@ -30,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
   },
 
   searchInput: {
-    width: "75%",
+    width: "100%",
   },
   newButton: {
     position: "absolute",
@@ -130,7 +131,8 @@ const BodySystems = (props) => {
       <Paper className={classes.pageContent}>
  
         <Toolbar>
-          <Controls.Input
+          <Grid container>
+<Grid item xs ={6}>    <Controls.Input
             label="Search body systems"
             className={classes.searchInput}
             InputProps={{
@@ -141,8 +143,9 @@ const BodySystems = (props) => {
               ),
             }}
             onChange={handleSearch}
-          />
-          <Controls.Button
+          /></Grid>
+
+<Grid item xs ={6}>   <Controls.Button
             text="Add New"
             variant="outlined"
             startIcon={<AddIcon />}
@@ -150,7 +153,11 @@ const BodySystems = (props) => {
             onClick={() => {
               setOpenPopup(() => setOpenPopup(true)), setRecordForEdit=null
             }}
-          />
+          /></Grid>
+
+          </Grid>
+      
+       
         </Toolbar>
         <TblContainer>
           <TblHead />
