@@ -33,22 +33,20 @@ class UserImageSerializer(serializers.HyperlinkedModelSerializer):
 class RegulatorLicenceSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.RegulatorLicence
-        fields = "__all__"
-        read_only_fields = (
-            'variation', 'owner',
-        )
+        fields = ('id', 'url', 'regulator_licence', 'facility',
+                  'valid_from', 'valid_to', 'created', 'updated')
+        read_only_fields = ('id', 'url',  'created', 'updated')
 
 
 class CountyPermitSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = models.CountyPermit
-        fields = "__all__"
-        read_only_fields = (
-            'variation', 'owner',
-        )
+        fields = ('id', 'url', 'county_permit', 'facility',
+                  'valid_from', 'valid_to', 'created', 'updated')
+        read_only_fields = ('id', 'url',  'created', 'updated')
 
 
-class FacilitySerializer(FacilitySafeSerializerMixin, serializers.ModelSerializer):
+class FacilitySerializer(serializers.ModelSerializer):
     facility_image = serializers.SerializerMethodField(
         read_only=True)
 
@@ -80,7 +78,7 @@ class FacilitySerializer(FacilitySafeSerializerMixin, serializers.ModelSerialize
             raise serializers.ValidationError(
                 {"response_code": 1, "response_message": "Not for administrators"})
 
-        created = models.Facility.objects.create(owner=user, ** validated_data)
+        created = models.Facility.objects.create(** validated_data)
 
         if created:
             #Set user to facility

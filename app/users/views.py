@@ -25,21 +25,22 @@ jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 User = get_user_model()
 
 
-class MerchantCreate(generics.CreateAPIView):
+# Create facility
+class FacilityCreate(generics.CreateAPIView):
     """
-    Create new merchant account
-    ===========================
-    Any user
+    Authenticated user
+    -----------------------------------------------------
+    Create facility
     """
-    name = 'merchant-create'
-    permission_classes = (
-        permissions.IsAuthenticated,
-    )
+    name = "facility-create"
+    permission_classes = (permissions.IsAuthenticated,
+                          )
     serializer_class = serializers.FacilitySerializer
+    queryset = models.Facility.objects.all()
 
     def get_serializer_context(self):
         user_pk = self.request.user.id
-        context = super(MerchantCreate,
+        context = super(FacilityCreate,
                         self).get_serializer_context()
 
         context.update({
@@ -47,6 +48,27 @@ class MerchantCreate(generics.CreateAPIView):
 
         })
         return context
+
+    def perform_create(self, serializer):
+
+        user = self.request.user
+        serializer.save(owner=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Facility created successfully.", "facility": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"message": "Facility not created", "facility": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class FacilityListForAdmin(generics.ListAPIView):
@@ -366,33 +388,54 @@ class FacilityImageDetail(generics.RetrieveUpdateDestroyAPIView):
         print("No deletes")
 
 
-class RegulatorLicenceAPIView(FacilitySafeViewMixin, generics.CreateAPIView):
-    name = 'RegulatorLicence'
-    permission_classes = (permissions.IsAuthenticated,)
+# ADd new regulator licence
+class RegulatorLicenceCreate(generics.CreateAPIView):
+    """
+    Authenticated user
+    -----------------------------------------------------
+    Add new regulator licence
+    """
+    name = "regulatorlicence-create"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
     serializer_class = serializers.RegulatorLicenceSerializer
     queryset = models.RegulatorLicence.objects.all()
-    lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(RegulatorLicenceCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
 
         user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
 
-        serializer.save(created_by=user, facility=user.facility
-                        )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Licence uploaded successfully.", "regulator-licence": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+            return Response(data={"message": "Licence not uploaded", "regulator-licence": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class RegulatorLicenceDetail(generics.RetrieveUpdateDestroyAPIView):
-    name = 'RegulatorLicence-detail'
+    name = 'regulatorlicence-detail'
     permission_classes = (
         permissions.IsAuthenticated,
     )
@@ -410,29 +453,50 @@ class RegulatorLicenceDetail(generics.RetrieveUpdateDestroyAPIView):
 
 # County permits
 
-class CountyPermitAPIView(generics.CreateAPIView):
-    name = 'countypermit-create'
-    permission_classes = (permissions.IsAuthenticated,)
+# ADd new regulator licence
+class CountyPermitCreate(generics.CreateAPIView):
+    """
+    Authenticated user
+    -----------------------------------------------------
+    Add new regulator licence
+    """
+    name = "countypermit-create"
+    permission_classes = (app_permissions.FacilitySuperintendentPermission,
+                          )
     serializer_class = serializers.CountyPermitSerializer
     queryset = models.CountyPermit.objects.all()
-    lookup_fields = ('pk',)
+
+    def get_serializer_context(self):
+        user_pk = self.request.user.id
+        context = super(CountyPermitCreate,
+                        self).get_serializer_context()
+
+        context.update({
+            "user_pk": user_pk
+
+        })
+        return context
 
     def perform_create(self, serializer):
 
         user = self.request.user
+        serializer.save(owner=user, facility=user.facility)
 
-        serializer.save(created_by=user, facility=user.facility
-                        )
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_create(serializer)
+            return Response(data={"message": "Permit uploaded successfully.", "county-permit": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        filter = {}
-        for field in self.lookup_fields:
-            filter[field] = self.kwargs[field]
-
-        obj = get_object_or_404(queryset, **filter)
-        self.check_object_permissions(self.request, obj)
-        return obj
+            return Response(data={"message": "Permit not uploaded", "county-permit": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class CountyPermitDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):

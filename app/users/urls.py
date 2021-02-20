@@ -4,8 +4,8 @@ from django.conf.urls import url
 
 
 urlpatterns = [
-    path("merchant/", views.MerchantCreate.as_view(),
-         name=views.MerchantCreate.name),
+    path("merchant/", views.FacilityCreate.as_view(),
+         name=views.FacilityCreate.name),
 
     path('register/', views.AnyUserRegisterAPIView.as_view(),
          name=views.AnyUserRegisterAPIView.name),
@@ -36,12 +36,15 @@ urlpatterns = [
          name=views.FacilityDetail.name),
     path('facilities/<uuid:pk>/image', views.FacilityImageAPIView.as_view(),
          name=views.FacilityImageAPIView.name),
-    path('facilities/<uuid:pk>/regulator-licence', views.RegulatorLicenceAPIView.as_view(),
-         name=views.RegulatorLicenceAPIView.name),
-    path('facilities/<uuid:pk>/county-permit', views.CountyPermitAPIView.as_view(),
-         name=views.CountyPermitAPIView.name),
-
-
+    path('facilities/<uuid:pk>/regulator-licence', views.RegulatorLicenceCreate.as_view(),
+         name=views.RegulatorLicenceCreate.name),
+    
+    path('facilities/<uuid:pk>/county-permit', views.CountyPermitCreate.as_view(),
+         name=views.CountyPermitCreate.name),
+    path('county-permits/<uuid:pk>', views.CountyPermitDetail.as_view(),
+         name=views.CountyPermitDetail.name),
+    path('regulator-licences/<uuid:pk>', views.RegulatorLicenceDetail.as_view(),
+         name=views.RegulatorLicenceDetail.name),
     path('facility-image/<uuid:pk>/', views.FacilityImageDetail.as_view(),
          name=views.FacilityImageDetail.name),
     #     Dependants urls

@@ -225,7 +225,7 @@ class RegulatorLicence(FacilityRelatedModel):
     """Model for uploading profile user image"""
     facility = models.ForeignKey(
         Facility, related_name="regulator_licence", on_delete=models.CASCADE)
-    licence = models.FileField(upload_to=regulator_licence_upload_to)
+    regulator_licence = models.FileField(upload_to=regulator_licence_upload_to)
     valid_from = models.DateField(auto_now_add=True)
     valid_to = models.DateField(auto_now_add=True)
     created = models.DateField(auto_now_add=True)
@@ -243,7 +243,7 @@ class CountyPermit(FacilityRelatedModel):
     """Model for uploading county business permits"""
     facility = models.ForeignKey(
         Facility, related_name="county_permit", on_delete=models.CASCADE)
-    licence = models.FileField(upload_to=county_permit_upload_to)
+    county_permit = models.FileField(upload_to=county_permit_upload_to)
     valid_from = models.DateField(auto_now_add=True)
     valid_to = models.DateField(auto_now_add=True)
     is_verified = models.BooleanField(default=False)
