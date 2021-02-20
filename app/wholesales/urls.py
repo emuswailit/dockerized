@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.conf.urls import url
-from users.views import FacilityDetail
+# from users.views import FacilityDetail
 
 urlpatterns = [
     path('retailer-accounts/create', views.RetailerAccountsCreateAPIView.as_view(),

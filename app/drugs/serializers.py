@@ -381,7 +381,7 @@ class ProductsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Products
-        fields = ('id', 'url', 'title', 'preparation', 'category', 'sub_category', 'manufacturer','is_prescription_only',
+        fields = ('id', 'url', 'title', 'preparation', 'category', 'sub_category', 'manufacturer', 'is_prescription_only',
                   'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack', 'manufacturer_details',
                   'preparation_details', 'active', 'created', 'updated')
 

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.conf.urls import url
-from users.views import FacilityDetail
+
 
 urlpatterns = [
     # 1. Facility administrator creates his facility departments

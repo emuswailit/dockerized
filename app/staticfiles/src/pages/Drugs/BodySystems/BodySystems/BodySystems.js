@@ -1,10 +1,10 @@
-import React, {useState, useEffect} from "react"
-import PageHeader from "../../../../components/common/PageHeader"
-import BodySystemsForm from "./BodySystemsForm"
-import {EditOutlined, Search} from "@material-ui/icons"
-import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline"
-import EditOutlinedIcon from "@material-ui/icons/EditOutlined"
-import CloseIcon from "@material-ui/icons/Close"
+import React, { useState, useEffect } from "react";
+import PageHeader from "../../../../components/common/PageHeader";
+import BodySystemsForm from "./BodySystemsForm";
+import { EditOutlined, Search } from "@material-ui/icons";
+import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline";
+import EditOutlinedIcon from "@material-ui/icons/EditOutlined";
+import CloseIcon from "@material-ui/icons/Close";
 import {
   makeStyles,
   Paper,
@@ -15,15 +15,19 @@ import {
   Toolbar,
   InputAdornment,
   Grid,
-} from "@material-ui/core"
-import useTable from "../../../../components/common/useTable"
+} from "@material-ui/core";
+import useTable from "../../../../components/common/useTable";
 
-import {addBodySystem, getBodySystems, changeBodySystem} from "../../../../actions/body_systems"
-import {connect} from "react-redux"
-import Controls from "../../../../components/controls/Control"
-import AddIcon from "@material-ui/icons/Add"
-import Popup from "../../../../components/common/Popup"
-import Notification from "../../../../components/common/Notification"
+import {
+  addBodySystem,
+  getBodySystems,
+  changeBodySystem,
+} from "../../../../actions/body_systems";
+import { connect } from "react-redux";
+import Controls from "../../../../components/controls/Control";
+import AddIcon from "@material-ui/icons/Add";
+import Popup from "../../../../components/common/Popup";
+import Notification from "../../../../components/common/Notification";
 const useStyles = makeStyles((theme) => ({
   pageContent: {
     margin: theme.spacing(1),
@@ -37,88 +41,89 @@ const useStyles = makeStyles((theme) => ({
     position: "absolute",
     right: "10px",
   },
-}))
+}));
 
 const headCells = [
-  {id: "title", label: "Title"},
-  {id: "description", label: "Description"},
-  {id: "actions", label: "Actions", disableSorting: true},
-]
+  { id: "title", label: "Title" },
+  { id: "description", label: "Description" },
+  { id: "actions", label: "Actions", disableSorting: true },
+];
 const BodySystems = (props) => {
-  const classes = useStyles()
-  const [rows, setRows] = React.useState([])
-  const [openPopup, setOpenPopup] = useState(false)
-  const [recordForEdit, setRecordForEdit] = useState(null)
+  const classes = useStyles();
+  const [rows, setRows] = React.useState([]);
+  const [openPopup, setOpenPopup] = useState(false);
+  const [recordForEdit, setRecordForEdit] = useState(null);
   const [filterFn, setFilterFn] = useState({
     fn: (items) => {
-      return items
+      return items;
     },
-  })
+  });
 
-  const[notify, setNotify]=useState({isOpen:false, message:'', type:''})
+  const [notify, setNotify] = useState({
+    isOpen: false,
+    message: "",
+    type: "",
+  });
   const {
     TblContainer,
     TblHead,
     TblPagination,
     recordsAfterPagingAndSorting,
-  } = useTable(rows, headCells, filterFn)
+  } = useTable(rows, headCells, filterFn);
 
   useEffect(() => {
-    props.getBodySystems()
-    setRows(props.bodysystems)
-  }, [])
+    props.getBodySystems();
+    setRows(props.bodysystems);
+  }, []);
 
   useEffect(() => {
-    setRows(props.bodysystems)
-    console.log(rows.length)
-  }, [props.bodysystems])
+    setRows(props.bodysystems);
+    console.log(rows.length);
+  }, [props.bodysystems]);
 
   const handleSearch = (e) => {
-    let target = e.target
+    let target = e.target;
     setFilterFn({
       fn: (items) => {
-        if (target.value == "") return items
+        if (target.value == "") return items;
         else
           return items.filter((x) => {
             if (
               x.title.toLowerCase().includes(target.value) ||
               x.description.toLowerCase().includes(target.value)
             ) {
-              return true
+              return true;
             }
-          })
+          });
       },
-    })
-  }
-
-
-
+    });
+  };
 
   const addOrEdit = (bodySystem, resetForm) => {
-    if (bodySystem.id=="") {
-      props.addBodySystem(bodySystem)
-    }else{
-     props.changeBodySystem(bodySystem, bodySystem.id)
+    if (bodySystem.id == "") {
+      props.addBodySystem(bodySystem);
+    } else {
+      props.changeBodySystem(bodySystem, bodySystem.id);
     }
-  console.log("Final: ",bodySystem)
-    resetForm()
-    setOpenPopup(false)
-    setRecordForEdit(null)
+    console.log("Final: ", bodySystem);
+    resetForm();
+    setOpenPopup(false);
+    setRecordForEdit(null);
     setNotify({
-       isOpen: true,
+      isOpen: true,
       message: "Submitted succesfully",
-      type:"success"
-    }
-     
-    )
-    props.getBodySystems()
-  }
+      type: "success",
+    });
+    props.getBodySystems();
+  };
 
   const openInPopUp = (item) => {
-
-    setRecordForEdit(item)
-    setOpenPopup(true)
-  }
+    setRecordForEdit(item);
+    setOpenPopup(true);
+  };
+  const onDelete = (id) => {
+    console.log("Clicked");
+  };
 
   return (
     <div>
@@ -129,35 +134,38 @@ const BodySystems = (props) => {
       />
 
       <Paper className={classes.pageContent}>
- 
         <Toolbar>
           <Grid container>
-<Grid item xs ={6}>    <Controls.Input
-            label="Search body systems"
-            className={classes.searchInput}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
-            onChange={handleSearch}
-          /></Grid>
+            <Grid item xs={6}>
+              {" "}
+              <Controls.Input
+                label="Search body systems"
+                className={classes.searchInput}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+                onChange={handleSearch}
+              />
+            </Grid>
 
-<Grid item xs ={6}>   <Controls.Button
-            text="Add New"
-            variant="outlined"
-            startIcon={<AddIcon />}
-            className={classes.newButton}
-            onClick={() => {
-              setOpenPopup(() => setOpenPopup(true)), setRecordForEdit=null
-            }}
-          /></Grid>
-
+            <Grid item xs={6}>
+              {" "}
+              <Controls.Button
+                text="Add New"
+                variant="outlined"
+                startIcon={<AddIcon />}
+                className={classes.newButton}
+                onClick={() => {
+                  setOpenPopup(() => setOpenPopup(true)),
+                    (setRecordForEdit = null);
+                }}
+              />
+            </Grid>
           </Grid>
-      
-       
         </Toolbar>
         <TblContainer>
           <TblHead />
@@ -169,12 +177,15 @@ const BodySystems = (props) => {
                 <TableCell>
                   <Controls.ActionButton
                     color="primary"
-                    onClick={()=>openInPopUp(item)}
+                    onClick={() => openInPopUp(item)}
                   >
                     <EditOutlinedIcon fontSize="small" />
                   </Controls.ActionButton>
 
-                  <Controls.ActionButton color="secondary">
+                  <Controls.ActionButton
+                    color="secondary"
+                    onClick={() => onDelete(item.title)}
+                  >
                     <CloseIcon fontSize="small" />
                   </Controls.ActionButton>
                 </TableCell>
@@ -193,19 +204,20 @@ const BodySystems = (props) => {
         <BodySystemsForm addOrEdit={addOrEdit} recordForEdit={recordForEdit} />
       </Popup>
 
-      <Notification notify={notify} setNotify={setNotify}/>
+      <Notification notify={notify} setNotify={setNotify} />
     </div>
-  )
-}
+  );
+};
 const mapStateToProps = (state) => {
   return {
     snackbarreducer: state.snackbarreducer,
     bodysystems: state.bodysystems.bodysystems,
     update: state.bodysystems.update,
-  }
-}
+  };
+};
 
 export default connect(mapStateToProps, {
   addBodySystem,
-  getBodySystems,changeBodySystem
-})(BodySystems)
+  getBodySystems,
+  changeBodySystem,
+})(BodySystems);
