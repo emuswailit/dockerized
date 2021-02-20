@@ -1,16 +1,11 @@
+from core.app_permissions import (
+    SubscribedOrStaffPermission)
 from django.db import IntegrityError
-from django.http import JsonResponse
-from django.shortcuts import render
-from rest_framework import generics, permissions, status, exceptions
-from . import serializers
-from . import models
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404
+from rest_framework import exceptions, generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from django_countries.serializers import CountryFieldMixin
-from rest_framework.filters import SearchFilter, OrderingFilter
-from core.app_permissions import IsSubscribedPermission, SubscribedOrStaffPermission
 
+from . import models, serializers
 
 # Distributors
 
@@ -35,8 +30,9 @@ class DistributorCreateAPIView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
-            self.perform_create(serializer)
-            return Response(data={"message": "Distributor created successfully.", "distributor": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            self.perfaorm_create(serializer)
+            return Response(data={"message": "Distributor created successfully.", "distributor": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -45,7 +41,8 @@ class DistributorCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Distributor not created", "distributor": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Distributor not created", "distributor": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DistributorListAPIView(generics.ListAPIView):
@@ -134,7 +131,9 @@ class PosologyCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Posology created successfully.", "posology": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Posology created successfully.",
+                                  "posology": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -143,7 +142,8 @@ class PosologyCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Posology not created", "route": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Posology not created", "route": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class PosologyListAPIView(generics.ListAPIView):
@@ -232,7 +232,8 @@ class FrequencyCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Frequency created successfully.", "frequency": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Frequency created successfully.", "frequency": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -241,7 +242,9 @@ class FrequencyCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Frequency not created", "frequency": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Frequency not created",
+                                  "frequency": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class FrequencyListAPIView(generics.ListAPIView):
@@ -330,7 +333,8 @@ class InstructionCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Instruction created successfully.", "instruction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Instruction created successfully.", "instruction": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -339,7 +343,8 @@ class InstructionCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Instruction not created", "instruction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Instruction not created", "instruction": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class InstructionListAPIView(generics.ListAPIView):
@@ -427,7 +432,8 @@ class BodySystemCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Body system created successfully.", "body_system": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Body system created successfully.", "body_system": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -436,7 +442,9 @@ class BodySystemCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "BodySystem not created", "body_system": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "BodySystem not created",
+                                  "body_system": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class BodySystemListAPIView(generics.ListAPIView):
@@ -460,7 +468,7 @@ class BodySystemDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     BodySystem details
     """
     name = "bodysystem-detail"
-    permission_classes = (permissions.AllowAny,
+    permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.BodySystemSerializer
     queryset = models.BodySystem.objects.all()
@@ -476,9 +484,9 @@ class BodySystemDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
-    def delete(self, request, *args, **kwargs):
-        raise exceptions.NotAcceptable(
-            {"message": ["This item cannot be deleted!"]})
+    # def delete(self, request, *args, **kwargs):
+    #     raise exceptions.NotAcceptable(
+    #         {"message": ["This item cannot be deleted!"]})
 
 
 class BodySystemUpdateAPIView(generics.RetrieveUpdateAPIView):
@@ -529,7 +537,9 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug class created successfully.", "drug_class": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug class created successfully.",
+                                  "drug_class": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -538,7 +548,9 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "DrugClass not created", "drug_class": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "DrugClass not created",
+                                  "drug_class": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class DrugClassListAPIView(generics.ListAPIView):
@@ -627,7 +639,9 @@ class DrugSubClassCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Sub class created successfully.", "drug_sub_class": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Sub class created successfully.",
+                                  "drug_sub_class": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -636,7 +650,9 @@ class DrugSubClassCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "DrugSubClass not created", "drug_sub_class": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "DrugSubClass not created",
+                                  "drug_sub_class": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class DrugSubClassListAPIView(generics.ListAPIView):
@@ -686,7 +702,7 @@ class DrugSubClassUpdateAPIView(generics.RetrieveUpdateAPIView):
                           )
     serializer_class = serializers.DrugSubClassSerializer
     queryset = models.DrugSubClass.objects.all()
-    # lookup_fields = ('pk',)
+    lookup_fields = ('pk',)
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -721,7 +737,9 @@ class GenericCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Generic created successfully.", "generic": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Generic created successfully.",
+                                  "generic": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -730,7 +748,9 @@ class GenericCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Generic not created", "generic": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Generic not created",
+                                  "generic": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class GenericListAPIView(generics.ListAPIView):
@@ -832,7 +852,9 @@ class PreparationCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Preparation created successfully.", "preparation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Preparation created successfully.",
+                                  "preparation": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -841,7 +863,9 @@ class PreparationCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Preparation not created", "preparation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Preparation not created",
+                                  "preparation": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class PreparationListAPIView(generics.ListAPIView):
@@ -930,7 +954,9 @@ class FormulationCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Formulation created successfully.", "formulation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Formulation created successfully.",
+                                  "formulation": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -939,7 +965,9 @@ class FormulationCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Formulation not created", "formulation": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Formulation not created",
+                                  "formulation": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class FormulationListAPIView(generics.ListAPIView):
@@ -1027,7 +1055,9 @@ class ManufacturerCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Manufacturer created successfully.", "manufacturer": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Manufacturer created successfully.",
+                                  "manufacturer": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1036,7 +1066,9 @@ class ManufacturerCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Manufacturer not created", "manufacturer": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Manufacturer not created",
+                                  "manufacturer": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class ManufacturerListAPIView(generics.ListAPIView):
@@ -1115,16 +1147,18 @@ class ProductCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"No repeating entries"})
+                {"response_code": "1", "response_message": "No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Product created successfully.", "product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Product created successfully.",
+                                  "product": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1133,7 +1167,9 @@ class ProductCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Product not created", "product": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Product not created",
+                                  "product": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class ProductListAPIView(generics.ListAPIView):
@@ -1223,7 +1259,9 @@ class ProductImageList(generics.ListCreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Product photo created successfully.", "product-image": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Product photo created successfully.",
+                                  "product-image": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1232,7 +1270,9 @@ class ProductImageList(generics.ListCreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Product image not created", "product-image": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Product image not created",
+                                  "product-image": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         user = self.request.user
@@ -1272,16 +1312,18 @@ class IndicationsCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"No repeating entries"})
+                {"response_code": "1", "response_message": "No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Indications created successfully.", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Indications created successfully.",
+                                  "indication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1290,7 +1332,9 @@ class IndicationsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Indications not created", "indication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Indications not created",
+                                  "indication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class IndicationsListAPIView(generics.ListAPIView):
@@ -1370,16 +1414,18 @@ class DosesCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"No repeating entries"})
+                {"response_code": "1", "response_message": "No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Dose created successfully.", "dose": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Dose created successfully.",
+                                  "dose": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1388,7 +1434,8 @@ class DosesCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Doses not created", "dose": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Doses not created", "dose": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DosesListAPIView(generics.ListAPIView):
@@ -1470,16 +1517,18 @@ class ModeOfActionsCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"No repeating entries"})
+                {"response_code": "1", "response_message": "No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Mode of action created successfully.", "mode-of-action": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Mode of action created successfully.",
+                                  "mode-of-action": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1488,7 +1537,9 @@ class ModeOfActionsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Mode of action not created", "mode-of-action": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Mode of action not created",
+                                  "mode-of-action": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class ModeOfActionsListAPIView(generics.ListAPIView):
@@ -1576,16 +1627,18 @@ class ContraindicationsCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"No repeating entries"})
+                {"response_code": "1", "response_message": "No repeating entries"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Contraindication created successfully.", "contraindication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Contraindication created successfully.",
+                                  "contraindication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1594,7 +1647,9 @@ class ContraindicationsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Contraindication not created", "contraindication": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Contraindication not created",
+                                  "contraindication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class ContraindicationsListAPIView(generics.ListAPIView):
@@ -1673,8 +1728,7 @@ class InteractionsCreateAPIView(generics.CreateAPIView):
     Create new drug interaction
     """
     name = "interactions-create"
-    permission_classes = (permissions.IsAdminUser,
-                          )
+    permission_classes = (permissions.IsAdminUser,)
     serializer_class = serializers.InteractionsSerializer
     queryset = models.Interactions.objects.all()
 
@@ -1682,16 +1736,18 @@ class InteractionsCreateAPIView(generics.CreateAPIView):
         try:
             user = self.request.user
             serializer.save(owner=user, facility=user.facility)
-        except IntegrityError as e:
+        except IntegrityError:
             raise exceptions.NotAcceptable(
-                {"response_code": "1", "response_message": f"The two contraindicating drugs must be different"})
+                {"response_code": "1", "response_message": "The two contraindicating drugs must be different"})
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug interaction created successfully.", "interaction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug interaction created successfully.",
+                                  "interaction": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1700,7 +1756,9 @@ class InteractionsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Drug interaction not created", "interaction": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug interaction not created",
+                                  "interaction": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class InteractionsListAPIView(generics.ListAPIView):
@@ -1794,7 +1852,9 @@ class SideEffectsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug side effect created successfully.", "side-effect": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug side effect created successfully.",
+                                  "side-effect": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1803,7 +1863,9 @@ class SideEffectsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Drug side effect not created", "side-effect": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug side effect not created",
+                                  "side-effect": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class SideEffectsListAPIView(generics.ListAPIView):
@@ -1897,7 +1959,9 @@ class PrecautionsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug precaution created successfully.", "precaution": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug precaution created successfully.",
+                                  "precaution": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -1906,7 +1970,9 @@ class PrecautionsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Drug precaution not created", "precaution": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug precaution not created",
+                                  "precaution": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class PrecautionsListAPIView(generics.ListAPIView):
@@ -2000,7 +2066,9 @@ class SpecialConsiderationsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug special considerations created successfully.", "special-consideration": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug special considerations created successfully.",
+                                  "special-consideration": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -2009,7 +2077,9 @@ class SpecialConsiderationsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Drug special considerations not created", "special-consideration": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Drug special considerations not created",
+                                  "special-consideration": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 class SpecialConsiderationsListAPIView(generics.ListAPIView):

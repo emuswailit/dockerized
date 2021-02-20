@@ -1,24 +1,8 @@
-import {
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  Grid,
-  makeStyles,
-  Radio,
-  RadioGroup,
-  TextField,
-} from "@material-ui/core"
 import {connect} from "react-redux"
 import React, {useState, useEffect} from "react"
-import {useForm, Form} from "../../../../components/common/useForm"
-import Controls from "../../../../components/controls/Control"
-import * as employeeService from "../../../../services/employeeService"
-
-const categoryItems = [
-  {id: "choice1", title: "Choice 1"},
-  {id: "choice2", title: "Choice 2"},
-  {id: "choice3", title: "Choice 3"},
-]
+import {useForm, Form} from "../../../components/common/useForm"
+import Controls from "../../../components/controls/Control"
+import {Grid} from "@material-ui/core"
 
 const initialFValues = {
   id: "",
@@ -26,7 +10,7 @@ const initialFValues = {
   title: "",
   description: "",
 }
-const BodySystemsForm = (props) => {
+const FormulationsForm = (props) => {
   const {addOrEdit, recordForEdit} = props
   const validate = (fieldValues = values) => {
     let temp = {...errors}
@@ -59,14 +43,12 @@ const BodySystemsForm = (props) => {
     if (validate()) addOrEdit(values, resetForm)
   }
 
-
   useEffect(() => {
-    if (recordForEdit !=null) {
+    if (recordForEdit != null) {
       setValues({
-        ...recordForEdit
+        ...recordForEdit,
       })
     }
-  
   }, [recordForEdit])
 
   return (
@@ -129,5 +111,4 @@ const BodySystemsForm = (props) => {
   )
 }
 
-
-export default BodySystemsForm
+export default FormulationsForm

@@ -423,8 +423,7 @@ class Products(FacilityRelatedModel):
     """
     category = models.ForeignKey(
         Categories, related_name="product_category", on_delete=models.CASCADE,)
-    sub_category = models.ForeignKey(
-        SubCategories, related_name="product_sub_category", on_delete=models.CASCADE, null=True, blank=True)
+
     preparation = models.ForeignKey(
         Preparation, related_name="product_preparation", on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=100, null=True,

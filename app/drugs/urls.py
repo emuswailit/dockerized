@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from django.conf.urls import url
 
 
 urlpatterns = [
@@ -101,7 +100,7 @@ urlpatterns = [
     path('products/create', views.ProductCreateAPIView.as_view(),
          name=views.ProductCreateAPIView.name),
 
-           path('products/<uuid:pk>/images', views.ProductImageList.as_view(),
+    path('products/<uuid:pk>/images', views.ProductImageList.as_view(),
          name=views.ProductImageList.name),
     path('product-images/<uuid:pk>', views.ProductImageDetail.as_view(),
          name=views.ProductImageDetail.name),

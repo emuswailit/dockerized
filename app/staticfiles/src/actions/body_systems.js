@@ -76,6 +76,8 @@ export const deleteBodySystem = (id) => (dispatch, getState) => {
   axios
     .delete(`api/v1/drugs/body-systems/${id}`, tokenConfig(getState))
     .then((res) => {
+
+      console.log("Rsponse ", res)
       dispatch(
         showSnackbarMessage("Body system successfully deleted!", "success")
       );
@@ -85,7 +87,7 @@ export const deleteBodySystem = (id) => (dispatch, getState) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      console.log("Delete error", err)
       dispatch(showSnackbarMessage(err.response.data.message, "error"));
     });
 };

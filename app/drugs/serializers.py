@@ -5,6 +5,7 @@ from django_countries.serializers import CountryFieldMixin
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from utilities.models import Categories
+from utilities.serializers import CategorySerializer
 
 from . import models
 
@@ -375,15 +376,17 @@ class ManufacturerDisplaySerializer(serializers.HyperlinkedModelSerializer):
 
 class ProductsSerializer(serializers.ModelSerializer):
 
-    # owner_details = serializers.SerializerMethodField(read_only=True)
+    category_details = serializers.SerializerMethodField(read_only=True)
     preparation_details = serializers.SerializerMethodField(read_only=True)
     manufacturer_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Products
-        fields = ('id', 'url', 'title', 'preparation', 'category', 'sub_category', 'manufacturer', 'is_prescription_only',
-                  'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack', 'manufacturer_details',
-                  'preparation_details', 'active', 'created', 'updated')
+        fields = ('id', 'url', 'title', 'preparation', 'category', 'manufacturer',
+                  'is_prescription_only',
+                  'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack',
+                  'manufacturer_details',
+                   'active', 'created', 'updated', 'preparation_details', 'category_details')
 
         read_only_fields = ('id', 'url',
                             'owner',
@@ -392,9 +395,9 @@ class ProductsSerializer(serializers.ModelSerializer):
                             'created',
                             'updated')
 
-    # def get_owner_details(self, obj):
-    #     owner = User.objects.get(id=obj.owner.id)
-    #     return UserSerializer(owner, context=self.context).data
+    def get_category_details(self, obj):
+        category = Categories.objects.get(id=obj.category.id)
+        return CategorySerializer(category, context=self.context).data
 
     def get_preparation_details(self, obj):
         if obj.preparation:
