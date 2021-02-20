@@ -55,15 +55,12 @@ urlpatterns = [
     path('dependants/user', views.UserDependantsList.as_view(),
          name=views.UserDependantsList.name),
 
-
     path('dependants/<uuid:pk>', views.DependantDetailAPIView.as_view(),
          name=views.DependantDetailAPIView.name),
     path('dependants/<uuid:pk>/update', views.DependantUpdateAPIView.as_view(),
          name=views.DependantUpdateAPIView.name),
     path('accounts/<uuid:pk>/dependant', views.DependantCreateAPIView.as_view(),
          name=views.DependantCreateAPIView.name),
-
-
 
     path('accounts', views.AccountListAPIView.as_view(),
          name=views.AccountListAPIView.name),
