@@ -3,7 +3,6 @@ import PageHeader from "../../../../components/common/PageHeader"
 import BodySystemsForm from "./BodySystemsForm"
 import {EditOutlined, Search} from "@material-ui/icons"
 import PeopleOutlineIcon from "@material-ui/icons/PeopleOutline"
-import {addBodySystem} from "../../../../actions/body_systems"
 import EditOutlinedIcon from "@material-ui/icons/EditOutlined"
 import CloseIcon from "@material-ui/icons/Close"
 import {
@@ -18,11 +17,12 @@ import {
 } from "@material-ui/core"
 import useTable from "../../../../components/common/useTable"
 
-import {getBodySystems} from "../../../../actions/body_systems"
+import {addBodySystem, getBodySystems, changeBodySystem} from "../../../../actions/body_systems"
 import {connect} from "react-redux"
 import Controls from "../../../../components/controls/Control"
 import AddIcon from "@material-ui/icons/Add"
 import Popup from "../../../../components/common/Popup"
+import Notification from "../../../../components/common/Notification"
 const useStyles = makeStyles((theme) => ({
   pageContent: {
     margin: theme.spacing(1),
@@ -53,6 +53,8 @@ const BodySystems = (props) => {
       return items
     },
   })
+
+  const[notify, setNotify]=useState({isOpen:false, message:'', type:''})
   const {
     TblContainer,
     TblHead,
@@ -88,14 +90,31 @@ const BodySystems = (props) => {
     })
   }
 
+
+
+
   const addOrEdit = (bodySystem, resetForm) => {
-    props.addBodySystem(bodySystem)
+    if (bodySystem.id=="") {
+      props.addBodySystem(bodySystem)
+    }else{
+     props.changeBodySystem(bodySystem, bodySystem.id)
+    }
+  console.log("Final: ",bodySystem)
     resetForm()
     setOpenPopup(false)
+    setRecordForEdit(null)
+    setNotify({
+       isOpen: true,
+      message: "Submitted succesfully",
+      type:"success"
+    }
+     
+    )
     props.getBodySystems()
   }
 
   const openInPopUp = (item) => {
+
     setRecordForEdit(item)
     setOpenPopup(true)
   }
@@ -109,8 +128,7 @@ const BodySystems = (props) => {
       />
 
       <Paper className={classes.pageContent}>
-        {/* <BodySystemsForm /> */}
-
+ 
         <Toolbar>
           <Controls.Input
             label="Search body systems"
@@ -130,7 +148,7 @@ const BodySystems = (props) => {
             startIcon={<AddIcon />}
             className={classes.newButton}
             onClick={() => {
-              setOpenPopup(() => setOpenPopup(true))
+              setOpenPopup(() => setOpenPopup(true)), setRecordForEdit=null
             }}
           />
         </Toolbar>
@@ -144,7 +162,7 @@ const BodySystems = (props) => {
                 <TableCell>
                   <Controls.ActionButton
                     color="primary"
-                    onClick={openInPopUp(item)}
+                    onClick={()=>openInPopUp(item)}
                   >
                     <EditOutlinedIcon fontSize="small" />
                   </Controls.ActionButton>
@@ -165,8 +183,10 @@ const BodySystems = (props) => {
         openPopup={openPopup}
         setOpenPopup={setOpenPopup}
       >
-        <BodySystemsForm recordForEdit={recordForEdit} addOrEdit={addOrEdit} />
+        <BodySystemsForm addOrEdit={addOrEdit} recordForEdit={recordForEdit} />
       </Popup>
+
+      <Notification notify={notify} setNotify={setNotify}/>
     </div>
   )
 }
@@ -180,5 +200,5 @@ const mapStateToProps = (state) => {
 
 export default connect(mapStateToProps, {
   addBodySystem,
-  getBodySystems,
+  getBodySystems,changeBodySystem
 })(BodySystems)

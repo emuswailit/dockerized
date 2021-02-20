@@ -9,7 +9,7 @@ import {
   TextField,
 } from "@material-ui/core"
 import {connect} from "react-redux"
-import React, {useEffect, useState} from "react"
+import React, {useState, useEffect} from "react"
 import {useForm, Form} from "../../../../components/common/useForm"
 import Controls from "../../../../components/controls/Control"
 import * as employeeService from "../../../../services/employeeService"
@@ -25,20 +25,18 @@ const initialFValues = {
   url: "",
   title: "",
   description: "",
-  departmentId: "",
-  is_active: true,
 }
 const BodySystemsForm = (props) => {
-  const {recordForEdit, addOrEdit} = props
+  const {addOrEdit, recordForEdit} = props
   const validate = (fieldValues = values) => {
     let temp = {...errors}
     if ("title" in fieldValues)
       temp.title = fieldValues.title ? "" : "This field is required"
     if ("description" in fieldValues)
       temp.description = fieldValues.description ? "" : "This field is required"
-    if ("departmentId" in fieldValues)
-      temp.departmentId =
-        fieldValues.departmentId.length != 0 ? "" : "This field is required"
+    // if ("departmentId" in fieldValues)
+    //   temp.departmentId =
+    //     fieldValues.departmentId.length != 0 ? "" : "This field is required"
 
     setErrors({
       ...temp,
@@ -61,13 +59,15 @@ const BodySystemsForm = (props) => {
     if (validate()) addOrEdit(values, resetForm)
   }
 
-useEffect(() => {
-  if (recordForEdit != null) {
-    setValues({
-      ...recordForEdit,
-    })
-  }
-}, [recordForEdit])
+
+  useEffect(() => {
+    if (recordForEdit !=null) {
+      setValues({
+        ...recordForEdit
+      })
+    }
+  
+  }, [recordForEdit])
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -91,34 +91,34 @@ useEffect(() => {
           />
         </Grid>
         <Grid item sm={6} xs={12}>
-          <Controls.RadioGroup
+          {/* <Controls.RadioGroup
             name="category"
             label="Category"
             value={values.gender}
             onChange={handleInputChange}
             items={categoryItems}
-          />
+          /> */}
 
-          <Controls.Select
+          {/* <Controls.Select
             name="departmentId"
             label="Department"
             value={values.departmentId}
             onChange={handleInputChange}
             options={employeeService.getDepartmentCollection()}
             error={errors.departmentId}
-          />
-          <Controls.DatePicker
+          /> */}
+          {/* <Controls.DatePicker
             name="entry"
             label="Entry date"
             value={values.entry}
             onChange={handleInputChange}
-          />
-          <Controls.Checkbox
+          /> */}
+          {/* <Controls.Checkbox
             name="is_active"
             label="Is Active"
             value={values.is_active}
             onChange={handleInputChange}
-          />
+          /> */}
           <div>
             <Controls.Button type="submit" text="Submit" />
             <Controls.Button text="Reset" color="default" onClick={resetForm} />
@@ -128,12 +128,6 @@ useEffect(() => {
     </Form>
   )
 }
-const mapStateToProps = (state) => {
-  return {
-    snackbarreducer: state.snackbarreducer,
-    bodysystems: state.bodysystems.bodysystems,
-    update: state.bodysystems.update,
-  }
-}
 
-export default connect(mapStateToProps, {})(BodySystemsForm)
+
+export default BodySystemsForm
