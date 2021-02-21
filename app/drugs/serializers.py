@@ -385,8 +385,7 @@ class ProductsSerializer(serializers.ModelSerializer):
         fields = ('id', 'url', 'title', 'preparation', 'category', 'manufacturer',
                   'is_prescription_only',
                   'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack',
-                  'manufacturer_details',
-                   'active', 'created', 'updated', 'preparation_details', 'category_details')
+                  'manufacturer_details', 'active', 'created', 'updated', 'preparation_details', 'category_details')
 
         read_only_fields = ('id', 'url',
                             'owner',

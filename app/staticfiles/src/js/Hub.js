@@ -5,13 +5,11 @@ import PrivateRoute from "./PrivateRoute"
 import Home from "../components/Home"
 import Login from "../components/Login"
 import Dashy from "./Dashy"
-import Users from "../components/Users/Users"
 import Register from "../components/common/Register"
 import Distributors from "../components/Drugs/Distributors"
 import Posologies from "../components/Drugs/Posologies"
 import Frequencies from "../components/Drugs/Frequencies"
 import Manufacturers from "../components/Drugs/Manufacturers"
-
 import Instructions from "../components/Drugs/Instructions"
 import BodySystems from "../pages/Drugs/BodySystems/BodySystems"
 import DrugClasses from "../pages/Drugs/DrugClasses/DrugClasses"
@@ -20,7 +18,7 @@ import Formulations from "../pages/Drugs/Formulations/Formulations"
 import Generics from "../pages/Drugs/Generics/Generics"
 import Preparations from "../pages/Drugs/Preparations/Preparations"
 import Products from "../pages/Drugs/Products/Products"
-
+import Users from "../pages/Users/Users/Users"
 export default function Hub() {
   return (
     <Fragment>

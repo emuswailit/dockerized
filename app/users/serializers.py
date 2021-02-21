@@ -1,3 +1,4 @@
+
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
@@ -6,6 +7,9 @@ from users.models import FacilityImage
 from users.models import UserImage
 from subscriptions.serializers import SubscriptionSerializer
 from subscriptions.models import Subscription
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import update_last_login
+from django.conf import settings
 
 from . import models
 
@@ -81,7 +85,7 @@ class FacilitySerializer(serializers.ModelSerializer):
         created = models.Facility.objects.create(** validated_data)
 
         if created:
-            #Set user to facility
+            # Set user to facility
             user.facility = created
             user.is_administrator = True
             user.is_superintendent = True
@@ -110,21 +114,23 @@ class FacilityVerifySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Facility
         fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed', 'trial_done', 'created', 'updated',)
+                  'latitude', 'longitude', 'description', 'is_verified', 'is_subscribed',
+                  'trial_done', 'created', 'updated',)
         read_only_fields = ('id', 'url', 'title', 'facility_type', 'county', 'town', 'road', 'building',
-                            'latitude', 'longitude', 'description',  'is_subscribed', 'trial_done', 'created', 'updated',)
+                            'latitude', 'longitude', 'description', 'is_subscribed',
+                            'trial_done', 'created', 'updated')
 
     def update(self, quote_item, validated_data):
         """
         This method updates the prescription quote item
 
         """
-        user_pk = self.context.get(
-            "user_pk")
+        # user_pk = self.context.get(
+        #     "user_pk")
 
-        if user_pk:
-            raise serializers.ValidationError(f"{user_pk}")
-            user = Users.objects.get(id=user_pk)
+        # if user_pk:
+        #     raise serializers.ValidationError(f"{user_pk}")
+        #     user = Users.objects.get(id=user_pk)
 
 
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
@@ -197,12 +203,13 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         )
 
         read_only_fields = ('is_staff', 'is_active',  'is_pharmacist',
-                            'is_prescriber', 'is_superintendent', 'is_administrator', 'cadre',
+                            'is_prescriber', 'is_superintendent', 'is_administrator', 'is_professional', 'cadre',
                             'is_client', 'is_courier',)
         # Make sure that the password field is never sent back to the client.
         # Make sure that the password field is never sent back to the client.
         extra_kwargs = {
-            'password': {'write_only': True, 'min_length': 8}, 'confirm_password': {'write_only': True, 'min_length': 8}
+            'password': {'write_only': True, 'min_length': 8},
+            'confirm_password': {'write_only': True, 'min_length': 8}
         }
 
     def validate_email(self, value):
@@ -219,9 +226,17 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
                 "Phone address is already in use")
         return value
 
-    def create(self, validated_data):
+    # def create(self, validated_data):
+    #     date_of_birth = validated_data.pop('date_of_birth')
 
-        return User.objects.create_user(**validated_data)
+    #     date_formatted = datetime.strptime(date_of_birth, "%Y-%m-%d")
+    #     # email = validated_data.pop('email')
+
+    #     # if User.objects.filter(email=email).count() > 0:
+    #     #     raise serializers.ValidationError(
+    #     #         {"response_code": "1", "response_message": "Provided email is already in use"})
+
+    #     return User.objects.create_user(date_formatted, **validated_data)
 
     def update(self, instance, validated_data):
         updated = super().update(instance, validated_data)
@@ -318,8 +333,8 @@ class UserLoginSerializer(serializers.Serializer):
                 'A user with this email and password is not found.'
             )
         try:
-            payload = JWT_PAYLOAD_HANDLER(user)
-            jwt_token = JWT_ENCODE_HANDLER(payload)
+            payload = settings.JWT_PAYLOAD_HANDLER(user)
+            jwt_token = settings.JWT_ENCODE_HANDLER(payload)
             update_last_login(None, user)
         except User.DoesNotExist:
             raise serializers.ValidationError(
@@ -335,8 +350,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.User
-        fields = ('first_name',
-                  'last_name')
+        fields = ('is_active', 'middle_name',
+                  )
 
     def validate_email(self, value):
         qs = User.objects.filter(email__iexact=value)

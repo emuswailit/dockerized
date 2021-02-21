@@ -43,16 +43,18 @@ class SlotsCreate(FacilitySafeViewMixin, generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Clinic slot succesfully created", "slot": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Clinic slot succesfully created", "slot": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
             for field_name, field_errors in default_errors.items():
                 for field_error in field_errors:
-                    error_message = '%s: %s' % (field_name, field_error)
+                    error_message = '%s: %s' % (field_name.replace("_", " ").upper(), field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Clinic slot not created", "slot": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Clinic slot not created", "slot": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class AllSlotsList(FacilitySafeViewMixin, generics.ListAPIView):

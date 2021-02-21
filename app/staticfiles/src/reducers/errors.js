@@ -1,24 +1,24 @@
-import * as actionTypes from "../actions/actionTypes";
+import * as actionTypes from "../actions/actionTypes"
 
-const initialState = { msg: "", status: "", theresError: false };
+const initialState = {response_message: null, response_code: null, errors: []}
 
 export default function (state = initialState, action) {
   switch (action.type) {
     case actionTypes.GET_ERRORS:
       return {
-        msg: action.message,
-        status: action.status,
-        theresError: true,
-      };
+        response_message: action.response_message,
+        response_code: action.response_code,
+        errors: action.errors,
+      }
 
     case actionTypes.CLEAR_ERRORS:
       return {
-        msg: null,
-        status: null,
-        theresError: false,
-      };
+        response_message: null,
+        response_code: null,
+        errors: [],
+      }
 
     default:
-      return state;
+      return state
   }
 }

@@ -202,7 +202,7 @@ const Navigation = withStyles(styles)(({classes, user}) => {
             <Grid item>
               <IconButton
                 className={classes.menuButton}
-                color="inherit"
+                color="primary"
                 aria-label="Menu"
                 onClick={onMenuClick}
               >
@@ -214,7 +214,7 @@ const Navigation = withStyles(styles)(({classes, user}) => {
             </Grid>
 
             <Grid sm alignItems="center">
-              <InputBase
+              <InputBase color="primary"
                 className={classes.searchInput}
                 placeholder="Search topics"
                 startAdornment={<SearchIcon fontSize="small" />}

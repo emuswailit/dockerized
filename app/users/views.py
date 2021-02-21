@@ -1,27 +1,22 @@
-from django.db import IntegrityError
 import base64
 
-from django.contrib.auth import authenticate, get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.encoding import force_bytes, force_text
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from rest_framework import generics, permissions, status, exceptions
-from rest_framework.exceptions import NotAcceptable, NotFound, ValidationError
-from rest_framework.response import Response
-from rest_framework_jwt.authentication import JSONWebTokenAuthentication
-from rest_framework_jwt.settings import api_settings
-from . import serializers
-from . import models
-from django.http import HttpResponse
 from core import app_permissions
+from core.views import FacilitySafeViewMixin
+from django.contrib.auth import authenticate, get_user_model
+from django.db import IntegrityError
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from rest_framework import exceptions, generics, permissions, status
+from rest_framework.response import Response
+from rest_framework_jwt.settings import api_settings
+
+from . import models, serializers
 from .token_generator import account_activation_token
 from .utils import jwt_response_payload_handler
-from core.views import FacilitySafeViewMixin
+
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-jwt_response_payload_handler = api_settings.JWT_RESPONSE_PAYLOAD_HANDLER
 User = get_user_model()
 
 
@@ -59,7 +54,9 @@ class FacilityCreate(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Facility created successfully.", "facility": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Facility created successfully.",
+                                  "facility": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -68,7 +65,8 @@ class FacilityCreate(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Facility not created", "facility": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Facility not created", "facility": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class FacilityListForAdmin(generics.ListAPIView):
@@ -82,7 +80,7 @@ class FacilityListForAdmin(generics.ListAPIView):
 
     def get_queryset(self):
         # Ensure that the users belong to the portfolio of the user that is making the request
-        user = self.request.user
+        # user = self.request.user
         return super().get_queryset().all()
 
 
@@ -171,52 +169,90 @@ class FacilityVerifyAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class AnyUserRegisterAPIView(generics.CreateAPIView):
-    """Allow any user to register in the system"""
-    name = 'user-register'
-    permission_classes = ()
-    authentication_classes = ()
+class UsersCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
+    """
+   Anyone
+    ============================================================
+    Register as user
+
+    """
+    name = 'users-create'
+    permission_classes = (
+        permissions.AllowAny,
+    )
     serializer_class = serializers.UserSerializer
-    queryset = User.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save()
+    queryset = models.User.objects.all()
 
     def create(self, request, *args, **kwargs):
-        errors_messages = []
-        if(User.objects.filter(email=request.data['email']).exists()):
-
-            raise exceptions.ValidationError(
-                {"message": ["The email provided is already in use", ]})
-
-        if(User.objects.filter(national_id=request.data['national_id']).exists()):
-
-            raise exceptions.ValidationError({"message": [
-                "The national ID number provided is already in use", ]})
-
-        if(User.objects.filter(phone=request.data['phone']).exists()):
-            raise exceptions.ValidationError({"message": [
-                "The phone number provided is already in use", ]})
-
         serializer = self.get_serializer(data=request.data)
-
         if serializer.is_valid():
-
+            errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "User created successfully.Please login to your email to verify activate your account.", "user": serializer.data, "status": status.HTTP_201_CREATED, "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_message": "Registration was succesful", "user": serializer.data,
+                                  "errors": errors_messages, "response_code": 0})
         else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name.replace("_", " ").upper(), field_error)
+                    errors_messages.append(error_message)
 
-            raise exceptions.ValidationError(
-                {"data": ["The seems to be an error with your provide data!", ]})
-        default_errors = serializer.errors  # default errors dict
-        errors_messages = []
-        for field_name, field_errors in default_errors.items():
-            for field_error in field_errors:
-                error_message = '%s: %s' % (field_name, field_error)
-                errors_messages.append(error_message)
+            return Response(data={"response_message": "Registration was not successfull", "user": serializer.data,
+                                  "errors": errors_messages, "response_code": 1})
 
-        return Response(data={"message": "User not created", "user": serializer.data, "status": status.HTTP_400_BAD_REQUEST, "errors": errors_messages}, status=status.HTTP_201_CREATED)
+
+# class AnyUserRegisterAPIView(generics.CreateAPIView):
+#     """Allow any user to register in the system"""
+#     name = 'user-register'
+#     permission_classes = ()
+#     authentication_classes = ()
+
+#     serializer_class = serializers.UserSerializer
+#     queryset = User.objects.all()
+
+#     def perform_create(self, serializer):
+#         serializer.save()
+
+#     def create(self, request, *args, **kwargs):
+#         errors_messages = []
+#         if(User.objects.filter(email=request.data['email']).exists()):
+
+#             raise exceptions.ValidationError(
+#                 {"message": ["The email provided is already in use", ]})
+
+#         if(User.objects.filter(national_id=request.data['national_id']).exists()):
+
+#             raise exceptions.ValidationError({"message": [
+#                 "The national ID number provided is already in use", ]})
+
+#         if(User.objects.filter(phone=request.data['phone']).exists()):
+#             raise exceptions.ValidationError({"message": [
+#                 "The phone number provided is already in use", ]})
+
+#         serializer = self.get_serializer(data=request.data)
+
+#         if serializer.is_valid():
+
+#             self.perform_create(serializer)
+#             return Response(data={"message": "User created successfully.Please login to
+# your email to verify activate your account.",
+#                                   "user": serializer.data, "status": status.HTTP_201_CREATED,
+#                                   "errors": errors_messages}, status=status.HTTP_201_CREATED)
+#         else:
+
+#             raise exceptions.ValidationError(
+#                 {"data": ["The seems to be an error with your provide data!", ]})
+#         default_errors = serializer.errors  # default errors dict
+#         errors_messages = []
+#         for field_name, field_errors in default_errors.items():
+#             for field_error in field_errors:
+#                 error_message = '%s: %s' % (field_name, field_error)
+#                 errors_messages.append(error_message)
+
+#         return Response(data={"message": "User not created", "user": serializer.data,
+#  "status": status.HTTP_400_BAD_REQUEST, "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class UserList(FacilitySafeViewMixin, generics.ListCreateAPIView):
@@ -247,7 +283,9 @@ class UserList(FacilitySafeViewMixin, generics.ListCreateAPIView):
                     response = jwt_response_payload_handler(
                         token, user, request=request)
                     return Response(response)
-            return Response(data={"message": "User created successfully.", "user": response, "status": status.HTTP_201_CREATED, "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "User created successfully.", "user": response,
+                                  "status": status.HTTP_201_CREATED,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -256,7 +294,9 @@ class UserList(FacilitySafeViewMixin, generics.ListCreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "User not created", "user": serializer.data, "status": status.HTTP_400_BAD_REQUEST, "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "User not created", "user": serializer.data,
+                                  "status": status.HTTP_400_BAD_REQUEST, "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
     def get_queryset(self, *args, **kwargs):
         facility_id = self.request.user.facility_id
@@ -296,7 +336,7 @@ def activate_account(request, uidb64, token):
     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
     if user is not None and account_activation_token.check_token(user, token):
-        if user.is_verified == False and user.is_active == False:
+        if not user.is_verified and not user.is_active:
             user.is_active = True
             user.is_verified = True
             user.save()
@@ -422,7 +462,9 @@ class RegulatorLicenceCreate(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Licence uploaded successfully.", "regulator-licence": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Licence uploaded successfully.",
+                                  "regulator-licence": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -431,7 +473,8 @@ class RegulatorLicenceCreate(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Licence not uploaded", "regulator-licence": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Licence not uploaded", "regulator-licence": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class RegulatorLicenceDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -487,7 +530,8 @@ class CountyPermitCreate(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Permit uploaded successfully.", "county-permit": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Permit uploaded successfully.", "county-permit": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -496,7 +540,8 @@ class CountyPermitCreate(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Permit not uploaded", "county-permit": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Permit not uploaded", "county-permit": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class CountyPermitDetail(FacilitySafeViewMixin, generics.RetrieveUpdateDestroyAPIView):
@@ -572,9 +617,9 @@ class UserAPI(generics.RetrieveAPIView):
     def get_object(self):
         try:
             return self.request.user
-        except:
+        except Exception as ex:
             raise exceptions.PermissionDenied(
-                {"login": ["Please login again!", ]})
+                {"error": f"{ex}"})
 
 # Account
 
@@ -607,7 +652,8 @@ class AccountCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Account created successfully.", "prescriber": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Account created successfully.", "prescriber": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -616,7 +662,8 @@ class AccountCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Account not created", "prescriber": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Account not created", "prescriber": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class AccountListAPIView(generics.ListAPIView):
@@ -711,7 +758,8 @@ class DependantCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Dependant created successfully.", "dependant": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Dependant created successfully.", "dependant": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -720,7 +768,8 @@ class DependantCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Dependant not created", "dependant": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Dependant not created", "dependant": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class AllDependantListAPIView(generics.ListAPIView):
@@ -850,14 +899,15 @@ class CadresCreate(FacilitySafeViewMixin, generics.CreateAPIView):
 
         except IntegrityError as e:
             raise exceptions.NotAcceptable(
-                {"detail": [f"Role is already added!", ]})
+                {"error": f"{e}", })
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Role succesfully created", "role": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Role succesfully created", "role": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -866,7 +916,8 @@ class CadresCreate(FacilitySafeViewMixin, generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Role not created", "role": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"message": "Role not created", "role": serializer.data,
+                                  "errors": errors_messages}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CadresList(FacilitySafeViewMixin, generics.ListAPIView):
@@ -895,3 +946,47 @@ class CadresDetail(generics.RetrieveAPIView):
     )
     serializer_class = serializers.CadresSerializer
     queryset = models.Cadres.objects.all()
+
+
+class UserUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Users update
+    """
+    name = "users-update"
+    permission_classes = (permissions.IsAdminUser,
+                          )
+    serializer_class = serializers.UserUpdateSerializer
+    queryset = models.User.objects.all()
+    lookup_fields = ('pk',)
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        filter = {}
+        for field in self.lookup_fields:
+            filter[field] = self.kwargs[field]
+
+        obj = get_object_or_404(queryset, **filter)
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def update(self, request, *args, **kwargs):
+
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_message": "User update was successfull",
+                                  "user": serializers.UserSerializer(instance, context={'request': request}).data,
+                                  "errors": errors_messages, "response_code": 0})
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name.replace("_", " ").upper(), field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_message": "User update was not successfull", "user": serializer.data,
+                                  "errors": errors_messages, "response_code": 1})

@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.text import slugify
 from django_countries.fields import CountryField
-from utilities.models import Categories, SubCategories
+from utilities.models import Categories
 
 User = get_user_model()
 

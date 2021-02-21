@@ -1,19 +1,23 @@
 from django.urls import path
 from . import views
-from django.conf.urls import url
 
 
 urlpatterns = [
     path("merchant/", views.FacilityCreate.as_view(),
          name=views.FacilityCreate.name),
 
-    path('register/', views.AnyUserRegisterAPIView.as_view(),
-         name=views.AnyUserRegisterAPIView.name),
+    path('register/', views.UsersCreate.as_view(),
+         name=views.UsersCreate.name),
     path('user/', views.UserAPI.as_view(), name=views.UserAPI.name),
     path('users/', views.UserList.as_view(), name=views.UserList.name),
     path('users/<uuid:pk>', views.UserDetail.as_view(),
          name=views.UserDetail.name),
     path('signin/', views.UserLoginView.as_view(), name="login"),
+
+    path('users/<uuid:pk>/image', views.UserImageAPIView.as_view(),
+         name=views.UserImageAPIView.name),
+    path('users/<uuid:pk>/update', views.UserUpdateAPIView.as_view(),
+         name=views.UserUpdateAPIView.name),
 
     path('users/<uuid:pk>/image', views.UserImageAPIView.as_view(),
          name=views.UserImageAPIView.name),
@@ -38,7 +42,7 @@ urlpatterns = [
          name=views.FacilityImageAPIView.name),
     path('facilities/<uuid:pk>/regulator-licence', views.RegulatorLicenceCreate.as_view(),
          name=views.RegulatorLicenceCreate.name),
-    
+
     path('facilities/<uuid:pk>/county-permit', views.CountyPermitCreate.as_view(),
          name=views.CountyPermitCreate.name),
     path('county-permits/<uuid:pk>', views.CountyPermitDetail.as_view(),
@@ -67,8 +71,6 @@ urlpatterns = [
 
     path('accounts/<uuid:pk>', views.AccountDetailAPIView.as_view(),
          name=views.AccountDetailAPIView.name),
-
-
 
     # Cadres urls
     path('cadres/create', views.CadresCreate.as_view(),

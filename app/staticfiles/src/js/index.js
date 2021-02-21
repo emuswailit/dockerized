@@ -37,24 +37,22 @@ class App extends React.Component {
     console.log(this.props)
   }
   render() {
-    let theme = createMuiTheme({
+    const theme = createMuiTheme({
       palette: {
         primary: {
-          light: lightGreen[300],
-          main: lightGreen[500],
-          dark: lightGreen[700],
+          light: '#757ce8',
+          main: '#3f50b5',
+          dark: '#002884',
+          contrastText: '#fff',
         },
         secondary: {
-          light: blueGrey[300],
-          main: blueGrey[500],
-          dark: blueGrey[700],
+          light: '#ff7961',
+          main: '#f44336',
+          dark: '#ba000d',
+          contrastText: '#000',
         },
-        background: {
-          default: "#f4f5fd",
-        },
-        type: this.state.themeType,
       },
-    })
+    });
     return (
       <Provider store={store}>
         <GenericSnackBar />

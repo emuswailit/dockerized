@@ -5,24 +5,16 @@ import jwt
 from django.utils.translation import gettext as _
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.contrib.sites.models import Site
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
 from django.db import models, transaction
 from django.db.models import signals
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.template.loader import render_to_string
-from django.utils.encoding import force_bytes, force_text
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.text import slugify
-from .token_generator import account_activation_token
 from django.core.mail import send_mail
-from django.urls import reverse
 from notifications.tasks import send_verification_email
 from rest_framework import exceptions
 from core.models import FacilityRelatedModel
-
+from django.conf import settings
 
 # Create your models here.
 
@@ -401,7 +393,7 @@ class User(AbstractUser):
         Cadres, on_delete=models.CASCADE, null=True, blank=True)
     gender = models.CharField(
         max_length=120, choices=GENDER_CHOICES)
-    date_of_birth = models.DateField(null=True)
+    date_of_birth = models.DateField(null=True,)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
     is_verified = models.BooleanField(default=False)
@@ -518,7 +510,9 @@ class DependantManager(models.Manager):
 
 
 class Dependant(models.Model):
-    """Dependants under a user account. This include family members and other persons under the account holder's care"""
+    """
+    Dependants under a user account. This include family members and other persons under the account holder's care
+    """
 
     GENDER_CHOICES = (
         ('Female', 'Female'),
@@ -576,7 +570,8 @@ signals.post_save.connect(user_post_save, sender=User)
 
 @receiver(post_save, sender=User, dispatch_uid="add_default_facility")
 def create_offer(sender, instance, created, **kwargs):
-    """Every user must be attached to a facility. Either created by sel as merchant or by default Mobipharma is created"""
+    """Every user must be attached to a facility. Either created by sel as merchant or by default Mobipharma is created
+    """
     if created:
         # send_verification_email(instance.id)
 
@@ -606,6 +601,9 @@ def create_offer(sender, instance, created, **kwargs):
         # Create a user account
         account = Account.objects.create(owner=instance)
         account.save()
-        dependant = Dependant.objects.create(owner=instance, first_name=instance.first_name, middle_name=instance.middle_name,
-                                             last_name=instance.last_name, gender=instance.gender, date_of_birth=instance.date_of_birth, account=account)
+        dependant = Dependant.objects.create(owner=instance,
+                                             first_name=instance.first_name, middle_name=instance.middle_name,
+                                             last_name=instance.last_name,
+                                             gender=instance.gender, date_of_birth=instance.date_of_birth,
+                                             account=account)
         dependant.save()
