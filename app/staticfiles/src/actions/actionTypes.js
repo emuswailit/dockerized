@@ -8,7 +8,9 @@ export const LOGOUT_SUCCESS = "LOGOUT_SUCCESS"
 
 export const GET_USERS = "GET_USERS"
 export const ADD_USER = "ADD_USER"
-export const EDIT_USER = "EDIT_USER"
+export const EDIT_USER_REQUEST = "EDIT_USER_REQUEST"
+export const EDIT_USER_SUCCESS = "EDIT_USER_SUCCESS"
+export const EDIT_USER_FAIL = "EDIT_USER_FAIL"
 export const DELETE_USER = "DELETE_USER"
 export const CLEAR_USERS = "CLEAR_USERS"
 

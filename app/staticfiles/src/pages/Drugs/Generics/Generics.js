@@ -169,8 +169,8 @@ const Generics = (props) => {
                 onChange={handleSearch}
               />
             </Grid>
-
-            <Grid item xs={6}>
+                <Grid></Grid>
+            <Grid item xs={3}>
               {" "}
               <Controls.Button
                 text="Add New"

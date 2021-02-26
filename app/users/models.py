@@ -361,14 +361,11 @@ class User(AbstractUser):
 
     )
     ROLE_CATEGORY_CHOICES = (
-        ("ADMINISTRATIVE-ASSISTANT", "ADMINISTRATIVE ASSISTANT"),
-        ("HEALTH-RECORDS-OFFICER", "ADMINISTRATIVE ASSISTANT"),
-        ("CLERK", "CLERK"),
-        ("CLINICAL-OFFICER", "CLINICAL OFFICER"),
-        ("MEDICAL-OFFICER", "MEDICAL OFFICER"),
-        ("MEDICAL-CONSULTANT", "MEDICAL CONSULTANT"),
-        ("NURSING-OFFICER", "NURSING OFFICER"),
-        ("PHARMACEUTICAL-TECHNOLOGIST", "PHARMACEUTICAL TECHNOLOGIST"),
+        ("ADMIN", "ADMIN"),
+        ("ALL", "ALL"),
+        ("COURIER", "COURIER"),
+        ("DOCTOR", "DOCTOR"),
+        ("NURSE", "NURSE"),
         ("PHARMACIST", "PHARMACIST"),
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -380,6 +377,7 @@ class User(AbstractUser):
     middle_name = models.CharField(
         max_length=120, blank=True, null=True, default="")
     last_name = models.CharField(max_length=120)
+    role = models.CharField(max_length=120, choices=ROLE_CATEGORY_CHOICES, default="ALL")
     national_id = models.CharField(max_length=30, unique=True)
     is_client = models.BooleanField(default=True)
     is_professional = models.BooleanField(default=False)

@@ -252,7 +252,7 @@ const Navigation = withStyles(styles)(({classes, user}) => {
           <Typography>{content} Here</Typography>
         </Grid> */}
         <Grid item>
-          <Drawer open={open} onClose={() => setOpen(false)}>
+          <Drawer open={open} onClose={() => setOpen(false)} color="primary" backgroundColor="primary">
             <List>
               {user.is_staff ? (
                 <Fragment>
@@ -266,6 +266,7 @@ const Navigation = withStyles(styles)(({classes, user}) => {
                     </Button>
                   </ListSubheader>
                   <ListItems
+                  backgroundColor="primary"
                     visible={sections.ADMIN}
                     items={items.ADMIN}
                     onClick={onClick}

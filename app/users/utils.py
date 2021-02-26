@@ -1,9 +1,6 @@
 import datetime
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
-from . import models
-from . import serializers
 
 
 expire_delta = settings.JWT_AUTH['JWT_REFRESH_EXPIRATION_DELTA']
@@ -20,6 +17,7 @@ def jwt_response_payload_handler(token, user=None, request=None):
         'first_name': user.first_name,
         'middle_name': user.middle_name,
         'last_name': user.last_name,
+        'role': user.role,
         'email': user.email,
         'phone': user.phone,
         'gender': user.gender,

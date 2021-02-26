@@ -47,6 +47,8 @@ export const login = (email, password) => (dispatch) => {
         payload: res.data,
       });
     })
+
+    localStorage.setItem('userInfo', JSON.stringify(data))
     .catch((err) => {
       console.log("erorr", err);
     });

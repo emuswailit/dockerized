@@ -17,10 +17,15 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import url
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 # from users.views import verify
 
 urlpatterns = [
     path('', include('frontend.urls')),
+    path('api/v1/users/login', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/v1/auth/', include('rest_framework.urls')),
     path('api/v1/users/', include('users.urls')),
     path('api/v1/utilities/', include('utilities.urls')),

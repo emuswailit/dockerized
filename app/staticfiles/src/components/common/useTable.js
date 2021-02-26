@@ -11,6 +11,7 @@ import React, {useState} from "react"
 
 const useStyles = makeStyles((theme) => ({
   table: {
+    minWidth: 650,
     marginTop: theme.spacing(3),
     "& thead th": {
       fontWeight: "600",
@@ -24,7 +25,11 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: "#fffbf2",
       cursor: "pointer",
     },
+   
+    
   },
+  
+  
 }))
 
 export default function useTable(rows, headCells, filterFn) {
@@ -76,7 +81,7 @@ export default function useTable(rows, headCells, filterFn) {
   }
 
   const TblContainer = (props) => (
-    <Table className={classes.table}>{props.children}</Table>
+    <Table className={classes.table} size="small" aria-label="a dense table">{props.children}</Table>
   )
 
   const TblHead = (props) => {
@@ -87,7 +92,7 @@ export default function useTable(rows, headCells, filterFn) {
     }
 
     return (
-      <TableHead>
+      <TableHead >
         <TableRow>
           {headCells.map((headCell) => (
             <TableCell

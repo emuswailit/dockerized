@@ -28,8 +28,7 @@ SECRET_KEY = 'ozs6d&t+d=no1=e**m&4*#2puhuiieejz2o!08qofr3lymk@*g'
 # DEBUG = True
 
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
-                 '212.22.173.231', 'mobipharma_project']
+ALLOWED_HOSTS = ['*']
 # 'DJANGO_ALLOWED_HOSTS' should be a single string of hosts with a space between each.
 # For example: 'DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]'
 
@@ -50,8 +49,8 @@ DATABASES = {
 # if DEBUG is False:
 #     DEBUG = int(os.environ.get("DEBUG", default=0))
 #     SECRET_KEY = 'ozs6d&t+d=no1=e**m&4*#2puhuiieejz2o!08qofr3lymk@*g'
-#     ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
-#                  '212.22.173.231', 'mobipharma_project']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost',
+                 '212.22.173.231', 'mobipharma_project']
 #     DATABASES = {
 #         'default': {
 #             'ENGINE': 'django.db.backends.postgresql',
@@ -85,6 +84,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'django.contrib.sites',
     'rest_framework.authtoken',
     'rest_auth.registration',
@@ -107,7 +107,7 @@ INSTALLED_APPS = [
     'notifications',
     'django_countries',
     'webpack_loader',
-    'corsheaders',
+
     'django_celery_results',
     'django_celery_beat',
 
@@ -209,7 +209,7 @@ STATIC_URL = '/static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
@@ -329,4 +329,8 @@ CELERY_CACHE_BACKEND = 'django-cache'
 # CELERY_RESULT_SERIALIZER = 'json'
 # CELERY_TIMEZONE = 'Africa/Nairobi'
 
-CORS_ORIGIN_ALLOW_ALL = True
+# define which origins are allowed
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]

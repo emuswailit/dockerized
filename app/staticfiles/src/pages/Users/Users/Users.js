@@ -98,8 +98,10 @@ const Users = (props) => {
           return items.filter((x) => {
             if (
               x.first_name.toLowerCase().includes(target.value) ||
+              x.middle_name.toLowerCase().includes(target.value) ||
               x.last_name.toLowerCase().includes(target.value) ||
               x.phone.toLowerCase().includes(target.value) ||
+              x.national_id.toLowerCase().includes(target.value) ||
               x.email.toLowerCase().includes(target.value)
             ) {
               return true

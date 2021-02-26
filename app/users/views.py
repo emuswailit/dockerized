@@ -350,8 +350,7 @@ def activate_account(request, uidb64, token):
 class UserLoginView(generics.views.APIView):
     """Log in a user using JWT"""
 
-    permission_classes = (permissions.AllowAny,)
-    authentication_classes = ()
+    permission_classes = [permissions.AllowAny, ]
     serializer_class = serializers.UserLoginSerializer
 
     def get_queryset(self):

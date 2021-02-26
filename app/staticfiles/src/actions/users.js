@@ -58,10 +58,7 @@ export const changeUser = (user, id) => (dispatch, getState) => {
   
       dispatch({
         type: actionTypes.EDIT_USER,
-        user: res.data.user,
-        response_code: res.data.response_code,
-        response_message: res.data.response_message,
-        errors: res.data.errors,
+     
       })
     })
     .catch((err) => {

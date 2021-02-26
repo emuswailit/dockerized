@@ -192,6 +192,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             'is_professional',
             'is_courier',
             'is_client',
+            'role',
             'cadre',
             'subscription_details',
             'facility_details',
