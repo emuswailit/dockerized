@@ -5,6 +5,7 @@ const initialState = {
   isAuthenticated: false,
   isLoading: false,
   user: {},
+  
 };
 
 export default function (state = initialState, action) {
@@ -13,6 +14,14 @@ export default function (state = initialState, action) {
       return {
         ...state,
         isLoading: true,
+        user:null
+      };
+      case actionTypes.USER_LOADING_FAIL:
+      return {
+        ...state,
+        isLoading: false,
+        user:null,
+        error:action.payload
       };
     case actionTypes.USER_LOADED:
       return {
@@ -20,7 +29,15 @@ export default function (state = initialState, action) {
         isAuthenticated: true,
         isLoading: false,
         user: action.payload,
+        error: null
       };
+    case actionTypes.LOGIN_REQUEST:
+        return {
+          ...state,
+          isLoading: true,
+          user:null,
+          error: action.payload
+        };
     case actionTypes.LOGIN_SUCCESS:
     case actionTypes.REGISTER_SUCCESS:
       localStorage.setItem("token", action.payload.token);
@@ -30,6 +47,7 @@ export default function (state = initialState, action) {
         isAuthenticated: true,
         isLoading: false,
         user: action.payload,
+        error:null
       };
     case actionTypes.AUTH_ERROR:
     case actionTypes.LOGIN_FAIL:
@@ -39,9 +57,10 @@ export default function (state = initialState, action) {
       return {
         ...state,
         token: null,
-        user: {},
+        user: null,
         isAuthenticated: false,
         isLoading: false,
+        error: action.payload
       };
     default:
       return state;

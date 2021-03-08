@@ -6,7 +6,9 @@ export class Dashy extends Component {
     console.log(this.props)
   }
   render() {
-    return <div></div>
+    return <div>
+  
+    </div>
   }
 }
 

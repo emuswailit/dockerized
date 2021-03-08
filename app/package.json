@@ -82,6 +82,7 @@
     "react-flatpickr": "^3.10.6",
     "react-form-input-validation": "^2.0.5",
     "react-history": "^0.18.2",
+    "react-hook-form": "^6.15.4",
     "react-loadable": "^5.5.0",
     "react-perfect-scrollbar": "^1.5.8",
     "react-redux": "^7.2.1",

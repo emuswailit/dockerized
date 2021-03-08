@@ -1,16 +1,16 @@
 export const USER_LOADING = "USER_LOADING"
+export const USER_LOADING_FAIL = "USER_LOADING_FAIL"
 export const USER_LOADED = "USER_LOADED"
 export const AUTH_ERROR = "AUTH_ERROR"
 
+export const LOGIN_REQUEST = "LOGIN_REQUEST"
 export const LOGIN_SUCCESS = "LOGIN_SUCCESS"
 export const LOGIN_FAIL = "LOGIN_FAIL"
 export const LOGOUT_SUCCESS = "LOGOUT_SUCCESS"
 
 export const GET_USERS = "GET_USERS"
 export const ADD_USER = "ADD_USER"
-export const EDIT_USER_REQUEST = "EDIT_USER_REQUEST"
-export const EDIT_USER_SUCCESS = "EDIT_USER_SUCCESS"
-export const EDIT_USER_FAIL = "EDIT_USER_FAIL"
+export const EDIT_USER = "EDIT_USER"
 export const DELETE_USER = "DELETE_USER"
 export const CLEAR_USERS = "CLEAR_USERS"
 
@@ -95,7 +95,9 @@ export const DELETE_MANUFACTURER = "DELETE_MANUFACTURER"
 
 //Product actions
 export const GET_PRODUCTS = "GET_PRODUCTS"
-export const ADD_PRODUCT = "ADD_PRODUCT"
+export const ADD_PRODUCT_REQUEST = "ADD_PRODUCT_REQUEST"
+export const ADD_PRODUCT_SUCCESS = "ADD_PRODUCT_SUCCESS"
+export const ADD_PRODUCT_FAIL = "ADD_PRODUCT_FAIL"
 export const EDIT_PRODUCT = "EDIT_PRODUCT"
 export const DELETE_PRODUCT = "DELETE_PRODUCT"
 

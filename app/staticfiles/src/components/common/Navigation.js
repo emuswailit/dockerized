@@ -241,11 +241,16 @@ const Navigation = withStyles(styles)(({classes, user}) => {
       </AppBar>
       <div className={classes.toolbarMargin} />
     </Fragment>
-  ))
+  
+  
+    )
+ 
+  )
 
   return (
+ 
     <div className={classes.root}>
-      <MyToolbar title={content} onMenuClick={toggleDrawer} />
+      {/* <MyToolbar title={content} onMenuClick={toggleDrawer} /> */}
 
       <Grid container justify="space-between">
         {/* <Grid item className={classes.alignContent}>

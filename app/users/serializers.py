@@ -171,6 +171,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
         model = models.User
         fields = (
             'url',
+            'facility',
             'id',
             'email',
             'first_name',
@@ -203,7 +204,7 @@ class UserSerializer(FacilitySafeSerializerMixin, serializers.HyperlinkedModelSe
             # 'portfolio_details',
         )
 
-        read_only_fields = ('is_staff', 'is_active',  'is_pharmacist',
+        read_only_fields = ('facility', 'is_staff', 'is_active',  'is_pharmacist',
                             'is_prescriber', 'is_superintendent', 'is_administrator', 'is_professional', 'cadre',
                             'is_client', 'is_courier',)
         # Make sure that the password field is never sent back to the client.

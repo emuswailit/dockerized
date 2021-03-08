@@ -153,7 +153,7 @@ const BodySystems = (props) => {
 
       <Paper className={classes.pageContent}>
         <Toolbar>
-          <Grid container>
+          <Grid container spacing={2}>
             <Grid item xs={6}>
               <Controls.Input
                 label="Search body systems"

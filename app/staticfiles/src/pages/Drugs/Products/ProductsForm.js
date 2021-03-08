@@ -6,6 +6,7 @@ import {Grid} from "@material-ui/core"
 import {getManufacturers} from "../../../actions/manufacturers"
 import {getPreparations} from "../../../actions/preparations"
 import {getCategories} from "../../../actions/categories"
+import Notification from "../../../components/common/Notification"
 const initialFValues = {
   id: "",
   url: "",
@@ -31,12 +32,12 @@ const ProductsForm = (props) => {
       temp.units_per_pack = fieldValues.units_per_pack
         ? ""
         : "This field is required"
-    // if ("category" in fieldValues)
-    //   temp.category =
-    //     fieldValues.category.length != 0 ? "" : "This field is required"
-    // if ("formulation" in fieldValues)
-    //   temp.formulation =
-    //     fieldValues.formulation.length != 0 ? "" : "This field is required"
+    if ("category" in fieldValues)
+      temp.category =
+        fieldValues.category.length != 0 ? "" : "This field is required"
+    if ("manufacturer" in fieldValues)
+      temp.manufacturer =
+        fieldValues.manufacturer.length != 0 ? "" : "This field is required"
 
     setErrors({
       ...temp,
@@ -104,6 +105,7 @@ const ProductsForm = (props) => {
           />
           <Controls.Input
             variant="outlined"
+            type="number"
             label="Units Per Pack"
             name="units_per_pack"
             value={values.units_per_pack}
@@ -160,6 +162,9 @@ const ProductsForm = (props) => {
             <Controls.Button type="submit" text="Submit" />
             <Controls.Button text="Reset" color="default" onClick={resetForm} />
           </div>
+          {/* TODO : Display this error to user in a firndly way*/}
+         {props.error && <h1>{props.error}</h1>}
+
         </Grid>
       </Grid>
     </Form>
@@ -170,7 +175,7 @@ const mapStateToProps = (state) => {
   return {
     categories: state.categories.categories,
     manufacturers: state.manufacturers.manufacturers,
-    update: state.preparations.update,
+    error: state.products.error,
     preparations: state.preparations.preparations,
   }
 }

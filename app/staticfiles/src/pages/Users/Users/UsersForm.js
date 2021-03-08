@@ -87,11 +87,11 @@ const UsersForm = (props) => {
 
   useEffect(() => {
     if (props.user != null) {
-      setErrors(props.form_errors)
+      setErrors(props.auth.error)
       if (validate()) addOrEdit(props.user, resetForm)
     }
-    console.log("erors", props.form_errors)
-  }, [props.form_errors])
+ 
+  }, [props.auth.error])
 
   useEffect(() => {
     if (recordForEdit != null) {
@@ -198,10 +198,10 @@ const UsersForm = (props) => {
             <Controls.Button text="Reset" color="default" onClick={resetForm} />
           </div>
           <div>
-            {props.form_errors ? (
+            {props.auth.error ? (
               <div className={classes.demo}>
                 <List dense={dense}>
-                  {Object.entries(props.form_errors).map(([key, value]) => {
+                  {Object.entries(props.auth.error).map(([key, value]) => {
                     return (
                       <ListItem>
                         <Typography variant="caption" color="secondary">
@@ -233,7 +233,7 @@ const UsersForm = (props) => {
 
 const mapStateToProps = (state) => {
   return {
-    form_errors: state.users.errors,
+    auth: state.auth,
     user: state.users.user,
   }
 }

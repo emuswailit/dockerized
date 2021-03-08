@@ -32,26 +32,26 @@ export const getProducts = () => (dispatch, getState) => {
 
 //ADD PRODUCT
 export const addProduct = (product) => (dispatch, getState) => {
+
+  dispatch({
+    type: actionTypes.ADD_PRODUCT_REQUEST,
+  
+  });
   axios
     .post("api/v1/drugs/products/create", product, tokenConfig(getState))
     .then((res) => {
       console.log("res", res);
-      dispatch(
-        showSnackbarMessage(
-          "Product successfully added!",
-          "success",
-          true,
-          true
-        )
-      );
       dispatch({
-        type: actionTypes.ADD_PRODUCT,
+        type: actionTypes.ADD_PRODUCT_SUCCESS,
         payload: res.data.product,
       });
     })
-    .catch((err) => {
-      console.log("err", err.response.data);
-      dispatch(showSnackbarMessage(err.response.data.detail, "error"));
+    .catch((error) => {
+console.log("Add Error", error)
+      dispatch({
+        type: actionTypes.ADD_PRODUCT_FAIL,
+        payload: error.response && error.response.data.message ? error.response.data.message : error.message,
+      });
     });
 };
 

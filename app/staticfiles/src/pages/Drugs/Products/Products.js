@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
 
 const headCells = [
   {id: "title", label: "Title"},
-  {id: "preparation", label: "Preparation"},
+  {id: "product", label: "product"},
   // {id: "generic", label: "Generic"},
   {id: "formulation", label: "Formulation"},
 
@@ -88,11 +88,11 @@ const Products = (props) => {
 
   useEffect(() => {
     props.getProducts()
-    setRows(props.products)
+    setRows(props.products.products)
   }, [])
 
   useEffect(() => {
-    setRows(props.products)
+    setRows(props.products.products)
   }, [props.products])
 
   const handleSearch = (e) => {
@@ -113,22 +113,41 @@ const Products = (props) => {
     })
   }
 
-  const addOrEdit = (preparation, resetForm) => {
-    if (preparation.id == "") {
-      props.addProduct(preparation)
+  const addOrEdit = (product, resetForm) => {
+    if (product.id == "") {
+      props.addProduct(product)
     } else {
-      props.changeProduct(preparation, preparation.id)
+      props.changeProduct(product, product.id)
     }
-    props.getProducts()
-    resetForm()
-    setOpenPopup(false)
-    setRecordForEdit(null)
-    setNotify({
-      isOpen: true,
-      message: "Submitted succesfully",
-      type: "success",
-    })
-    props.getProducts()
+
+    console.log("props", props.products)
+
+    if (props.error===null) {
+            resetForm()
+setOpenPopup(false)
+setRecordForEdit(null)
+props.getProducts()
+    }else{
+      console.log("Alas",props.error)
+    }
+
+//     if (props.products.error) {
+//       setNotify({
+//         isOpen: true,
+//         message: props.products.error,
+//         type: "error",
+//       })
+//       console.log("cfgzdvgxz", props.products.error)
+//     }else{
+//       // props.getProducts()
+//       resetForm()
+// setOpenPopup(false)
+// setRecordForEdit(null)
+
+//     }
+
+   
+  
   }
 
   const openInPopUp = (item) => {
@@ -153,7 +172,7 @@ const Products = (props) => {
     <div>
       <PageHeader
         title="Drug Products"
-        subTitle="Assorment of drug preparations"
+        subTitle="Assorment of drug products"
         icon={<PeopleOutlineIcon fontSize="large" />}
       />
 
@@ -162,7 +181,7 @@ const Products = (props) => {
           <Grid container>
             <Grid item xs={6}>
               <Controls.Input
-                label="Search drug preparations"
+                label="Search drug products"
                 className={classes.searchInput}
                 InputProps={{
                   startAdornment: (
@@ -197,13 +216,13 @@ const Products = (props) => {
               <TableRow>
                 <TableCell>{item ? item.title : "N/A"}</TableCell>
                 <TableCell>
-                  {item.preparation_details
-                    ? item.preparation_details.title
+                  {item.product_details
+                    ? item.product_details.title
                     : "N/A"}
                 </TableCell>
                 <TableCell>
-                  {item.preparation_details
-                    ? item.preparation_details.formulation_details.title
+                  {item.product_details
+                    ? item.product_details.formulation_details.title
                     : "N/A"}
                 </TableCell>
 
@@ -215,7 +234,7 @@ const Products = (props) => {
                 <TableCell>{item.units_per_pack}</TableCell>
                 <TableCell>{item.packaging}</TableCell>
                 <TableCell>
-                  {item.category_details ? item.category_details.title : "N/A"}
+                  {item.category_details.title}
                 </TableCell>
                 <TableCell>
                   {item.is_prescription_only ? "Yes" : "No"}
@@ -272,8 +291,8 @@ const mapStateToProps = (state) => {
   return {
     generics: state.generics.generics,
     formulations: state.formulations.formulations,
-    products: state.products.products,
-    update: state.preparations.update,
+    products: state.products,
+    error: state.products.error,
   }
 }
 

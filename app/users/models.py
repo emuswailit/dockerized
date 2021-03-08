@@ -370,7 +370,7 @@ class User(AbstractUser):
     )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(
-        Facility, related_name='%(class)s', on_delete=models.CASCADE, editable=False)
+        Facility, related_name='%(class)s', on_delete=models.CASCADE, editable=False, null=True, blank=True)
     email = models.EmailField('email', unique=True)
     phone = models.CharField(max_length=30, unique=True)
     first_name = models.CharField(max_length=120)

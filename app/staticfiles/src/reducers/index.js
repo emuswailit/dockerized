@@ -3,7 +3,6 @@ import auth from "./auth"
 import users from "./users"
 import utility from "./utility"
 import messages from "./messages"
-import errors from "./errors"
 import bodysystems from "./bodysystems"
 import drugclasses from "./drugclasses"
 import snackbarreducer from "./snackbarreducer"
@@ -23,7 +22,6 @@ export default combineReducers({
   users,
   utility,
   messages,
-  errors,
   bodysystems,
   drugclasses,
   snackbarreducer,

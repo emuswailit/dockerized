@@ -11,7 +11,7 @@ import React, {useState} from "react"
 
 const useStyles = makeStyles((theme) => ({
   table: {
-    minWidth: 650,
+     minWidth: 650,
     marginTop: theme.spacing(3),
     "& thead th": {
       fontWeight: "600",

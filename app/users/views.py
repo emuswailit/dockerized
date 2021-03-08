@@ -169,7 +169,7 @@ class FacilityVerifyAPIView(generics.RetrieveUpdateAPIView):
         return obj
 
 
-class UsersCreate(FacilitySafeViewMixin, generics.CreateAPIView):
+class UsersCreate(generics.CreateAPIView):
 
     """
    Anyone
@@ -190,7 +190,7 @@ class UsersCreate(FacilitySafeViewMixin, generics.CreateAPIView):
             errors_messages = []
             self.perform_create(serializer)
             return Response(data={"response_message": "Registration was succesful", "user": serializer.data,
-                                  "errors": errors_messages, "response_code": 0})
+                                  "errors": errors_messages, "response_code": 0}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []

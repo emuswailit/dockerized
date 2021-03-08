@@ -10,7 +10,7 @@ User = get_user_model()
 
 class Distributor(FacilityRelatedModel):
     title = models.CharField(max_length=100, unique=True)
-    physical_address = models.CharField(max_length=120, unique=True)
+    physical_address = models.CharField(max_length=120)
     postal_address = models.CharField(max_length=120, null=True, blank=True)
     description = models.TextField(max_length=100, null=True, blank=True)
     phone1 = models.CharField(max_length=30, null=True, blank=True)
@@ -110,7 +110,7 @@ class BodySystem(FacilityRelatedModel):
 class DrugClass(FacilityRelatedModel):
 
     system = models.ForeignKey(BodySystem, on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100, unique=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)

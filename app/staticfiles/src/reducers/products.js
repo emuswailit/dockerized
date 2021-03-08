@@ -2,7 +2,7 @@ import * as actionTypes from "../actions/actionTypes";
 
 const initialState = {
   products: [],
-  update: false,
+  loading: false,
 };
 
 export default function (state = initialState, action) {
@@ -13,7 +13,7 @@ export default function (state = initialState, action) {
         ...state,
 
         products: action.payload,
-        update: false, //Has the purpose of resetting the update redux variable for reloading drug classes
+        loading: false, //Has the purpose of resetting the update redux variable for reloading drug classes
       };
 
     case actionTypes.DELETE_PRODUCT:
@@ -22,21 +22,37 @@ export default function (state = initialState, action) {
         products: state.products.filter(
           (product) => product.id !== action.payload
         ),
-        update: true,
+        loading: true,
       };
 
-    case actionTypes.ADD_PRODUCT:
+      case actionTypes.ADD_PRODUCT_REQUEST:
+        return {
+          ...state,
+          products: state.products,
+          loading: true,
+          error: null
+        };
+    case actionTypes.ADD_PRODUCT_SUCCESS:
       return {
         ...state,
         products: state.products.concat(action.payload),
-        update: true,
+        loading: false,
+        
       };
+
+    case actionTypes.ADD_PRODUCT_FAIL:
+        return {
+          ...state,
+          products: state.products,
+          loading: false,
+          error: action.payload
+        };
 
     case actionTypes.EDIT_PRODUCT:
       return {
         ...state,
-        update: action.payload,
-        update: true,
+        loading: action.payload,
+        loading: true,
       };
 
     default:

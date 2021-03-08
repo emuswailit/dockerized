@@ -5,6 +5,14 @@ import { showSnackbarMessage } from "./snackbaractions";
 
 // CHECK TOKEN & LOAD USER
 export const loadUser = () => (dispatch, getState) => {
+
+    if (tokenConfig(getState)==null) {
+        dispatch({
+            type: actionTypes.USER_LOADING_FAIL,
+            payload:"Please login again"
+           
+        })
+    }
   // User Loading
 
   dispatch({ type: actionTypes.USER_LOADING });
@@ -18,11 +26,12 @@ export const loadUser = () => (dispatch, getState) => {
         payload: res.data,
       });
     })
-    .catch((err) => {
-      console.log("user error", err);
-      // dispatch({
-      //   type: actionTypes.AUTH_ERROR,
-      // });
+    .catch((error) => {
+     console.log("Ela",error.response && error.response.data.message ? error.response.data.message : error.message,)
+      dispatch({
+        type: actionTypes.USER_LOADING_FAIL,
+        payload: error.response && error.response.data.message ? error.response.data.message : error.message,
+      });
     });
 };
 
@@ -37,7 +46,9 @@ export const login = (email, password) => (dispatch) => {
 
   // Request Body
   const body = JSON.stringify({ email, password });
-
+dispatch({
+    type: actionTypes.LOGIN_REQUEST
+})
   axios
     .post("/api/v1/users/signin/", body, config)
     .then((res) => {
@@ -48,15 +59,18 @@ export const login = (email, password) => (dispatch) => {
       });
     })
 
-    localStorage.setItem('userInfo', JSON.stringify(data))
-    .catch((err) => {
-      console.log("erorr", err);
+  
+    .catch((error) => {
+      dispatch({
+          type: actionTypes.LOGIN_FAIL,
+          payload:error.response && error.response.data.message ? error.response.data.message : error.message,
+      })
     });
 };
 
 // LOGOUT USER
 export const logout = () => (dispatch) => {
-  
+localStorage.removeItem('token')
   dispatch({
     type: actionTypes.LOGOUT_SUCCESS,
   });
@@ -78,7 +92,7 @@ export const tokenConfig = (getState) => {
     console.log("only token", token);
     config.headers["Authorization"] = `Bearer ${token}`;
   } else {
-    console.log("There is no token");
+    return null
   }
 
   return config;

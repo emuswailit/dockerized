@@ -416,11 +416,18 @@ class ProductsSerializer(serializers.ModelSerializer):
             return None
 
     def create(self, validated_data):
+        title = validated_data.pop('title')
         preparation = validated_data.pop('preparation')
+
+        if not title:
+            raise serializers.ValidationError(
+                "Enter unique product title ")
+
         category = validated_data.pop('category')
         manufacturer = validated_data.pop('manufacturer')
 
         if preparation:
+            title = preparation.title
 
             if not manufacturer:
                 raise serializers.ValidationError(
@@ -429,7 +436,7 @@ class ProductsSerializer(serializers.ModelSerializer):
                 category = Categories.objects.drug_category()
 
         product = models.Products.objects.create(
-            preparation=preparation, category=category, manufacturer=manufacturer, **validated_data)
+            preparation=preparation, title=title, category=category, manufacturer=manufacturer, **validated_data)
 
         return product
 

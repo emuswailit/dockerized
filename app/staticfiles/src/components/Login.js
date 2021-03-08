@@ -15,6 +15,8 @@ import { makeStyles } from "@material-ui/core/styles";
 import { login } from "../actions/auth";
 import { connect } from "react-redux";
 import { Redirect } from "react-router-dom";
+import { Form, useForm } from "./common/useForm";
+import Controls from "./controls/Control";
 
 function Copyright() {
   return (
@@ -61,6 +63,13 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing(3, 0, 2),
   },
 }));
+const initialFValues = {
+
+  email: "",
+  password: "",
+
+}
+
 
 const SignInSide = (props) => {
     console.log(props);
@@ -68,6 +77,7 @@ const SignInSide = (props) => {
 
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
+
 
   const loginUser = () => {
     props.login(email, password);
@@ -85,8 +95,38 @@ const SignInSide = (props) => {
     }
   }, []);
 
+  const validate = (fieldValues = values) => {
+    let temp = {...errors}
+    if ("password" in fieldValues)
+      temp.password = fieldValues.password ? "" : "Password is required"
+    if ('email' in fieldValues)
+      temp.email = (/$^|.+@.+..+/).test(fieldValues.email) ? "" : "Email is not valid."
+      setErrors({
+        ...temp,
+      })
+  
+      if (fieldValues == values) return Object.values(temp).every((x) => x == "")
+  }
+
+  const {
+    values,
+    setValues,
+    handleInputChange,
+    errors,
+    setErrors,
+    resetForm,
+  } = useForm(initialFValues, true, validate)
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    console.log("Not validated")
+    if (validate())
+    props.login(values.email, values.password)
+  }
   return (
     <Fragment>
+     
       {props.auth.isAuthenticated ? (
         <Redirect to="/" />
       ) : (
@@ -109,62 +149,33 @@ const SignInSide = (props) => {
               <Typography component="h1" variant="h5">
                 Sign in
               </Typography>
-              <form className={classes.form} noValidate>
-                <TextField
-                  variant="outlined"
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email Address"
-                  name="email"
-                  autoComplete="email"
-                  autoFocus
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <TextField
-                  variant="outlined"
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-                {/* <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
-                /> */}
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  className={classes.submit}
-                  onClick={loginUser}
-                >
-                  Sign In
-                </Button>
-                <Grid container>
-                  <Grid item xs>
-                    <Link href="#" variant="body2">
-                      Forgot password?
-                    </Link>
-                  </Grid>
-                  <Grid item>
-                    {/* <Link href="#" variant="body2" >
-                      {"Don't have an account? Sign Up"}
-                    </Link> */}
-
-                    <Button onClick={ registerUser}>Register</Button>
-                  </Grid>
-                </Grid>
-                <Box mt={5}>
-                  <Copyright />
-                </Box>
-              </form>
+              <Form onSubmit={handleSubmit}>
+      <Grid container>
+        <Grid item xs={12}>
+        <Controls.Input
+            variant="outlined"
+            label="Email"
+            name="email"
+            value={values.email}
+            onChange={handleInputChange}
+            error={errors.email}
+          />
+                <Controls.Input
+            variant="outlined"
+            label="Password"
+            name="password"
+            type="password"
+            value={values.password}
+            onChange={handleInputChange}
+            error={errors.password}
+          />
+         
+            <Controls.Button width='80%' type="submit" text="Submit" />
+            {props.auth.error && <h3 variant='primary'>{props.auth.error}</h3>}
+      
+          </Grid>
+          </Grid>
+          </Form>
             </div>
           </Grid>
         </Grid>

@@ -5,6 +5,7 @@ import {
   DialogContent,
   makeStyles,
   Typography,
+  Grid,
 } from "@material-ui/core"
 import CloseIcon from "@material-ui/icons/Close"
 import Controls from "../controls/Control"
@@ -25,7 +26,10 @@ export default function Popup(props) {
   const classes = useStyles()
 
   return (
-    <Dialog
+    <Grid container>
+
+      <Grid item xs ={12}>
+      <Dialog
       open={openPopup}
       maxWidth="md"
       classes={{paper: classes.dialogWrapper}}
@@ -47,5 +51,8 @@ export default function Popup(props) {
       </DialogTitle>
       <DialogContent dividers>{children}</DialogContent>
     </Dialog>
+      </Grid>
+    </Grid>
+    
   )
 }

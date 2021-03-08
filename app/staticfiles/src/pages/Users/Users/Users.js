@@ -118,20 +118,21 @@ const Users = (props) => {
       props.changeUser(user, user.id)
     }
 
-    if (props.response_code === 0) {
+    if (props.auth.error === null) {
       resetForm()
       setOpenPopup(false)
       setRecordForEdit(null)
-      setNotify({
-        isOpen: true,
-        message: props.response_message,
-        type: "success",
-      })
+      // setNotify({
+      //   isOpen: true,
+      //   message: props.auth.message,
+      //   type: "success",
+      // })
       props.getUsers()
-    } else {
+    } else if (props.auth.error) {
+      
       setNotify({
         isOpen: true,
-        message: props.response_message,
+        message: props.auth.error,
         type: "error",
       })
     }
