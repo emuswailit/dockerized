@@ -882,7 +882,7 @@ class GenericCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Generic created successfully.",
+            return Response(data={"response_code": 0, "response_message": "Generic created successfully.",
                                   "generic": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
@@ -893,7 +893,7 @@ class GenericCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Generic not created",
+            return Response(data={"response_code": 1, "response_message": "Generic not created",
                                   "generic": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
@@ -985,7 +985,7 @@ class GenericUpdateAPIView(generics.RetrieveUpdateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_update(serializer)
-            return Response(data={"message": "Generic updated successfully.",
+            return Response(data={"response_code": 0, "response_message": "Generic updated successfully.",
                                   "generic": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
@@ -996,7 +996,7 @@ class GenericUpdateAPIView(generics.RetrieveUpdateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Generic not updated",
+            return Response(data={"response_code": 1, "response_message": "Generic  was not updated",
                                   "generic": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
@@ -1806,7 +1806,7 @@ class ContraindicationsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Contraindication created successfully.",
+            return Response(data={"response_code": 0, "response_message": "Contraindication created successfully.",
                                   "contraindication": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
@@ -1817,7 +1817,7 @@ class ContraindicationsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Contraindication not created",
+            return Response(data={"response_code": 1, "response_message": "Contraindication not created",
                                   "contraindication": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
@@ -1867,11 +1867,9 @@ class ContraindicationsDetailAPIView(generics.RetrieveAPIView):
 
 class ContraindicationsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
-    Admin user
-    ------------------------------------------------------------
-    Update contraindication
+    Distributor update
     """
-    name = "contraindications-update"
+    name = "contraindication-update"
     permission_classes = (permissions.IsAdminUser,
                           )
     serializer_class = serializers.ContraindicationsSerializer
@@ -1887,6 +1885,79 @@ class ContraindicationsUpdateAPIView(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": "0", "response_message": "Contraindication details updated successfully.",
+                                  "contraindication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": "0", "response_message": "Contraindication details not updated",
+                                  "contraindication": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+# class ContraindicationsUpdateAPIView(generics.RetrieveUpdateAPIView):
+#     """
+#     Admin user
+#     ------------------------------------------------------------
+#     Update contraindication
+#     """
+#     name = "contraindicationsupdate"
+#     permission_classes = (permissions.IsAdminUser,
+#                           )
+#     serializer_class = serializers.ContraindicationsSerializer
+#     queryset = models.Contraindications.objects.all()
+#     lookup_fields = ('pk',)
+
+#     def get_object(self):
+#         queryset = self.get_queryset()
+#         filter = {}
+#         for field in self.lookup_fields:
+#             filter[field] = self.kwargs[field]
+
+#         obj = get_object_or_404(queryset, **filter)
+#         self.check_object_permissions(self.request, obj)
+#         return
+
+#     def update(self, request, *args, **kwargs):
+#         """
+#         Custom update and return custom message
+
+#         """
+#         instance = self.get_object()
+#         serializer = self.get_serializer(instance, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             errors_messages = []
+#             self.perform_update(serializer)
+#             return Response(data={"response_code": 0, "response_message": "Drug contraindication updated successfully.",
+#                                   "bodysystem": serializer.data,  "errors": errors_messages},
+#                             status=status.HTTP_201_CREATED)
+#         else:
+#             default_errors = serializer.errors  # default errors dict
+#             errors_messages = []
+#             for field_name, field_errors in default_errors.items():
+#                 for field_error in field_errors:
+#                     error_message = '%s: %s' % (field_name, field_error)
+#                     errors_messages.append(error_message)
+
+#             return Response(data={"response_code": 1, "response_message": "Drug contraindication not updated",
+#                                   "generic": serializer.data,  "errors": errors_messages},
+#                             status=status.HTTP_400_BAD_REQUEST)
 
 # Drug Interations views
 

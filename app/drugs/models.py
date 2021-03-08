@@ -235,7 +235,7 @@ class ModeOfActions(FacilityRelatedModel):
 class Contraindications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    title = models.TextField(max_length=200)
+    title = models.TextField(max_length=200, unique=True)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
