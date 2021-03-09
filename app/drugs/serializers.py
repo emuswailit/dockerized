@@ -475,10 +475,13 @@ class ModeOfActionsSerializer(serializers.HyperlinkedModelSerializer):
 
 class ContraindicationsSerializer(serializers.HyperlinkedModelSerializer):
     generic_details = serializers.SerializerMethodField(read_only=True)
+    # generic = serializers.PrimaryKeyRelatedField(
+    #     queryset=models.Generic.objects.all(),
+    #     many=True)
 
     class Meta:
         model = models.Contraindications
-        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated', 'generic_details'
+        fields = ('id', 'url', 'facility', 'generic', 'condition', 'description', 'created', 'updated', 'generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)

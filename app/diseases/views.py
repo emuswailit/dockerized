@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, exceptions, status
 from . import serializers, models
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -28,7 +29,7 @@ class DiseaseCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Disease created successfully.", "disease": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease created successfully.", "disease": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -37,7 +38,7 @@ class DiseaseCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Disease not created", "disease": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease not created", "disease": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiseaseListAPIView(generics.ListAPIView):
@@ -122,19 +123,44 @@ class DiseaseUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Disease updated successfully.",
+                                  "disease": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Disease  was not updated",
+                                  "generic": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+
 
 # Diseases notes
-class DiseaseNotesCreateAPIView(generics.CreateAPIView):
+class NotesCreateAPIView(generics.CreateAPIView):
     """
     Admin
     ---------------------------------------------
     Create new payment method
     """
-    name = "diseasenotes-create"
+    name = "notes-create"
     permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.DiseaseNotesSerializer
-    queryset = models.DiseaseNotes.objects.all()
+    serializer_class = serializers.NotesSerializer
+    queryset = models.Notes.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -146,7 +172,7 @@ class DiseaseNotesCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Disease note created successfully.", "disease-notes": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease note created successfully.", "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -155,25 +181,26 @@ class DiseaseNotesCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Disease note not created", "disease-notes": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease note not created",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class DiseaseNotesListAPIView(generics.ListAPIView):
+class NotesListAPIView(generics.ListAPIView):
     """
     Authenticated user
     -------------------------------------------
     View listing of payment methods
     """
-    name = "diseasenotes-list"
+    name = "notes-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.DiseaseNotesSerializer
+    serializer_class = serializers.NotesSerializer
 
-    queryset = models.DiseaseNotes.objects.all()
+    queryset = models.Notes.objects.all()
     # TODO : Reuse this for filtering by q.
 
     def get_context_data(self, *args, **kwargs):
-        context = super(DiseaseNotesListAPIView, self).get_context_data(
+        context = super(NotesListAPIView, self).get_context_data(
             *args, **kwargs)
         # context["now"] = timezone.now()
         context["query"] = self.request.GET.get("q")  # None
@@ -181,7 +208,7 @@ class DiseaseNotesListAPIView(generics.ListAPIView):
 
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
-        qs = super(DiseaseNotesListAPIView,
+        qs = super(NotesListAPIView,
                    self).get_queryset(*args, **kwargs)
         query = self.request.GET.get("q")
         if query:
@@ -193,17 +220,17 @@ class DiseaseNotesListAPIView(generics.ListAPIView):
         return qs.filter(owner=user)
 
 
-class DiseaseNotesDetailAPIView(generics.RetrieveAPIView):
+class NotesDetailAPIView(generics.RetrieveAPIView):
     """
     Authenticated user
     ----------------------------------------
     View details of a payment method
     """
-    name = "diseasenotes-detail"
+    name = "notes-detail"
     permission_classes = (permissions.AllowAny,
                           )
-    serializer_class = serializers.DiseaseNotesSerializer
-    queryset = models.DiseaseNotes.objects.all()
+    serializer_class = serializers.NotesSerializer
+    queryset = models.Notes.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -217,17 +244,17 @@ class DiseaseNotesDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class DiseaseNotesUpdateAPIView(generics.RetrieveUpdateAPIView):
+class NotesUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
     Admin
     ------------------------------
     Update payment method details
     """
-    name = "diseasenotes-update"
+    name = "notes-update"
     permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.DiseaseNotesSerializer
-    queryset = models.DiseaseNotes.objects.all()
+    serializer_class = serializers.NotesSerializer
+    queryset = models.Notes.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -239,6 +266,31 @@ class DiseaseNotesUpdateAPIView(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Disease notes updated successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Disease notes entry was not updated",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 
 # Signs and symptoms
@@ -264,7 +316,7 @@ class SignsAndSymptomsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Signs or symptom created successfully.", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Signs or symptom created successfully.", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -273,7 +325,7 @@ class SignsAndSymptomsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Signs or symptom not created", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Signs or symptom not created", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class SignsAndSymptomsListAPIView(generics.ListAPIView):
@@ -358,8 +410,34 @@ class SignsAndSymptomsUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Entry updated successfully.",
+                                  "sign-symptom": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Entry  was not updated",
+                                  "sign-symptom": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 # Diagnosis views
+
+
 class DiagnosisCreateAPIView(generics.CreateAPIView):
     """
     Admin
@@ -382,7 +460,7 @@ class DiagnosisCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Diagnosis created successfully.", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Diagnosis created successfully.", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -391,7 +469,7 @@ class DiagnosisCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Diagnosis not created", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Diagnosis not created", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiagnosisListAPIView(generics.ListAPIView):
@@ -476,8 +554,34 @@ class DiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Diagnosis updated successfully.",
+                                  "diagnosis": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Diagnosis  was not updated",
+                                  "diagnosis": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 # Differential Diagnosis views
+
+
 class DifferentialDiagnosisCreateAPIView(generics.CreateAPIView):
     """
     Admin
@@ -500,7 +604,7 @@ class DifferentialDiagnosisCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Differential diagnosis created successfully.", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis created successfully.", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -509,7 +613,7 @@ class DifferentialDiagnosisCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Differential diagnosis not created", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis not created", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DifferentialDiagnosisListAPIView(generics.ListAPIView):
@@ -594,6 +698,31 @@ class DifferentialDiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis updated successfully.",
+                                  "differential": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Differential diagnosis  was not updated",
+                                  "differential": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+
 
 # Management views
 class ManagementCreateAPIView(generics.CreateAPIView):
@@ -618,7 +747,7 @@ class ManagementCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Disease management method created successfully.", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease management method created successfully.", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -627,7 +756,7 @@ class ManagementCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Disease management method not created", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease management method not created", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class ManagementListAPIView(generics.ListAPIView):
@@ -712,6 +841,31 @@ class ManagementUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis updated successfully.",
+                                  "management": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Differential diagnosis  was not updated",
+                                  "management": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+
 
 # Prevention views
 class PreventionCreateAPIView(generics.CreateAPIView):
@@ -736,7 +890,8 @@ class PreventionCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Prevention method created successfully.", "prevention": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Prevention method created successfully.",
+                                  "prevention": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -745,7 +900,8 @@ class PreventionCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Prevention method not created", "prevention": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Prevention method not created",
+                                  "prevention": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class PreventionListAPIView(generics.ListAPIView):
@@ -830,6 +986,31 @@ class PreventionUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Prevention method updated successfully.",
+                                  "prevention": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Prevention method  was not updated",
+                                  "prevention": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+
 
 # Disease stages views
 class DiseaseStagesCreateAPIView(generics.CreateAPIView):
@@ -854,7 +1035,7 @@ class DiseaseStagesCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Disease stage created successfully.", "disease-stage": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease stage created successfully.", "disease-stage": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -863,7 +1044,7 @@ class DiseaseStagesCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Disease stage not created", "disease-stage": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease stage not created", "disease-stage": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiseaseStagesListAPIView(generics.ListAPIView):
@@ -948,6 +1129,31 @@ class DiseaseStagesUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Disease stage updated successfully.",
+                                  "stage": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Disease stage  was not updated",
+                                  "stage": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+
 
 # Disease stage categories views
 class DiseaseStageCategoriesCreateAPIView(generics.CreateAPIView):
@@ -972,7 +1178,7 @@ class DiseaseStageCategoriesCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Disease stage category created successfully.", "stage-category": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease stage category created successfully.", "stage-category": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -981,7 +1187,7 @@ class DiseaseStageCategoriesCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Disease stage category not created", "stage-category": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease stage category not created", "stage-category": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiseaseStageCategoriesListAPIView(generics.ListAPIView):
@@ -1065,6 +1271,31 @@ class DiseaseStageCategoriesUpdateAPIView(generics.RetrieveUpdateAPIView):
         obj = get_object_or_404(queryset, **filter)
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Stage category updated successfully.",
+                                  "category": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Stage category  was not updated",
+                                  "category": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
 
 # Sources views
 

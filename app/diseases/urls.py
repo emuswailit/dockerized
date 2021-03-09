@@ -16,14 +16,14 @@ urlpatterns = [
          name=views.DiseaseUpdateAPIView.name),
 
     # # Disease notes
-    path('disease-notes/create', views.DiseaseNotesCreateAPIView.as_view(),
-         name=views.DiseaseNotesCreateAPIView.name),
-    path('disease-notes', views.DiseaseNotesListAPIView.as_view(),
-         name=views.DiseaseNotesListAPIView.name),
-    path('disease-notes/<uuid:pk>', views.DiseaseNotesDetailAPIView.as_view(),
-         name=views.DiseaseNotesDetailAPIView.name),
-    path('disease-notes/<uuid:pk>/update', views.DiseaseNotesUpdateAPIView.as_view(),
-         name=views.DiseaseNotesUpdateAPIView.name),
+    path('notes/create', views.NotesCreateAPIView.as_view(),
+         name=views.NotesCreateAPIView.name),
+    path('notes', views.NotesListAPIView.as_view(),
+         name=views.NotesListAPIView.name),
+    path('notes/<uuid:pk>', views.NotesDetailAPIView.as_view(),
+         name=views.NotesDetailAPIView.name),
+    path('notes/<uuid:pk>/update', views.NotesUpdateAPIView.as_view(),
+         name=views.NotesUpdateAPIView.name),
 
     # # Signs and symptoms urls
     path('diagnosis/create', views.SignsAndSymptomsCreateAPIView.as_view(),

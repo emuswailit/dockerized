@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.text import slugify
 from django_countries.fields import CountryField
 from utilities.models import Categories
+from diseases.models import Diseases
 
 User = get_user_model()
 
@@ -174,8 +175,8 @@ class Generic(FacilityRelatedModel):
 class Indications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    indication = models.CharField(
-        max_length=240, blank=True, null=True)
+    disease = models.ForeignKey(Diseases, on_delete=models.CASCADE)
+    dose = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -183,14 +184,6 @@ class Indications(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
-
-        class Meta:
-            db_table = 'indications'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'indication'],
-                    name='Do not repeat entry for generic')
-            ]
 
 
 class Doses(FacilityRelatedModel):
@@ -235,7 +228,7 @@ class ModeOfActions(FacilityRelatedModel):
 class Contraindications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    title = models.TextField(max_length=200, unique=True)
+    condition = models.ForeignKey(Diseases, on_delete=models.CASCADE)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -243,13 +236,6 @@ class Contraindications(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
-
-        class Meta:
-            db_table = 'contraindications'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'title'], name='Do not repeat title for generic')
-            ]
 
 
 class Interactions(FacilityRelatedModel):

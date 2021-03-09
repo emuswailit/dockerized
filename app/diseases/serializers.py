@@ -13,10 +13,13 @@ class DiseaseSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class DiseaseNotesSerializer(serializers.HyperlinkedModelSerializer):
+class NotesSerializer(serializers.ModelSerializer):
+    disease = serializers.PrimaryKeyRelatedField(
+        queryset=models.Diseases.objects.all(),
+        many=False)
 
     class Meta:
-        model = models.DiseaseNotes
+        model = models.Notes
         fields = ('id', 'url', 'disease', 'facility', 'title',
                   'description', 'owner')
         read_only_fields = (

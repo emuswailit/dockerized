@@ -1,7 +1,7 @@
 from django.db import models
 from core.models import FacilityRelatedModel
 from django.contrib.auth import get_user_model
-from drugs.models import Generic
+
 
 User = get_user_model()
 
@@ -23,7 +23,7 @@ class Diseases(FacilityRelatedModel):
         return self.title
 
 
-class DiseaseNotes(FacilityRelatedModel):
+class Notes(FacilityRelatedModel):
 
     """
     Model for all disease notes
@@ -113,7 +113,6 @@ class Management(FacilityRelatedModel):
         Diseases, on_delete=models.CASCADE, null=True, blank=True)
     treatment_category = models.CharField(
         max_length=100, choices=TREATMENT_CATEGORY)
-    drug = models.ForeignKey(Generic, max_length=100, on_delete=models.CASCADE)
     description = models.TextField(null=True, blank=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)

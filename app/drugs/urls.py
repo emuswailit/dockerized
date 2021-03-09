@@ -16,6 +16,17 @@ urlpatterns = [
     path('body-systems/create', views.BodySystemCreateAPIView.as_view(),
          name=views.BodySystemCreateAPIView.name),
 
+
+    #     # Contraindications urls
+    #     path('conditions', views.ConditionListAPIView.as_view(),
+    #          name=views.ConditionListAPIView.name),
+    #     path('conditions/<uuid:pk>', views.ConditionDetailAPIView.as_view(),
+    #          name=views.ConditionDetailAPIView.name),
+    #     path('conditions/<uuid:pk>/update', views.ConditionUpdateAPIView.as_view(),
+    #          name=views.ConditionUpdateAPIView.name),
+    #     path('conditions/create', views.ConditionCreateAPIView.as_view(),
+    #          name=views.ConditionCreateAPIView.name),
+
     # Contraindications urls
     path('contraindications', views.ContraindicationsListAPIView.as_view(),
          name=views.ContraindicationsListAPIView.name),
