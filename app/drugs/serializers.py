@@ -6,6 +6,8 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from utilities.models import Categories
 from utilities.serializers import CategorySerializer
+from diseases.serializers import DiseaseSerializer
+from diseases.models import Diseases
 
 from . import models
 
@@ -283,7 +285,7 @@ class ManufacturerSerializer(CustomCountryMixin, serializers.HyperlinkedModelSer
 
     class Meta:
         model = models.Manufacturer
-        fields = ('id', 'url', 'title', 'country', 'owner', 'email', 'website', 'distributors'
+        fields = ('id', 'url', 'title', 'country', 'owner', 'email', 'website',
                   )
 
         read_only_fields = ('id', 'url',  'owner',)
@@ -441,26 +443,37 @@ class ProductsSerializer(serializers.ModelSerializer):
         return product
 
 
-class IndicationsSerializer(serializers.HyperlinkedModelSerializer):
-    # owner_details = serializers.SerializerMethodField(read_only=True)
+class IndicationsSerializer(serializers.ModelSerializer):
+    generic_details = serializers.SerializerMethodField(read_only=True)
+
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Indications
-        fields = ('id', 'url', 'facility', 'generic', 'indication', 'description', 'owner',  'created', 'updated'
+        fields = ('id', 'url', 'facility', 'disease', 'generic', 'dose', 'description', 'owner',
+                  'created', 'updated', 'generic_details', 'disease_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
 
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
 
-class DosesSerializer(serializers.HyperlinkedModelSerializer):
-    # owner_details = serializers.SerializerMethodField(read_only=True)
+    def get_disease_details(self, obj):
+        disease = Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
-    class Meta:
-        model = models.Doses
-        fields = ('id', 'url', 'facility', 'generic', 'indication', 'route', 'dose', 'owner',  'created', 'updated'
-                  )
 
-        read_only_fields = ('id', 'url', 'facility',  'owner',)
+# class DosesSerializer(serializers.HyperlinkedModelSerializer):
+#     # owner_details = serializers.SerializerMethodField(read_only=True)
+
+#     class Meta:
+#         model = models.Doses
+#         fields = ('id', 'url', 'facility', 'generic', 'indication', 'route', 'dose', 'owner',  'created', 'updated'
+#                   )
+
+#         read_only_fields = ('id', 'url', 'facility',  'owner',)
 
 
 class ModeOfActionsSerializer(serializers.HyperlinkedModelSerializer):
@@ -475,13 +488,14 @@ class ModeOfActionsSerializer(serializers.HyperlinkedModelSerializer):
 
 class ContraindicationsSerializer(serializers.HyperlinkedModelSerializer):
     generic_details = serializers.SerializerMethodField(read_only=True)
-    # generic = serializers.PrimaryKeyRelatedField(
-    #     queryset=models.Generic.objects.all(),
-    #     many=True)
+    generic = serializers.PrimaryKeyRelatedField(
+        queryset=models.Generic.objects.all(),
+        many=False)
 
     class Meta:
         model = models.Contraindications
-        fields = ('id', 'url', 'facility', 'generic', 'condition', 'description', 'created', 'updated', 'generic_details'
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated',
+                  'generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)

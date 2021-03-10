@@ -26,35 +26,35 @@ urlpatterns = [
          name=views.NotesUpdateAPIView.name),
 
     # # Signs and symptoms urls
-    path('diagnosis/create', views.SignsAndSymptomsCreateAPIView.as_view(),
-         name=views.SignsAndSymptomsCreateAPIView.name),
-    path('signs-and-symptoms', views.SignsAndSymptomsListAPIView.as_view(),
-         name=views.SignsAndSymptomsListAPIView.name),
-    path('signs-and-symptoms/<uuid:pk>', views.SignsAndSymptomsDetailAPIView.as_view(),
-         name=views.SignsAndSymptomsDetailAPIView.name),
-    path('signs-and-symptoms/<uuid:pk>/update', views.SignsAndSymptomsUpdateAPIView.as_view(),
-         name=views.SignsAndSymptomsUpdateAPIView.name),
+    path('symptoms/create', views.SymptomsCreateAPIView.as_view(),
+         name=views.SymptomsCreateAPIView.name),
+    path('symptoms', views.SymptomsListAPIView.as_view(),
+         name=views.SymptomsListAPIView.name),
+    path('symptoms/<uuid:pk>', views.SymptomsDetailAPIView.as_view(),
+         name=views.SymptomsDetailAPIView.name),
+    path('symptoms/<uuid:pk>/update', views.SymptomsUpdateAPIView.as_view(),
+         name=views.SymptomsUpdateAPIView.name),
 
 
     # # Diagnosis urls
-    path('diagnosis/create', views.DiagnosisCreateAPIView.as_view(),
+    path('diagnoses/create', views.DiagnosisCreateAPIView.as_view(),
          name=views.DiagnosisCreateAPIView.name),
-    path('diagnosis', views.DiagnosisListAPIView.as_view(),
+    path('diagnoses', views.DiagnosisListAPIView.as_view(),
          name=views.DiagnosisListAPIView.name),
-    path('diagnosis/<uuid:pk>', views.DiagnosisDetailAPIView.as_view(),
+    path('diagnoses/<uuid:pk>', views.DiagnosisDetailAPIView.as_view(),
          name=views.DiagnosisDetailAPIView.name),
-    path('diagnosis/<uuid:pk>/update', views.DiagnosisUpdateAPIView.as_view(),
+    path('diagnoses/<uuid:pk>/update', views.DiagnosisUpdateAPIView.as_view(),
          name=views.DiagnosisUpdateAPIView.name),
 
 
     # # Differential Diagnosis urls
-    path('differential-diagnosis/create', views.DifferentialDiagnosisCreateAPIView.as_view(),
+    path('differential-diagnoses/create', views.DifferentialDiagnosisCreateAPIView.as_view(),
          name=views.DifferentialDiagnosisCreateAPIView.name),
-    path('differential-diagnosis', views.DifferentialDiagnosisListAPIView.as_view(),
+    path('differential-diagnoses', views.DifferentialDiagnosisListAPIView.as_view(),
          name=views.DifferentialDiagnosisListAPIView.name),
-    path('differential-diagnosis/<uuid:pk>', views.DifferentialDiagnosisDetailAPIView.as_view(),
+    path('differential-diagnoses/<uuid:pk>', views.DifferentialDiagnosisDetailAPIView.as_view(),
          name=views.DifferentialDiagnosisDetailAPIView.name),
-    path('differential-diagnosis/<uuid:pk>/update', views.DifferentialDiagnosisUpdateAPIView.as_view(),
+    path('differential-diagnoses/<uuid:pk>/update', views.DifferentialDiagnosisUpdateAPIView.as_view(),
          name=views.DifferentialDiagnosisUpdateAPIView.name),
 
 

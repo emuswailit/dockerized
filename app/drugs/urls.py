@@ -17,15 +17,15 @@ urlpatterns = [
          name=views.BodySystemCreateAPIView.name),
 
 
-    #     # Contraindications urls
-    #     path('conditions', views.ConditionListAPIView.as_view(),
-    #          name=views.ConditionListAPIView.name),
-    #     path('conditions/<uuid:pk>', views.ConditionDetailAPIView.as_view(),
-    #          name=views.ConditionDetailAPIView.name),
-    #     path('conditions/<uuid:pk>/update', views.ConditionUpdateAPIView.as_view(),
-    #          name=views.ConditionUpdateAPIView.name),
-    #     path('conditions/create', views.ConditionCreateAPIView.as_view(),
-    #          name=views.ConditionCreateAPIView.name),
+    # Contraindications urls
+    path('formulations', views.FormulationListAPIView.as_view(),
+         name=views.FormulationListAPIView.name),
+    path('formulations/<uuid:pk>', views.FormulationDetailAPIView.as_view(),
+         name=views.FormulationDetailAPIView.name),
+    path('formulations/<uuid:pk>/update', views.FormulationUpdateAPIView.as_view(),
+         name=views.FormulationUpdateAPIView.name),
+    path('formulations/create', views.FormulationCreateAPIView.as_view(),
+         name=views.FormulationCreateAPIView.name),
 
     # Contraindications urls
     path('contraindications', views.ContraindicationsListAPIView.as_view(),
@@ -49,14 +49,14 @@ urlpatterns = [
 
 
     # Doses urls
-    path('doses', views.DosesListAPIView.as_view(),
-         name=views.DosesListAPIView.name),
-    path('doses/<uuid:pk>', views.DosesDetailAPIView.as_view(),
-         name=views.DosesDetailAPIView.name),
-    path('doses/<uuid:pk>/update', views.DosesUpdateAPIView.as_view(),
-         name=views.DosesUpdateAPIView.name),
-    path('doses/create', views.DosesCreateAPIView.as_view(),
-         name=views.DosesCreateAPIView.name),
+    #     path('doses', views.DosesListAPIView.as_view(),
+    #          name=views.DosesListAPIView.name),
+    #     path('doses/<uuid:pk>', views.DosesDetailAPIView.as_view(),
+    #          name=views.DosesDetailAPIView.name),
+    #     path('doses/<uuid:pk>/update', views.DosesUpdateAPIView.as_view(),
+    #          name=views.DosesUpdateAPIView.name),
+    #     path('doses/create', views.DosesCreateAPIView.as_view(),
+    #          name=views.DosesCreateAPIView.name),
 
     # Drug Class urls
     path('drug-classes/create', views.DrugClassCreateAPIView.as_view(),

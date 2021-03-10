@@ -42,7 +42,7 @@ class Notes(FacilityRelatedModel):
         return self.title
 
 
-class SignsAndSymptoms(FacilityRelatedModel):
+class Symptoms(FacilityRelatedModel):
 
     """
     Disease signs and symptoms
@@ -106,13 +106,13 @@ class Management(FacilityRelatedModel):
 
     """
     TREATMENT_CATEGORY = (
-        ("Drug Management", "Drug Management"),
         ("Non-Drug Management", "Non-Drug Management"),
     )
     disease = models.ForeignKey(
         Diseases, on_delete=models.CASCADE, null=True, blank=True)
     treatment_category = models.CharField(
-        max_length=100, choices=TREATMENT_CATEGORY)
+        max_length=100, choices=TREATMENT_CATEGORY, default="Non-Drug Management")
+    title = models.TextField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)

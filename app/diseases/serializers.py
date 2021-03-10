@@ -17,70 +17,107 @@ class NotesSerializer(serializers.ModelSerializer):
     disease = serializers.PrimaryKeyRelatedField(
         queryset=models.Diseases.objects.all(),
         many=False)
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Notes
         fields = ('id', 'url', 'disease', 'facility', 'title',
-                  'description', 'owner')
+                  'description', 'owner', 'disease_details', )
         read_only_fields = (
             'owner', 'facility',
         )
 
+    def get_disease_details(self, obj):
+        disease = models.Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
-class SignsAndSymptomsSerializer(serializers.HyperlinkedModelSerializer):
+
+class SymptomsSerializer(serializers.HyperlinkedModelSerializer):
     """
     Signs and symptoms model
     """
+    disease = serializers.PrimaryKeyRelatedField(
+        queryset=models.Diseases.objects.all(),
+        many=False)
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = models.SignsAndSymptoms
+        model = models.Symptoms
         fields = ('id', 'url', 'disease', 'facility', 'title',
-                  'description', 'owner')
+                  'description', 'owner', 'disease_details')
         read_only_fields = (
             'owner', 'facility',
         )
+
+    def get_disease_details(self, obj):
+        disease = models.Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
 
 class DiagnosisSerializer(serializers.HyperlinkedModelSerializer):
     """
     Signs and symptoms model
     """
+    disease = serializers.PrimaryKeyRelatedField(
+        queryset=models.Diseases.objects.all(),
+        many=False)
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Diagnosis
         fields = ('id', 'url', 'disease', 'facility', 'title',
-                  'description', 'owner')
+                  'description', 'owner', 'disease_details')
         read_only_fields = (
             'owner', 'facility',
         )
+
+    def get_disease_details(self, obj):
+        disease = models.Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
 
 class DifferentialDiagnosisSerializer(serializers.HyperlinkedModelSerializer):
     """
     Signs and symptoms model
     """
+    disease = serializers.PrimaryKeyRelatedField(
+        queryset=models.Diseases.objects.all(),
+        many=False)
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.DifferentialDiagnosis
         fields = ('id', 'url', 'disease', 'facility', 'title',
-                  'description', 'owner')
+                  'description', 'owner', 'disease_details')
         read_only_fields = (
             'owner', 'facility',
         )
+
+    def get_disease_details(self, obj):
+        disease = models.Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
 
 class ManagementSerializer(serializers.HyperlinkedModelSerializer):
     """
     Signs and symptoms model
     """
+    disease = serializers.PrimaryKeyRelatedField(
+        queryset=models.Diseases.objects.all(),
+        many=False)
+    disease_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Management
-        fields = ('id', 'url', 'facility', 'disease', 'treatment_category', 'drug', 'description', 'title',
-                  'description', 'owner')
+        fields = ('id', 'url', 'facility', 'disease', 'treatment_category', 'description', 'title',
+                  'description', 'owner', 'disease_details')
         read_only_fields = (
             'owner', 'facility',
         )
+
+    def get_disease_details(self, obj):
+        disease = models.Diseases.objects.get(id=obj.disease.id)
+        return DiseaseSerializer(disease, context=self.context).data
 
 
 class PreventionSerializer(serializers.HyperlinkedModelSerializer):

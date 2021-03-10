@@ -294,17 +294,17 @@ class NotesUpdateAPIView(generics.RetrieveUpdateAPIView):
 
 
 # Signs and symptoms
-class SignsAndSymptomsCreateAPIView(generics.CreateAPIView):
+class SymptomsCreateAPIView(generics.CreateAPIView):
     """
     Admin
     ---------------------------------------------
     Create new signs and symptoms entry
     """
-    name = "signsandsymptoms-create"
+    name = "symptoms-create"
     permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.SignsAndSymptomsSerializer
-    queryset = models.SignsAndSymptoms.objects.all()
+    serializer_class = serializers.SymptomsSerializer
+    queryset = models.Symptoms.objects.all()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -316,7 +316,8 @@ class SignsAndSymptomsCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"response_code": 0, "response_message": "Signs or symptom created successfully.", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Signs or symptom created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -325,25 +326,26 @@ class SignsAndSymptomsCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"response_code": 0, "response_message": "Signs or symptom not created", "signs-and-symptoms": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Signs or symptom not created",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
-class SignsAndSymptomsListAPIView(generics.ListAPIView):
+class SymptomsListAPIView(generics.ListAPIView):
     """
     Authenticated user
     -------------------------------------------
     View listing of signs and symptoms entries
     """
-    name = "signsandsymptoms-list"
+    name = "symptoms-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.SignsAndSymptomsSerializer
+    serializer_class = serializers.SymptomsSerializer
 
-    queryset = models.SignsAndSymptoms.objects.all()
+    queryset = models.Symptoms.objects.all()
     # TODO : Reuse this for filtering by q.
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SignsAndSymptomsListAPIView, self).get_context_data(
+        context = super(SymptomsListAPIView, self).get_context_data(
             *args, **kwargs)
         # context["now"] = timezone.now()
         context["query"] = self.request.GET.get("q")  # None
@@ -351,7 +353,7 @@ class SignsAndSymptomsListAPIView(generics.ListAPIView):
 
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
-        qs = super(SignsAndSymptomsListAPIView,
+        qs = super(SymptomsListAPIView,
                    self).get_queryset(*args, **kwargs)
         query = self.request.GET.get("q")
         if query:
@@ -363,17 +365,17 @@ class SignsAndSymptomsListAPIView(generics.ListAPIView):
         return qs.filter(owner=user)
 
 
-class SignsAndSymptomsDetailAPIView(generics.RetrieveAPIView):
+class SymptomsDetailAPIView(generics.RetrieveAPIView):
     """
     Authenticated user
     ----------------------------------------
     View details of a signs and symptoms entry
     """
-    name = "signsandsymptoms-detail"
+    name = "symptoms-detail"
     permission_classes = (permissions.IsAuthenticated,
                           )
-    serializer_class = serializers.SignsAndSymptomsSerializer
-    queryset = models.SignsAndSymptoms.objects.all()
+    serializer_class = serializers.SymptomsSerializer
+    queryset = models.Symptoms.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -387,17 +389,17 @@ class SignsAndSymptomsDetailAPIView(generics.RetrieveAPIView):
         return obj
 
 
-class SignsAndSymptomsUpdateAPIView(generics.RetrieveUpdateAPIView):
+class SymptomsUpdateAPIView(generics.RetrieveUpdateAPIView):
     """
     Admin
     ------------------------------
     Update signs and symptoms
     """
-    name = "signsandsymptoms-update"
+    name = "symptoms-update"
     permission_classes = (permissions.IsAdminUser,
                           )
-    serializer_class = serializers.SignsAndSymptomsSerializer
-    queryset = models.SignsAndSymptoms.objects.all()
+    serializer_class = serializers.SymptomsSerializer
+    queryset = models.Symptoms.objects.all()
     lookup_fields = ('pk',)
 
     def get_object(self):
@@ -421,7 +423,7 @@ class SignsAndSymptomsUpdateAPIView(generics.RetrieveUpdateAPIView):
             errors_messages = []
             self.perform_update(serializer)
             return Response(data={"response_code": 0, "response_message": "Entry updated successfully.",
-                                  "sign-symptom": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -432,7 +434,7 @@ class SignsAndSymptomsUpdateAPIView(generics.RetrieveUpdateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"response_code": 1, "response_message": "Entry  was not updated",
-                                  "sign-symptom": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
 # Diagnosis views
@@ -460,7 +462,8 @@ class DiagnosisCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"response_code": 0, "response_message": "Diagnosis created successfully.", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Diagnosis created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -469,7 +472,8 @@ class DiagnosisCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"response_code": 0, "response_message": "Diagnosis not created", "diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Diagnosis not created",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DiagnosisListAPIView(generics.ListAPIView):
@@ -565,7 +569,7 @@ class DiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
             errors_messages = []
             self.perform_update(serializer)
             return Response(data={"response_code": 0, "response_message": "Diagnosis updated successfully.",
-                                  "diagnosis": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -576,7 +580,7 @@ class DiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"response_code": 1, "response_message": "Diagnosis  was not updated",
-                                  "diagnosis": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
 # Differential Diagnosis views
@@ -604,7 +608,8 @@ class DifferentialDiagnosisCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"response_code": 0, "response_message": "Differential diagnosis created successfully.", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -613,7 +618,8 @@ class DifferentialDiagnosisCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"response_code": 0, "response_message": "Differential diagnosis not created", "differential-diagnosis": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Differential diagnosis not created",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class DifferentialDiagnosisListAPIView(generics.ListAPIView):
@@ -709,7 +715,7 @@ class DifferentialDiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
             errors_messages = []
             self.perform_update(serializer)
             return Response(data={"response_code": 0, "response_message": "Differential diagnosis updated successfully.",
-                                  "differential": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -720,7 +726,7 @@ class DifferentialDiagnosisUpdateAPIView(generics.RetrieveUpdateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"response_code": 1, "response_message": "Differential diagnosis  was not updated",
-                                  "differential": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
 
@@ -747,7 +753,8 @@ class ManagementCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"response_code": 0, "response_message": "Disease management method created successfully.", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 0, "response_message": "Disease management method created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
             errors_messages = []
@@ -756,7 +763,8 @@ class ManagementCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"response_code": 1, "response_message": "Disease management method not created", "management": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
+            return Response(data={"response_code": 1, "response_message": "Disease management method not created",
+                                  "obj": serializer.data,  "errors": errors_messages}, status=status.HTTP_201_CREATED)
 
 
 class ManagementListAPIView(generics.ListAPIView):
@@ -851,8 +859,8 @@ class ManagementUpdateAPIView(generics.RetrieveUpdateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_update(serializer)
-            return Response(data={"response_code": 0, "response_message": "Differential diagnosis updated successfully.",
-                                  "management": serializer.data,  "errors": errors_messages},
+            return Response(data={"response_code": 0, "response_message": "Disease management entry updated successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -862,8 +870,8 @@ class ManagementUpdateAPIView(generics.RetrieveUpdateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"response_code": 1, "response_message": "Differential diagnosis  was not updated",
-                                  "management": serializer.data,  "errors": errors_messages},
+            return Response(data={"response_code": 1, "response_message": "Disease management entry  was not updated",
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
 

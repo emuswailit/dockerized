@@ -28,12 +28,10 @@ class Distributor(FacilityRelatedModel):
 
 
 class Manufacturer(FacilityRelatedModel):
-
     title = models.CharField(max_length=100, unique=True)
     country = CountryField()
     email = models.EmailField(null=True, blank=True)
     website = models.CharField(max_length=120, null=True, blank=True)
-    distributors = models.ManyToManyField(Distributor, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -62,8 +60,8 @@ class Posology(FacilityRelatedModel):
 
 class Frequency(FacilityRelatedModel):
     title = models.CharField(max_length=100)
-    latin = models.CharField(max_length=100)
-    abbreviation = models.CharField(max_length=100)
+    latin = models.CharField(max_length=100, null=True, blank=True)
+    abbreviation = models.CharField(max_length=100, null=True, blank=True)
     numerical = models.IntegerField(default=0)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.TextField(null=True, blank=True)
@@ -89,8 +87,17 @@ class Instruction(FacilityRelatedModel):
     def __str__(self):
         return self.title
 
-        class Meta:
-            db_table = 'special_instructions'
+
+class Formulation(FacilityRelatedModel):
+
+    title = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        self.title = self.title.upper()
 
 
 class BodySystem(FacilityRelatedModel):
@@ -100,9 +107,6 @@ class BodySystem(FacilityRelatedModel):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'body_systems'
 
     def __str__(self):
         return self.title
@@ -117,10 +121,6 @@ class DrugClass(FacilityRelatedModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        db_table = 'drug_classes'
-        verbose_name_plural = "Drug Classes"
-
     def __str__(self):
         return self.title
 
@@ -133,10 +133,6 @@ class DrugSubClass(FacilityRelatedModel):
     description = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'drug_sub_classes'
-        verbose_name_plural = "Drug Sub Classes"
 
     def __str__(self):
         return self.title
@@ -156,10 +152,6 @@ class Generic(FacilityRelatedModel):
 
     def __str__(self):
         return self.title
-
-        class Meta:
-            db_table = 'generics'
-        # override save
 
     # def save(self,  *args, **kwargs):
 
@@ -185,25 +177,30 @@ class Indications(FacilityRelatedModel):
     def __str__(self):
         return self.title
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['generic', 'disease', 'dose'], name='Indications must be unique')
+        ]
 
-class Doses(FacilityRelatedModel):
-    generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    indication = models.ForeignKey(Indications, on_delete=models.CASCADE)
-    route = models.ForeignKey(Posology, on_delete=models.CASCADE)
-    dose = models.TextField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.indication
+# class Doses(FacilityRelatedModel):
+#     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
+#     indication = models.ForeignKey(Indications, on_delete=models.CASCADE)
+#     route = models.ForeignKey(Posology, on_delete=models.CASCADE)
+#     dose = models.TextField()
+#     owner = models.ForeignKey(User, on_delete=models.CASCADE)
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True)
 
-        class Meta:
-            db_table = 'doses'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'indication', 'route'], name='Do not repeat title for generic')
-            ]
+#     def __str__(self):
+#         return self.indication
+
+#         class Meta:
+#             db_table = 'doses'
+#             constraints = [
+#                 models.UniqueConstraint(fields=[
+#                     'generic', 'indication', 'route'], name='Do not repeat title for generic')
+#             ]
 
 
 class ModeOfActions(FacilityRelatedModel):
@@ -228,7 +225,7 @@ class ModeOfActions(FacilityRelatedModel):
 class Contraindications(FacilityRelatedModel):
 
     generic = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    condition = models.ForeignKey(Diseases, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
@@ -309,38 +306,6 @@ class SpecialConsiderations(FacilityRelatedModel):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.title
-
-        class Meta:
-            db_table = 'specialconsiderations'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'title'], name='Do not repeat entry for generic')
-            ]
-
-
-class Formulation(FacilityRelatedModel):
-
-    title = models.CharField(max_length=100, unique=True)
-    description = models.TextField(null=True, blank=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    def clean(self):
-        self.title = self.title.upper()
-
-    def __str__(self):
-        return self.title
-
-        class Meta:
-            db_table = 'formulations'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'title'], name='Do not repeat title for generic')
-            ]
-
 
 class Preparation(FacilityRelatedModel):
 
@@ -357,10 +322,6 @@ class Preparation(FacilityRelatedModel):
 
     def __str__(self):
         return f"{self.title} - {self.formulation}"
-
-        class Meta:
-            db_table = 'drug_preparations'
-            verbose_name_plural = "drug_preparations"
 
 
 class ProductsQuerySet(models.query.QuerySet):
