@@ -662,7 +662,7 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
             errors_messages = []
             self.perform_create(serializer)
             return Response(data={"message": "Drug class created successfully.",
-                                  "drug_class": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -672,7 +672,7 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"drug_class": "DrugClass not created",
+            return Response(data={"obj": "DrugClass not created",
                                   "data": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
@@ -751,7 +751,7 @@ class DrugClassUpdateAPIView(generics.UpdateAPIView):
             errors_messages = []
             self.perform_update(serializer)
             return Response(data={"response_code": "0", "response_message": "Drug class updated successfully.",
-                                  "drug_class": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -762,7 +762,7 @@ class DrugClassUpdateAPIView(generics.UpdateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"response_code": "1", "response_message": "Drug class not updated",
-                                  "drug_class": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_400_BAD_REQUEST)
 
 # Sub Class
@@ -788,7 +788,7 @@ class DrugSubClassCreateAPIView(generics.CreateAPIView):
             errors_messages = []
             self.perform_create(serializer)
             return Response(data={"message": "Sub class created successfully.",
-                                  "data": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -799,7 +799,7 @@ class DrugSubClassCreateAPIView(generics.CreateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"message": "DrugSubClass not created",
-                                  "data": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
 
 

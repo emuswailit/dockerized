@@ -477,13 +477,16 @@ class IndicationsSerializer(serializers.ModelSerializer):
 
 
 class ModeOfActionsSerializer(serializers.HyperlinkedModelSerializer):
-
+    generic_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = models.ModeOfActions
-        fields = ('id', 'url', 'facility', 'generic', 'mode_of_action',  'created', 'updated'
+        fields = ('id', 'url', 'facility', 'generic', 'mode_of_action',  'created', 'updated','generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
 
 
 class ContraindicationsSerializer(serializers.HyperlinkedModelSerializer):
