@@ -536,7 +536,7 @@ class BodySystemCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Body system created successfully.", "obj": serializer.data,
+            return Response(data={"response_code":0,"response_message": "Body system created successfully.", "obj": serializer.data,
                                   "errors": errors_messages}, status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -546,7 +546,7 @@ class BodySystemCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "BodySystem not created",
+            return Response(data={"response_code":1,"response_message": "BodySystem not created",
                                   "obj": serializer.data,
                                   "errors": errors_messages}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -661,7 +661,7 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Drug class created successfully.",
+            return Response(data={"response_code":0,"response_message": "Drug class created successfully.",
                                   "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
@@ -672,9 +672,9 @@ class DrugClassCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"obj": "DrugClass not created",
-                                  "data": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+            return Response(data={"response_code":1,"response_message": "DrugClass not created",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class DrugClassListAPIView(generics.ListAPIView):
@@ -1025,7 +1025,7 @@ class GenericUpdateAPIView(generics.RetrieveUpdateAPIView):
 
             return Response(data={"response_code": 1, "response_message": "Generic  was not updated",
                                   "obj": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 # Preparation
@@ -1049,8 +1049,8 @@ class PreparationCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Preparation created successfully.",
-                                  "preparation": serializer.data,  "errors": errors_messages},
+            return Response(data={"response_code":0,"response_message": "Preparation created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -1060,9 +1060,9 @@ class PreparationCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Preparation not created",
+            return Response(data={"response_code":1, "response_message": "Preparation not created",
                                   "preparation": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class PreparationListAPIView(generics.ListAPIView):
@@ -1129,7 +1129,30 @@ class PreparationUpdateAPIView(generics.RetrieveUpdateAPIView):
         raise exceptions.NotAcceptable(
             {"message": ["This item cannot be deleted!"]})
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
 
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": 0, "response_message": "Preparation updated successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": 1, "response_message": "Preparation  was not updated",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
 # Formulation
 
 class FormulationCreateAPIView(generics.CreateAPIView):
@@ -1276,7 +1299,7 @@ class ManufacturerCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Manufacturer created successfully.",
+            return Response(data={"response_code":0,"response_message": "Manufacturer created successfully.",
                                   "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
@@ -1287,9 +1310,9 @@ class ManufacturerCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Manufacturer not created",
+            return Response(data={"response_code":0,"response_message": "Manufacturer not created",
                                   "obj": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ManufacturerListAPIView(generics.ListAPIView):
@@ -1403,8 +1426,8 @@ class ProductCreateAPIView(generics.CreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Product created successfully.",
-                                  "product": serializer.data,  "errors": errors_messages},
+            return Response(data={"response_code":0,"response_message": "Product created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -1414,9 +1437,9 @@ class ProductCreateAPIView(generics.CreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Product not created",
-                                  "product": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+            return Response(data={"response_code":0,"response_message": "Product not created",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductListAPIView(generics.ListAPIView):
@@ -1479,6 +1502,30 @@ class ProductUpdateAPIView(generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        """
+        Custom update and return custom message
+
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            errors_messages = []
+            self.perform_update(serializer)
+            return Response(data={"response_code": "0", "response_message": "Product details updated successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_201_CREATED)
+        else:
+            default_errors = serializer.errors  # default errors dict
+            errors_messages = []
+            for field_name, field_errors in default_errors.items():
+                for field_error in field_errors:
+                    error_message = '%s: %s' % (field_name, field_error)
+                    errors_messages.append(error_message)
+
+            return Response(data={"response_code": "1", "response_message": "Product details not updated",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 class ProductImageList(generics.ListCreateAPIView):
     """
@@ -1506,8 +1553,8 @@ class ProductImageList(generics.ListCreateAPIView):
         if serializer.is_valid():
             errors_messages = []
             self.perform_create(serializer)
-            return Response(data={"message": "Product photo created successfully.",
-                                  "product-image": serializer.data,  "errors": errors_messages},
+            return Response(data={"response_code":0,"response_message": "Product photo created successfully.",
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -1517,9 +1564,9 @@ class ProductImageList(generics.ListCreateAPIView):
                     error_message = '%s: %s' % (field_name, field_error)
                     errors_messages.append(error_message)
 
-            return Response(data={"message": "Product image not created",
-                                  "product-image": serializer.data,  "errors": errors_messages},
-                            status=status.HTTP_201_CREATED)
+            return Response(data={"response_code":1,"response_message": "Product image not created",
+                                  "obj": serializer.data,  "errors": errors_messages},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
         user = self.request.user
@@ -1546,7 +1593,6 @@ class ProductImageDetail(generics.RetrieveAPIView):
 
 # Indications
 class IndicationsCreateAPIView(generics.CreateAPIView):
-
     """
     Create new generic
     """
@@ -2532,7 +2578,7 @@ class ConsiderationsListAPIView(generics.ListAPIView):
     ------------------------------------------------
     List of drug special considerations
     """
-    name = "specialconsiderations-list"
+    name = "considerations-list"
     permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.ConsiderationsSerializer
@@ -2551,7 +2597,7 @@ class ConsiderationsDetailAPIView(generics.RetrieveAPIView):
     ------------------------------------------------------
     Special considerations details
     """
-    name = "specialconsiderations-detail"
+    name = "considerations-detail"
     permission_classes = (permissions.IsAuthenticated,
                           )
     serializer_class = serializers.ConsiderationsSerializer
@@ -2602,7 +2648,7 @@ class ConsiderationsUpdateAPIView(generics.RetrieveUpdateAPIView):
             errors_messages = []
             self.perform_update(serializer)
             return Response(data={"response_code": 0, "response_message": "Special instruction entry updated successfully.",
-                                  "generic": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_201_CREATED)
         else:
             default_errors = serializer.errors  # default errors dict
@@ -2613,7 +2659,7 @@ class ConsiderationsUpdateAPIView(generics.RetrieveUpdateAPIView):
                     errors_messages.append(error_message)
 
             return Response(data={"response_code": 1, "response_message": "Special instruction entry  was not updated",
-                                  "generic": serializer.data,  "errors": errors_messages},
+                                  "obj": serializer.data,  "errors": errors_messages},
                             status=status.HTTP_400_BAD_REQUEST)
 
 

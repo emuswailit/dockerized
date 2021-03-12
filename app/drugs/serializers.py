@@ -4,8 +4,8 @@ from django_countries.fields import CountryField as ModelCountryField
 from django_countries.serializers import CountryFieldMixin
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from utilities.models import Categories
-from utilities.serializers import CategorySerializer
+from utilities.models import Categories, SubCategories
+from utilities.serializers import CategorySerializer, SubCategorySerializer
 from diseases.serializers import DiseaseSerializer
 from diseases.models import Diseases
 
@@ -379,15 +379,16 @@ class ManufacturerDisplaySerializer(serializers.HyperlinkedModelSerializer):
 class ProductsSerializer(serializers.ModelSerializer):
 
     category_details = serializers.SerializerMethodField(read_only=True)
+    sub_category_details = serializers.SerializerMethodField(read_only=True)
     preparation_details = serializers.SerializerMethodField(read_only=True)
     manufacturer_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Products
-        fields = ('id', 'url', 'title', 'preparation', 'category', 'manufacturer',
+        fields = ('id', 'url', 'title', 'preparation', 'category','sub_category', 'manufacturer',
                   'is_prescription_only',
                   'description', 'packaging', 'units_per_pack', 'owner', 'units_per_pack',
-                  'manufacturer_details', 'active', 'created', 'updated', 'preparation_details', 'category_details')
+                   'active', 'created', 'updated','manufacturer_details', 'preparation_details', 'category_details', 'sub_category_details')
 
         read_only_fields = ('id', 'url',
                             'owner',
@@ -399,7 +400,16 @@ class ProductsSerializer(serializers.ModelSerializer):
     def get_category_details(self, obj):
         category = Categories.objects.get(id=obj.category.id)
         return CategorySerializer(category, context=self.context).data
-
+    
+    
+    def get_sub_category_details(self, obj):
+        sub_category= None
+        if obj.sub_category and  SubCategories.objects.filter(id=obj.sub_category.id).count()>0:
+            sub_category = SubCategories.objects.get(id=obj.sub_category.id)
+            return SubCategorySerializer(sub_category, context=self.context).data
+        else:
+            return None
+    
     def get_preparation_details(self, obj):
         if obj.preparation:
             preparation = models.Preparation.objects.get(id=obj.preparation.id)
@@ -417,25 +427,25 @@ class ProductsSerializer(serializers.ModelSerializer):
         else:
             return None
 
-    def create(self, validated_data):
-        title = validated_data.pop('title')
-        preparation = validated_data.pop('preparation')
+    # def create(self, validated_data):
+    #     title = validated_data.pop('title')
+    #     preparation = validated_data.pop('preparation')
 
-        if not title:
-            raise serializers.ValidationError(
-                "Enter unique product title ")
+    #     if not title:
+    #         raise serializers.ValidationError(
+    #             "Enter unique product title ")
 
-        category = validated_data.pop('category')
-        manufacturer = validated_data.pop('manufacturer')
+    #     category = validated_data.pop('category')
+    #     manufacturer = validated_data.pop('manufacturer')
+        
+    #     if preparation:
+    #         title = preparation.title
 
-        if preparation:
-            title = preparation.title
-
-            if not manufacturer:
-                raise serializers.ValidationError(
-                    f"Manufacturer is required  {category.title}")
-            else:
-                category = Categories.objects.drug_category()
+    #         if not manufacturer:
+    #             raise serializers.ValidationError(
+    #                 f"Manufacturer is required  {category.title}")
+    #         else:
+    #             pass
 
         product = models.Products.objects.create(
             preparation=preparation, title=title, category=category, manufacturer=manufacturer, **validated_data)
@@ -554,7 +564,7 @@ class PrecautionsSerializer(serializers.HyperlinkedModelSerializer):
         generic = models.Generic.objects.get(id=obj.generic.id)
         return GenericSerializer(generic, context=self.context).data
 
-class ConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
+class ConsiderationsSerializer(serializers.ModelSerializer):
     generic_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = models.Considerations

@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.text import slugify
 from django_countries.fields import CountryField
-from utilities.models import Categories
+from utilities.models import Categories, SubCategories
 from diseases.models import Diseases
 
 User = get_user_model()
@@ -98,7 +98,8 @@ class Formulation(FacilityRelatedModel):
 
     def clean(self):
         self.title = self.title.upper()
-
+    def __str__(self):
+        return self.title
 
 class BodySystem(FacilityRelatedModel):
 
@@ -363,7 +364,8 @@ class Products(FacilityRelatedModel):
     """
     category = models.ForeignKey(
         Categories, related_name="product_category", on_delete=models.CASCADE,)
-
+    sub_category = models.ForeignKey(
+        SubCategories, related_name="product_sub_category", on_delete=models.CASCADE, null=True, blank=True)
     preparation = models.ForeignKey(
         Preparation, related_name="product_preparation", on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=100, null=True,

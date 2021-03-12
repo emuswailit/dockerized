@@ -47,7 +47,7 @@ class SubCategories(FacilityRelatedModel):
     """Model for product sub categoriesy"""
     category = models.ForeignKey(Categories, on_delete=models.CASCADE)
     title = models.CharField(max_length=120, null=True, blank=True)
-    description = models.CharField(max_length=120, null=True)
+    description = models.CharField(max_length=120, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
