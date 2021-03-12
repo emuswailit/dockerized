@@ -214,12 +214,11 @@ class ModeOfActions(FacilityRelatedModel):
     def __str__(self):
         return self.title
 
-        class Meta:
-            db_table = 'mode_of_actions'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'mode_of_action'], name='No repetion entries per generic')
-            ]
+    class Meta:   
+        constraints = [
+            models.UniqueConstraint(fields=[
+                'generic', 'mode_of_action'], name='No repetion entries per generic')
+        ]
 
 
 class Contraindications(FacilityRelatedModel):
@@ -240,21 +239,16 @@ class Interactions(FacilityRelatedModel):
     generic = models.ForeignKey(
         Generic, related_name="generic_drug_interactions", on_delete=models.CASCADE)
     contra_indicated = models.ForeignKey(Generic, on_delete=models.CASCADE)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'interactions'
-        constraints = [
-            models.UniqueConstraint(fields=[
-                                    'generic', 'contra_indicated'], name='Drug cannot be contraindicated with itself')
-        ]
+        unique_together=("generic","contra_indicated","description")
 
 
 class SideEffects(FacilityRelatedModel):
-
     generic = models.ForeignKey(
         Generic, related_name="generic_side_effects", on_delete=models.CASCADE)
     title = models.TextField(max_length=200)
@@ -266,11 +260,10 @@ class SideEffects(FacilityRelatedModel):
     def __str__(self):
         return self.title
 
-        class Meta:
-            db_table = 'sideffects'
-            constraints = [
-                models.UniqueConstraint(fields=[
-                    'generic', 'title'], name='Do not repeat entry for generic')
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=[
+                    'generic', 'title','description'], name='Do not repeat entry for generic')
             ]
 
 
@@ -295,7 +288,7 @@ class Precautions(FacilityRelatedModel):
             ]
 
 
-class SpecialConsiderations(FacilityRelatedModel):
+class Considerations(FacilityRelatedModel):
 
     generic = models.ForeignKey(
 

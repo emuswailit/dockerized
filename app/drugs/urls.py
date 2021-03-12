@@ -222,14 +222,14 @@ urlpatterns = [
          name=views.PrecautionsCreateAPIView.name),
 
     # Drug special considerations urls
-    path('special-considerations', views.SpecialConsiderationsListAPIView.as_view(),
-         name=views.SpecialConsiderationsListAPIView.name),
-    path('special-considerations/<uuid:pk>', views.SpecialConsiderationsDetailAPIView.as_view(),
-         name=views.SpecialConsiderationsDetailAPIView.name),
-    path('special-considerations/<uuid:pk>/update', views.SpecialConsiderationsUpdateAPIView.as_view(),
-         name=views.SpecialConsiderationsUpdateAPIView.name),
-    path('special-considerations/create', views.SpecialConsiderationsCreateAPIView.as_view(),
-         name=views.SpecialConsiderationsCreateAPIView.name),
+    path('considerations', views.ConsiderationsListAPIView.as_view(),
+         name=views.ConsiderationsListAPIView.name),
+    path('considerations/<uuid:pk>', views.ConsiderationsDetailAPIView.as_view(),
+         name=views.ConsiderationsDetailAPIView.name),
+    path('considerations/<uuid:pk>/update', views.ConsiderationsUpdateAPIView.as_view(),
+         name=views.ConsiderationsUpdateAPIView.name),
+    path('considerations/create', views.ConsiderationsCreateAPIView.as_view(),
+         name=views.ConsiderationsCreateAPIView.name),
 
 
 ]

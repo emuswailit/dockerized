@@ -508,45 +508,63 @@ class ContraindicationsSerializer(serializers.HyperlinkedModelSerializer):
         return GenericSerializer(generic, context=self.context).data
 
 
-class InteractionsSerializer(serializers.HyperlinkedModelSerializer):
-
+class InteractionsSerializer(serializers.ModelSerializer):
+    generic_details = serializers.SerializerMethodField(read_only=True)
+    contra_indicated_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = models.Interactions
-        fields = ('id', 'url', 'facility', 'generic', 'contra_indicated', 'description', 'created', 'updated'
+        fields = ('id', 'url', 'facility', 
+        'generic', 'contra_indicated', 'description', 
+        'created', 'updated','generic_details','contra_indicated_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
 
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
+    def get_contra_indicated_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.contra_indicated.id)
+        return GenericSerializer(generic, context=self.context).data
 
-class SideEffectsSerializer(serializers.HyperlinkedModelSerializer):
-
+class SideEffectsSerializer(serializers.ModelSerializer):
+    generic_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = models.SideEffects
-        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated','generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
-
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
 
 class PrecautionsSerializer(serializers.HyperlinkedModelSerializer):
-
+    generic_details = serializers.SerializerMethodField(read_only=True)
+    generic = serializers.PrimaryKeyRelatedField(
+        queryset=models.Generic.objects.all(),
+        many=False)
     class Meta:
         model = models.Precautions
-        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated','generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
 
-
-class SpecialConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
-
+class ConsiderationsSerializer(serializers.HyperlinkedModelSerializer):
+    generic_details = serializers.SerializerMethodField(read_only=True)
     class Meta:
-        model = models.SpecialConsiderations
-        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated'
+        model = models.Considerations
+        fields = ('id', 'url', 'facility', 'generic', 'title', 'description', 'created', 'updated', 'generic_details'
                   )
 
         read_only_fields = ('id', 'url', 'facility',  'owner',)
-
+    def get_generic_details(self, obj):
+        generic = models.Generic.objects.get(id=obj.generic.id)
+        return GenericSerializer(generic, context=self.context).data
 
 class GenericReferenceSerializer(serializers.ModelSerializer):
     preparations = serializers.SerializerMethodField(read_only=True)
@@ -633,9 +651,9 @@ class GenericReferenceSerializer(serializers.ModelSerializer):
         return InteractionsSerializer(interactions, context=self.context, many=True).data
 
     def get_special_considerations(self, obj):
-        special_considerations = models.SpecialConsiderations.objects.filter(
+        special_considerations = models.Considerations.objects.filter(
             generic=obj)
-        return SpecialConsiderationsSerializer(special_considerations, context=self.context, many=True).data
+        return ConsiderationsSerializer(special_considerations, context=self.context, many=True).data
 
     def get_drug_class_details(self, obj):
         drug_class = models.DrugClass.objects.get(id=obj.drug_class.id)
